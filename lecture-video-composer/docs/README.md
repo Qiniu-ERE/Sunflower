@@ -54,4 +54,4 @@
 
 如果您发现文档中的错误或有改进建议，请通过以下方式反馈：
 - 提交 Issue
-- 发送邮件至 docs@example.com
+- 发送邮件至 Sunflower-Team@qiniu.com
