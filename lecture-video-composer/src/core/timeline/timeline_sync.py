@@ -100,7 +100,7 @@ class Timeline:
 class TimelineSync:
     """时间轴同步引擎"""
     
-    TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+    TIMESTAMP_FORMAT = "%Y-%m-%d-%H:%M:%S"
     
     @classmethod
     def parse_timestamp(cls, filename: str) -> datetime:
@@ -108,7 +108,7 @@ class TimelineSync:
         从文件名解析时间戳
         
         Args:
-            filename: 文件名，格式为 "YYYY-MM-DD hh:mm:ss.ext"
+            filename: 文件名，格式为 "YYYY-MM-DD-hh:mm:ss.ext"
             
         Returns:
             datetime对象
@@ -123,7 +123,7 @@ class TimelineSync:
             timestamp = datetime.strptime(name_without_ext, cls.TIMESTAMP_FORMAT)
             return timestamp
         except ValueError as e:
-            raise ValueError(f"Invalid filename format: {filename}. Expected format: YYYY-MM-DD hh:mm:ss.ext") from e
+            raise ValueError(f"Invalid filename format: {filename}. Expected format: YYYY-MM-DD-hh:mm:ss.ext") from e
     
     @classmethod
     def build_timeline(cls, audio_file: Path, photo_files: List[Path], 
