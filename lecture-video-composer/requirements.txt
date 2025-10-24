@@ -1,0 +1,17 @@
+# Lecture Video Composer - Python Dependencies
+# MVP Core Requirements
+
+# Image processing
+Pillow>=10.0.0
+
+# Audio metadata extraction (optional, fallback if ffprobe not available)
+mutagen>=1.47.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Note: ffmpeg/ffprobe should be installed separately on the system
+# For macOS: brew install ffmpeg
+# For Ubuntu: sudo apt-get install ffmpeg
+# For Windows: Download from https://ffmpeg.org/download.html
