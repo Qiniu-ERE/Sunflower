@@ -355,6 +355,11 @@ def main():
         
         # 导出视频（如果需要）
         if args.export_video:
+            # 如果使用了 --no-save，强制保存文件以便导出视频
+            if args.no_save:
+                logger.warning("⚠️  --no-save conflicts with --export-video. Files will be saved for video export.")
+                composer.save_project()
+            
             logger.info("\n" + "=" * 60)
             logger.info("Exporting video...")
             logger.info("=" * 60)
