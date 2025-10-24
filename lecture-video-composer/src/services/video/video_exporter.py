@@ -10,6 +10,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import json
 import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import multiprocessing
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -132,12 +134,67 @@ class VideoExporter:
             logger.info("Cleaning up temporary files...")
             shutil.rmtree(temp_dir, ignore_errors=True)
     
+    def _create_single_segment(self, item_data: tuple) -> Path:
+        """
+        创建单个视频片段（用于并行处理）
+        
+        Args:
+            item_data: (index, item, photos_dir, temp_dir, width, height) 元组
+            
+        Returns:
+            生成的片段文件路径
+        """
+        i, item, photos_dir, temp_dir, width, height = item_data
+        
+        photo_file = photos_dir / item['photo']
+        duration = item['duration']
+        segment_file = temp_dir / f"segment_{i:04d}.mp4"
+        
+        logger.info(f"Creating segment {i+1}: {photo_file.name} ({duration:.2f}s)")
+        
+        # 使用FFmpeg将照片转换为视频片段
+        # 修复：scale滤镜使用 width:height 而不是 widthxheight
+        cmd = [
+            'ffmpeg',
+            '-y',  # 覆盖输出文件
+            '-loop', '1',  # 循环图片
+            '-i', str(photo_file),  # 输入图片
+            '-t', str(duration),  # 持续时间
+            '-vf', f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1",  # 缩放并填充
+            '-r', str(self.config.fps),  # 帧率
+            '-c:v', self.config.video_codec,  # 视频编码器
+            '-preset', self.config.preset,  # 编码预设
+            '-crf', str(self.config.crf),  # 质量因子
+            '-pix_fmt', self.config.pixel_format,  # 像素格式
+            str(segment_file)
+        ]
+        
+        try:
+            timeout = max(duration * 2.0 + 30, 120)  # Minimum 2 minutes timeout
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"FFmpeg error: {result.stderr}")
+                raise RuntimeError(f"Failed to create segment for {photo_file.name}")
+            
+            logger.info(f"✓ Segment {i+1} completed: {photo_file.name}")
+            return segment_file
+            
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(f"Timeout creating segment for {photo_file.name} (duration: {duration:.1f}s, timeout: {timeout:.1f}s)")
+    
     def _create_photo_segments(self,
                               timeline_items: List[Dict[str, Any]],
                               photos_dir: Path,
                               temp_dir: Path) -> List[Path]:
         """
-        为每张照片创建视频片段
+        并行创建视频片段以加快导出速度
         
         Args:
             timeline_items: 时间轴项列表
@@ -145,68 +202,45 @@ class VideoExporter:
             temp_dir: 临时目录
             
         Returns:
-            视频片段文件路径列表
+            视频片段文件路径列表（按顺序）
         """
-        segment_files = []
-        
         # 解析分辨率
         width, height = self.config.resolution.split('x')
         
-        for i, item in enumerate(timeline_items):
-            photo_file = photos_dir / item['photo']
-            duration = item['duration']
-            segment_file = temp_dir / f"segment_{i:04d}.mp4"
-            
-            logger.info(f"Creating segment {i+1}/{len(timeline_items)}: {photo_file.name} ({duration:.2f}s)")
-            
-            # 使用FFmpeg将照片转换为视频片段
-            # -loop 1: 循环输入图片
-            # -i: 输入文件
-            # -t: 持续时间
-            # -vf scale: 缩放到目标分辨率，保持宽高比
-            # -r: 帧率
-            # -c:v: 视频编码器
-            # -pix_fmt: 像素格式
-            cmd = [
-                'ffmpeg',
-                '-y',  # 覆盖输出文件
-                '-loop', '1',  # 循环图片
-                '-i', str(photo_file),  # 输入图片
-                '-t', str(duration),  # 持续时间
-                '-vf', f"scale={self.config.resolution}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1",  # 缩放并填充
-                '-r', str(self.config.fps),  # 帧率
-                '-c:v', self.config.video_codec,  # 视频编码器
-                '-preset', self.config.preset,  # 编码预设
-                '-crf', str(self.config.crf),  # 质量因子
-                '-pix_fmt', self.config.pixel_format,  # 像素格式
-                str(segment_file)
-            ]
-            
-            try:
-                # Calculate timeout based on duration
-                # Formula: duration * factor + base_overhead
-                # Factor depends on encoding complexity (preset, resolution, etc.)
-                # For still images to video, processing is roughly 1-2x realtime for fast preset
-                timeout = max(duration * 2.0 + 30, 120)  # Minimum 2 minutes timeout
-                
-                logger.debug(f"Using timeout: {timeout:.1f}s for duration: {duration:.1f}s")
-                
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout
-                )
-                
-                if result.returncode != 0:
-                    logger.error(f"FFmpeg error: {result.stderr}")
-                    raise RuntimeError(f"Failed to create segment for {photo_file.name}")
-                
-                segment_files.append(segment_file)
-                
-            except subprocess.TimeoutExpired:
-                raise RuntimeError(f"Timeout creating segment for {photo_file.name} (duration: {duration:.1f}s, timeout: {timeout:.1f}s)")
+        # 准备并行处理的数据
+        items_data = [
+            (i, item, photos_dir, temp_dir, width, height)
+            for i, item in enumerate(timeline_items)
+        ]
         
+        # 使用CPU核心数作为并行线程数（最多使用CPU核心数）
+        max_workers = min(multiprocessing.cpu_count(), len(timeline_items))
+        logger.info(f"Using {max_workers} parallel workers to process {len(timeline_items)} segments")
+        
+        # 并行处理所有片段
+        segment_files = [None] * len(timeline_items)  # 预分配列表以保持顺序
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # 提交所有任务
+            future_to_index = {
+                executor.submit(self._create_single_segment, item_data): item_data[0]
+                for item_data in items_data
+            }
+            
+            # 收集结果
+            completed = 0
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                try:
+                    segment_file = future.result()
+                    segment_files[index] = segment_file
+                    completed += 1
+                    logger.info(f"Progress: {completed}/{len(timeline_items)} segments completed")
+                except Exception as e:
+                    logger.error(f"Failed to create segment {index}: {e}")
+                    raise
+        
+        logger.info(f"All {len(timeline_items)} segments created successfully")
         return segment_files
     
     def _concatenate_segments(self, segment_files: List[Path], output_file: Path):
