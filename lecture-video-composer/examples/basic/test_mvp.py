@@ -25,10 +25,10 @@ def create_test_files():
     print("=" * 60)
     print("\n请准备以下格式的文件:")
     print("\n1. 音频文件 (10分钟):")
-    print("   格式: YYYY-MM-DD hh:mm:ss.mp3")
-    print("   示例: 2025-10-24 14:30:00.mp3")
+    print("   格式: YYYY-MM-DD-hh:mm:ss.mp3")
+    print("   示例: 2025-10-24-14:30:00.mp3")
     print("\n2. 照片文件 (10张):")
-    print("   格式: YYYY-MM-DD hh:mm:ss.jpg")
+    print("   格式: YYYY-MM-DD-hh:mm:ss.jpg")
     print("   示例:")
     
     # 生成示例文件名
@@ -66,9 +66,9 @@ def test_timeline_parsing():
     print("=" * 60)
     
     test_filenames = [
-        "2025-10-24 14:30:00.mp3",
-        "2025-10-24 14:32:15.jpg",
-        "2025-10-24 14:35:40.jpg"
+        "2025-10-24-14:30:00.mp3",
+        "2025-10-24-14:32:15.jpg",
+        "2025-10-24-14:35:40.jpg"
     ]
     
     for filename in test_filenames:
@@ -97,7 +97,7 @@ def test_full_workflow():
     audio_files = list(fixtures_dir.glob("*.mp3"))
     if not audio_files:
         print(f"\n⚠ 未找到音频文件 (*.mp3) in {fixtures_dir}")
-        print("请添加格式为 'YYYY-MM-DD hh:mm:ss.mp3' 的音频文件")
+        print("请添加格式为 'YYYY-MM-DD-hh:mm:ss.mp3' 的音频文件")
         return
     
     audio_file = audio_files[0]
@@ -107,7 +107,7 @@ def test_full_workflow():
     photo_files = sorted(fixtures_dir.glob("*.jpg")) + sorted(fixtures_dir.glob("*.jpeg"))
     if not photo_files:
         print(f"\n⚠ 未找到照片文件 (*.jpg) in {fixtures_dir}")
-        print("请添加格式为 'YYYY-MM-DD hh:mm:ss.jpg' 的照片文件")
+        print("请添加格式为 'YYYY-MM-DD-hh:mm:ss.jpg' 的照片文件")
         return
     
     print(f"找到 {len(photo_files)} 个照片文件")

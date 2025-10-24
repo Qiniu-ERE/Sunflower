@@ -62,7 +62,7 @@ describe('TimelineSync', () => {
   describe('parseTimestamp', () => {
     test('should parse valid timestamp', () => {
       const timeline = new TimelineSync();
-      const date = timeline.parseTimestamp('2025-10-24 14:30:00.mp3');
+      const date = timeline.parseTimestamp('2025-10-24-14:30:00.mp3');
       
       expect(date.getFullYear()).toBe(2025);
       expect(date.getMonth()).toBe(9); // 0-based
@@ -81,10 +81,10 @@ describe('TimelineSync', () => {
 
   describe('buildTimeline', () => {
     test('should build timeline with correct offsets', () => {
-      const audioFile = createMockFile('2025-10-24 14:30:00.mp3');
+      const audioFile = createMockFile('2025-10-24-14:30:00.mp3');
       const photoFiles = [
-        createMockFile('2025-10-24 14:32:00.jpg'),
-        createMockFile('2025-10-24 14:35:00.jpg')
+        createMockFile('2025-10-24-14:32:00.jpg'),
+        createMockFile('2025-10-24-14:35:00.jpg')
       ];
 
       const timeline = new TimelineSync(audioFile, photoFiles);
@@ -95,10 +95,10 @@ describe('TimelineSync', () => {
     });
 
     test('should sort photos by timestamp', () => {
-      const audioFile = createMockFile('2025-10-24 14:30:00.mp3');
+      const audioFile = createMockFile('2025-10-24-14:30:00.mp3');
       const photoFiles = [
-        createMockFile('2025-10-24 14:35:00.jpg'),
-        createMockFile('2025-10-24 14:32:00.jpg') // 顺序颠倒
+        createMockFile('2025-10-24-14:35:00.jpg'),
+        createMockFile('2025-10-24-14:32:00.jpg') // 顺序颠倒
       ];
 
       const timeline = new TimelineSync(audioFile, photoFiles);
@@ -132,10 +132,10 @@ function createMockFile(filename) {
 }
 
 function setupTimeline() {
-  const audioFile = createMockFile('2025-10-24 14:30:00.mp3');
+  const audioFile = createMockFile('2025-10-24-14:30:00.mp3');
   const photoFiles = [
-    createMockFile('2025-10-24 14:32:00.jpg'),
-    createMockFile('2025-10-24 14:35:00.jpg')
+    createMockFile('2025-10-24-14:32:00.jpg'),
+    createMockFile('2025-10-24-14:35:00.jpg')
   ];
   return new TimelineSync(audioFile, photoFiles);
 }
@@ -291,9 +291,9 @@ describe('Basic Playback E2E', () => {
 // tests/performance/timeline-performance.test.js
 describe('Timeline Performance', () => {
   test('should build timeline for 100 photos in < 1s', async () => {
-    const audioFile = createMockFile('2025-10-24 14:30:00.mp3');
+    const audioFile = createMockFile('2025-10-24-14:30:00.mp3');
     const photoFiles = Array.from({ length: 100 }, (_, i) => {
-      const time = new Date('2025-10-24 14:30:00');
+      const time = new Date('2025-10-24-14:30:00');
       time.setSeconds(time.getSeconds() + i * 10);
       return createMockFile(formatTimestamp(time) + '.jpg');
     });
