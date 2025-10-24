@@ -505,11 +505,20 @@ output/
 
 ## 八、常见问题
 
-### Q1: ffprobe 命令未找到
+### Q1: ffprobe 警告信息
 
-**问题**: `FileNotFoundError: ffprobe not found`
+**问题**: `WARNING: ffprobe failed, trying fallback method`
 
-**解决**:
+**说明**: 
+- 这是一个**警告**，不是错误！系统会自动降级使用 Python mutagen 库
+- MVP 已实现**双重容错机制**：优先使用 ffprobe，失败则使用 mutagen
+- 功能完全正常，只是使用了备选方案
+
+**关于 pip install ffprobe**:
+- `pip install ffprobe` 安装的只是一个 Python 包装器，不是真正的 ffprobe 工具
+- 真正的 `ffprobe` 是 FFmpeg 项目的可执行文件，需要单独安装
+
+**完全解决方案（可选）**:
 ```bash
 # macOS
 brew install ffmpeg
@@ -520,6 +529,8 @@ sudo apt-get install ffmpeg
 # 验证安装
 ffprobe -version
 ```
+
+**注意**: macOS 15 (Sequoia) 预发布版本可能遇到 brew 问题，但不影响 MVP 功能
 
 ### Q2: PIL/Pillow 导入错误
 
