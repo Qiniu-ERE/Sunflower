@@ -16,6 +16,7 @@ from core.timeline.timeline_sync import TimelineSync, Timeline
 from services.audio.audio_service import AudioService, AudioMetadata
 from services.image.image_service import ImageService, ImageMetadata
 from services.metadata.metadata_service import MetadataService, ProjectMetadata
+from services.video.video_exporter import VideoExporter, VideoExportConfig
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -224,6 +225,59 @@ class LectureComposer:
         
         return self.project_metadata
     
+    def export_video(self, output_file: Optional[Path] = None, 
+                    config: Optional[VideoExportConfig] = None) -> Path:
+        """
+        导出视频文件
+        
+        Args:
+            output_file: 输出视频文件路径（可选，默认为output_dir/video.mp4）
+            config: 视频导出配置（可选，使用默认配置）
+            
+        Returns:
+            生成的视频文件路径
+        """
+        logger.info("Starting video export...")
+        
+        if self.timeline is None:
+            raise RuntimeError("Timeline not built. Call process() first.")
+        
+        if self.audio_metadata is None:
+            raise RuntimeError("Audio metadata not extracted. Call process() first.")
+        
+        # 确定输出文件路径
+        if output_file is None:
+            output_file = self.output_dir / "video.mp4"
+        
+        # 创建视频导出器
+        exporter = VideoExporter(config)
+        
+        # 准备时间轴数据
+        timeline_items = []
+        for item in self.timeline.items:
+            timeline_items.append({
+                'photo': item.file_path.name,
+                'duration': item.duration,
+                'offset': item.offset_seconds
+            })
+        
+        # 导出视频
+        video_file = exporter.export_video(
+            audio_file=self.output_dir / "audio" / self.audio_file.name,
+            timeline_items=timeline_items,
+            photos_dir=self.output_dir / "photos",
+            output_file=output_file,
+            audio_duration=self.audio_metadata.duration
+        )
+        
+        logger.info(f"Video exported successfully: {video_file}")
+        
+        # 获取视频信息
+        video_info = exporter.get_video_info(video_file)
+        logger.info(f"Video info: {video_info}")
+        
+        return video_file
+    
     def get_summary(self) -> str:
         """
         获取处理摘要
@@ -266,6 +320,11 @@ def main():
     parser.add_argument('-o', '--output', type=Path, help='Output directory', default=None)
     parser.add_argument('-t', '--title', type=str, help='Project title', default=None)
     parser.add_argument('--no-save', action='store_true', help='Do not save project files')
+    parser.add_argument('--export-video', action='store_true', help='Export video file')
+    parser.add_argument('--video-file', type=Path, help='Video output file path', default=None)
+    parser.add_argument('--resolution', type=str, help='Video resolution (e.g., 1920x1080)', default='1920x1080')
+    parser.add_argument('--fps', type=int, help='Video frame rate', default=30)
+    parser.add_argument('--bitrate', type=str, help='Video bitrate (e.g., 5000k)', default='5000k')
     
     args = parser.parse_args()
     
@@ -293,6 +352,25 @@ def main():
         # 打印元数据JSON
         print("\nProject Metadata JSON:")
         print(metadata.to_json())
+        
+        # 导出视频（如果需要）
+        if args.export_video:
+            logger.info("\n" + "=" * 60)
+            logger.info("Exporting video...")
+            logger.info("=" * 60)
+            
+            config = VideoExportConfig(
+                resolution=args.resolution,
+                fps=args.fps,
+                video_bitrate=args.bitrate
+            )
+            
+            video_file = composer.export_video(
+                output_file=args.video_file,
+                config=config
+            )
+            
+            print(f"\n✅ Video exported successfully: {video_file}")
         
         return 0
         

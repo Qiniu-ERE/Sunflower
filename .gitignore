@@ -1,1 +1,7 @@
 .DS_Store
+lecture-video-composer/src/core/__pycache__/lecture_composer.cpython-39.pyc
+lecture-video-composer/src/core/timeline/__pycache__/timeline_sync.cpython-39.pyc
+lecture-video-composer/src/services/audio/__pycache__/audio_service.cpython-39.pyc
+lecture-video-composer/src/services/image/__pycache__/image_service.cpython-39.pyc
+lecture-video-composer/src/services/metadata/__pycache__/metadata_service.cpython-39.pyc
+lecture-video-composer/src/services/video/__pycache__/video_exporter.cpython-39.pyc
