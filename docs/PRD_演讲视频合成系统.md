@@ -161,8 +161,13 @@ class Timeline:
 ### 4.1 文件命名规范
 
 **输入文件要求**:
-- 音频文件: `YYYY-MM-DD hh:mm:ss.mp3` (例: `2025-10-24 14:30:00.mp3`)
-- 照片文件: `YYYY-MM-DD hh:mm:ss.jpg` (例: `2025-10-24 14:32:15.jpg`)
+- 音频文件: `YYYY-MM-DD-hh:mm:ss.mp3` (例: `2025-10-24-14:30:00.mp3`)
+- 照片文件: `YYYY-MM-DD-hh:mm:ss.jpg` (例: `2025-10-24-14:32:15.jpg`)
+
+**命名规则说明**:
+- 年月日用 `-` 分隔
+- 时分秒用 `:` 分隔
+- 日期和时间之间用 `-` 分隔
 
 **时间解析逻辑**:
 ```python
@@ -170,7 +175,7 @@ def parse_filename_timestamp(filename: str) -> datetime:
     # 提取文件名中的时间部分（去除扩展名）
     name_without_ext = filename.rsplit('.', 1)[0]
     # 解析为 datetime 对象
-    return datetime.strptime(name_without_ext, "%Y-%m-%d %H:%M:%S")
+    return datetime.strptime(name_without_ext, "%Y-%m-%d-%H:%M:%S")
 ```
 
 ### 4.2 播放器功能规格
@@ -216,11 +221,11 @@ def parse_filename_timestamp(filename: str) -> datetime:
 lecture_project/
 ├── metadata.json          # 项目元数据
 ├── audio/
-│   └── 2025-10-24 14:30:00.mp3
+│   └── 2025-10-24-14:30:00.mp3
 └── photos/
-    ├── 2025-10-24 14:32:15.jpg
-    ├── 2025-10-24 14:35:40.jpg
-    └── 2025-10-24 14:38:22.jpg
+    ├── 2025-10-24-14:32:15.jpg
+    ├── 2025-10-24-14:35:40.jpg
+    └── 2025-10-24-14:38:22.jpg
 ```
 
 **metadata.json 格式**:
@@ -230,7 +235,7 @@ lecture_project/
   "title": "高等数学第三章",
   "created_at": "2025-10-24T14:30:00+08:00",
   "audio": {
-    "filename": "2025-10-24 14:30:00.mp3",
+    "filename": "2025-10-24-14:30:00.mp3",
     "duration": 3600,
     "format": "mp3",
     "sample_rate": 44100
@@ -239,13 +244,13 @@ lecture_project/
     {
       "timestamp": "2025-10-24T14:32:15+08:00",
       "offset": 135,
-      "photo": "2025-10-24 14:32:15.jpg",
+      "photo": "2025-10-24-14:32:15.jpg",
       "duration": 225
     },
     {
       "timestamp": "2025-10-24T14:35:40+08:00",
       "offset": 340,
-      "photo": "2025-10-24 14:35:40.jpg",
+      "photo": "2025-10-24-14:35:40.jpg",
       "duration": 162
     }
   ],
@@ -295,9 +300,9 @@ class LectureTimeline {
   }
 
   parseTimestamp(filename) {
-    // "2025-10-24 14:30:00.mp3" -> Date对象
-    const timeStr = filename.replace(/\.[^.]+$/, '');
-    return new Date(timeStr.replace(' ', 'T'));
+    // "2025-10-24-14:30:00.mp3" -> Date对象
+    const timeStr = filename.replace(/\.[^.]+$/, '').replace(/-(\d{2}):/, 'T$1:');
+    return new Date(timeStr);
   }
 
   buildTimeline(photoFiles) {

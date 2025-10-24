@@ -458,9 +458,9 @@ export class ResponsivePlayer {
 fixtures/
 ├── sample-audio.mp3          # 5分钟示例音频
 ├── sample-photos/
-│   ├── 2025-10-24 14:30:00.jpg
-│   ├── 2025-10-24 14:32:00.jpg
-│   └── 2025-10-24 14:35:00.jpg
+│   ├── 2025-10-24-14:30:00.jpg
+│   ├── 2025-10-24-14:32:00.jpg
+│   └── 2025-10-24-14:35:00.jpg
 └── README.md
 ```
 
@@ -470,9 +470,9 @@ fixtures/
 // 从fixtures目录加载
 const audioPath = './fixtures/sample-audio.mp3';
 const photoPaths = [
-  './fixtures/sample-photos/2025-10-24 14:30:00.jpg',
-  './fixtures/sample-photos/2025-10-24 14:32:00.jpg',
-  './fixtures/sample-photos/2025-10-24 14:35:00.jpg'
+  './fixtures/sample-photos/2025-10-24-14:30:00.jpg',
+  './fixtures/sample-photos/2025-10-24-14:32:00.jpg',
+  './fixtures/sample-photos/2025-10-24-14:35:00.jpg'
 ];
 ```
 
