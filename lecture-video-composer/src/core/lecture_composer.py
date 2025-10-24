@@ -322,9 +322,11 @@ def main():
     parser.add_argument('--no-save', action='store_true', help='Do not save project files')
     parser.add_argument('--export-video', action='store_true', help='Export video file')
     parser.add_argument('--video-file', type=Path, help='Video output file path', default=None)
-    parser.add_argument('--resolution', type=str, help='Video resolution (e.g., 1920x1080)', default='1920x1080')
+    parser.add_argument('--resolution', type=str, help='Video resolution (e.g., 1280x720)', default='1280x720')
     parser.add_argument('--fps', type=int, help='Video frame rate', default=30)
-    parser.add_argument('--bitrate', type=str, help='Video bitrate (e.g., 5000k)', default='5000k')
+    parser.add_argument('--bitrate', type=str, help='Video bitrate (e.g., 3000k)', default='3000k')
+    parser.add_argument('--enable-subtitles', action='store_true', help='Enable subtitle generation (default: enabled)', default=True)
+    parser.add_argument('--no-subtitles', action='store_true', help='Disable subtitle generation')
     
     args = parser.parse_args()
     
@@ -364,10 +366,14 @@ def main():
             logger.info("Exporting video...")
             logger.info("=" * 60)
             
+            # 确定是否启用字幕
+            enable_subtitles = not args.no_subtitles
+            
             config = VideoExportConfig(
                 resolution=args.resolution,
                 fps=args.fps,
-                video_bitrate=args.bitrate
+                video_bitrate=args.bitrate,
+                enable_subtitles=enable_subtitles
             )
             
             video_file = composer.export_video(
