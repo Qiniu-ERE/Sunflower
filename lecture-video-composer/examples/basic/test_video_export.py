@@ -78,6 +78,7 @@ def test_video_export_config():
     print(f"  质量因子(CRF): {config3.crf}")
     
     print("\n✅ 视频导出配置测试完成")
+    return True
 
 
 def test_full_workflow():
