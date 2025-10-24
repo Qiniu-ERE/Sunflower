@@ -126,7 +126,7 @@ Sunflower/
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/sunyifei83/Sunflower.git
+git clone https://github.com/Qiniu-ERE/Sunflower.git
 cd Sunflower/lecture-video-composer
 
 # 2. 安装系统依赖
