@@ -147,12 +147,16 @@ export class LecturePlayer extends EventBus {
      * 加载照片
      */
     async _loadPhotos(urls, timestamps) {
+        console.log('开始加载照片:', urls.length, '张');
+        
         const promises = urls.map((url, index) => {
             return new Promise((resolve, reject) => {
                 const img = new Image();
-                img.crossOrigin = 'anonymous';
+                // 移除crossOrigin，因为是同源请求
+                // img.crossOrigin = 'anonymous';
                 
                 img.onload = () => {
+                    console.log(`照片加载成功 [${index}]:`, url);
                     resolve({
                         image: img,
                         url: url,
@@ -161,18 +165,26 @@ export class LecturePlayer extends EventBus {
                     });
                 };
                 
-                img.onerror = () => {
+                img.onerror = (e) => {
+                    console.error(`照片加载失败 [${index}]:`, url, e);
                     reject(new Error(`照片加载失败: ${url}`));
                 };
                 
+                console.log(`开始加载照片 [${index}]:`, url);
                 img.src = url;
             });
         });
         
-        this.photos = await Promise.all(promises);
-        
-        // 按时间戳排序
-        this.photos.sort((a, b) => a.timestamp - b.timestamp);
+        try {
+            this.photos = await Promise.all(promises);
+            console.log('所有照片加载完成:', this.photos.length);
+            
+            // 按时间戳排序
+            this.photos.sort((a, b) => a.timestamp - b.timestamp);
+        } catch (error) {
+            console.error('照片加载过程中出错:', error);
+            throw error;
+        }
     }
 
     /**
@@ -189,18 +201,30 @@ export class LecturePlayer extends EventBus {
      * 播放
      */
     async play() {
+        console.log('尝试播放, audio对象:', this.audio);
+        console.log('音频源:', this.audio?.src);
+        console.log('音频状态:', {
+            readyState: this.audio?.readyState,
+            networkState: this.audio?.networkState,
+            error: this.audio?.error
+        });
+        
         if (!this.audio) {
+            console.error('未加载音频');
             throw new Error('未加载音频');
         }
         
         try {
+            console.log('开始播放音频...');
             await this.audio.play();
+            console.log('音频播放成功');
             this.state.isPlaying = true;
             this.state.isPaused = false;
             this._startAnimation();
             this.emit('play');
         } catch (error) {
-            this.emit('error', { message: '播放失败', error });
+            console.error('播放失败:', error);
+            this.emit('error', { message: '播放失败: ' + error.message, error });
             throw error;
         }
     }
