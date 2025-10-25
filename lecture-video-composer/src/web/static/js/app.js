@@ -50,6 +50,9 @@ class App {
             // 显示上传视图
             this.showView(this.state.get('ui.currentView') || 'upload');
             
+            // 加载初始文件列表
+            await this.updateFileList();
+            
             // 恢复用户偏好设置
             this.restorePreferences();
             
@@ -152,14 +155,27 @@ class App {
      * 初始化播放器
      */
     initPlayer() {
-        const prefs = this.state.get('preferences') || {};
-        
-        this.player = new LecturePlayer('photo-canvas', {
-            transitionDuration: prefs.transitionDuration || 300,
-            transitionType: prefs.transitionType || 'fade',
-            autoPlay: false,
-            volume: prefs.volume !== undefined ? prefs.volume : 1.0
-        });
+        try {
+            const prefs = this.state.get('preferences') || {};
+            
+            this.player = new LecturePlayer('photo-canvas', {
+                transitionDuration: prefs.transitionDuration || 300,
+                transitionType: prefs.transitionType || 'fade',
+                autoPlay: false,
+                volume: prefs.volume !== undefined ? prefs.volume : 1.0
+            });
+        } catch (error) {
+            console.error('播放器初始化失败:', error);
+            // 创建一个空的播放器占位对象，避免后续代码出错
+            this.player = {
+                on: () => {},
+                setVolume: () => {},
+                setPlaybackRate: () => {},
+                setOptions: () => {},
+                getState: () => ({ currentTime: 0, duration: 0, volume: 1 })
+            };
+            return;
+        }
         
         // 监听播放器事件
         this.player.on('loaded', (data) => {
@@ -246,35 +262,40 @@ class App {
     initTimeline() {
         const timelineContainer = document.querySelector('.timeline-container');
         if (!timelineContainer) {
-            console.warn('时间轴容器未找到');
+            console.warn('时间轴容器未找到，将在播放器视图中初始化');
             return;
         }
         
-        this.timeline = new Timeline(timelineContainer, {
-            height: 60,
-            markerColor: '#4CAF50',
-            progressColor: '#2196F3',
-            hoverColor: '#FFC107'
-        });
-        
-        // 监听时间轴事件
-        this.timeline.on('seek', ({ time }) => {
-            if (this.player) {
-                this.player.seek(time);
-            }
-        });
-        
-        this.timeline.on('markerClick', ({ index, photo }) => {
-            console.log('点击标记点:', index, photo);
-            if (this.player) {
-                this.player.seek(photo.timestamp);
-            }
-        });
-        
-        this.timeline.on('markerHover', ({ index, photo }) => {
-            // 可以显示照片预览
-            console.log('悬停标记点:', index);
-        });
+        try {
+            this.timeline = new Timeline(timelineContainer, {
+                height: 60,
+                markerColor: '#4CAF50',
+                progressColor: '#2196F3',
+                hoverColor: '#FFC107'
+            });
+            
+            // 监听时间轴事件
+            this.timeline.on('seek', ({ time }) => {
+                if (this.player) {
+                    this.player.seek(time);
+                }
+            });
+            
+            this.timeline.on('markerClick', ({ index, photo }) => {
+                console.log('点击标记点:', index, photo);
+                if (this.player) {
+                    this.player.seek(photo.timestamp);
+                }
+            });
+            
+            this.timeline.on('markerHover', ({ index, photo }) => {
+                // 可以显示照片预览
+                console.log('悬停标记点:', index);
+            });
+        } catch (error) {
+            console.error('时间轴初始化失败:', error);
+            this.timeline = null;
+        }
     }
 
     /**
@@ -349,6 +370,8 @@ class App {
             const params = sessionId ? `?session_id=${sessionId}` : '';
             const data = await this.api.get(`/file/list${params}`);
             
+            console.log('文件列表数据:', data);
+            
             // 更新状态
             this.state.update('uploads', {
                 audioFiles: data.audio_files || [],
@@ -356,35 +379,65 @@ class App {
             });
             
             // 更新音频列表
-            const audioList = document.getElementById('audio-list');
-            if (audioList && data.audio_files) {
-                audioList.innerHTML = data.audio_files.map(file => `
-                    <div class="file-item">
-                        <i class="fas fa-music"></i>
-                        <span>${file.name}</span>
-                        <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'audio')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `).join('');
+            const audioList = document.getElementById('audio-file-list');
+            if (audioList) {
+                if (data.audio_files && data.audio_files.length > 0) {
+                    audioList.innerHTML = data.audio_files.map(file => `
+                        <div class="file-item">
+                            <span class="file-icon">🎵</span>
+                            <span class="file-name">${file.name}</span>
+                            <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'audio')">
+                                <span>🗑️</span>
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    audioList.innerHTML = '';
+                }
             }
             
             // 更新照片列表
-            const photoList = document.getElementById('photo-list');
-            if (photoList && data.photo_files) {
-                photoList.innerHTML = data.photo_files.map(file => `
-                    <div class="file-item">
-                        <i class="fas fa-image"></i>
-                        <span>${file.name}</span>
-                        <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'photo')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `).join('');
+            const photoList = document.getElementById('photos-file-list');
+            if (photoList) {
+                if (data.photo_files && data.photo_files.length > 0) {
+                    photoList.innerHTML = data.photo_files.map(file => `
+                        <div class="file-item">
+                            <span class="file-icon">📸</span>
+                            <span class="file-name">${file.name}</span>
+                            <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'photo')">
+                                <span>🗑️</span>
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    photoList.innerHTML = '';
+                }
             }
+            
+            // 更新创建项目按钮状态
+            this.updateCreateButtonState(data.audio_files, data.photo_files);
             
         } catch (error) {
             console.error('获取文件列表失败:', error);
+        }
+    }
+    
+    /**
+     * 更新创建项目按钮状态
+     */
+    updateCreateButtonState(audioFiles, photoFiles) {
+        const createBtn = document.getElementById('create-project-btn');
+        if (createBtn) {
+            const hasAudio = audioFiles && audioFiles.length > 0;
+            const hasPhotos = photoFiles && photoFiles.length > 0;
+            
+            if (hasAudio && hasPhotos) {
+                createBtn.disabled = false;
+                createBtn.classList.remove('disabled');
+            } else {
+                createBtn.disabled = true;
+                createBtn.classList.add('disabled');
+            }
         }
     }
 
@@ -717,14 +770,32 @@ class App {
     restorePreferences() {
         const prefs = this.state.get('preferences') || {};
         
+        // 检查播放器是否正确初始化
+        if (!this.player || !this.player.setVolume) {
+            console.warn('播放器未正确初始化，跳过恢复播放器偏好设置');
+            // 仅应用非播放器相关的偏好设置
+            if (prefs.theme) {
+                document.body.setAttribute('data-theme', prefs.theme);
+            }
+            return;
+        }
+        
         // 恢复音量
-        if (this.player && prefs.volume !== undefined) {
-            this.player.setVolume(prefs.volume);
+        if (prefs.volume !== undefined) {
+            try {
+                this.player.setVolume(prefs.volume);
+            } catch (error) {
+                console.error('恢复音量设置失败:', error);
+            }
         }
         
         // 恢复播放速率
-        if (this.player && prefs.playbackRate !== undefined) {
-            this.player.setPlaybackRate(prefs.playbackRate);
+        if (prefs.playbackRate !== undefined) {
+            try {
+                this.player.setPlaybackRate(prefs.playbackRate);
+            } catch (error) {
+                console.error('恢复播放速率失败:', error);
+            }
         }
         
         // 应用其他偏好设置
@@ -742,12 +813,16 @@ class App {
             document.body.setAttribute('data-theme', prefs.theme);
         }
         
-        // 过渡效果
-        if (this.player && prefs.transitionType) {
-            this.player.setOptions({
-                transitionType: prefs.transitionType,
-                transitionDuration: prefs.transitionDuration || 300
-            });
+        // 过渡效果 - 检查播放器和方法是否存在
+        if (this.player && typeof this.player.setOptions === 'function' && prefs.transitionType) {
+            try {
+                this.player.setOptions({
+                    transitionType: prefs.transitionType,
+                    transitionDuration: prefs.transitionDuration || 300
+                });
+            } catch (error) {
+                console.error('应用过渡效果设置失败:', error);
+            }
         }
     }
 

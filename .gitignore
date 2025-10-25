@@ -36,3 +36,4 @@ lecture-video-composer/src/web/services/__pycache__/session_manager.cpython-39.p
 
 # 忽略临时会话文件
 lecture-video-composer/data/temp/sessions/*.json
+lecture-video-composer/data/uploads/*

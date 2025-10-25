@@ -122,6 +122,7 @@ class TestingConfig(Config):
     TEMP_TEST_DIR = Path(tempfile.mkdtemp())
     DATA_DIR = TEMP_TEST_DIR / 'data'
     UPLOAD_DIR = DATA_DIR / 'uploads'
+    UPLOAD_FOLDER = DATA_DIR / 'uploads'  # Flask使用的配置名
     PROJECTS_DIR = DATA_DIR / 'projects'
     EXPORTS_DIR = DATA_DIR / 'exports'
     TEMP_DIR = DATA_DIR / 'temp'

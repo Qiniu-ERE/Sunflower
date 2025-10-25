@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Web服务器启动脚本
 用于启动演讲视频合成系统的Web界面
