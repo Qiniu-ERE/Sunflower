@@ -29,12 +29,16 @@ def app(temp_dir):
     # 覆盖配置为测试目录
     app.config['SESSION_FILE_DIR'] = str(temp_dir)
     app.config['UPLOAD_FOLDER'] = str(temp_dir / 'uploads')
+    app.config['PROJECTS_FOLDER'] = str(temp_dir / 'projects')
     app.config['TESTING'] = True
     app.config['SECRET_KEY'] = 'test-secret-key'
     
-    # 确保上传目录存在
+    # 确保目录存在
     upload_dir = Path(app.config['UPLOAD_FOLDER'])
     upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    projects_dir = Path(app.config['PROJECTS_FOLDER'])
+    projects_dir.mkdir(parents=True, exist_ok=True)
     
     # 重新初始化session_manager使用测试目录
     from src.web.app import session_manager

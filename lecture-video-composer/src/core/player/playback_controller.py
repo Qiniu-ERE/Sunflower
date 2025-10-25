@@ -5,7 +5,7 @@ Playback Controller
 
 import logging
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Optional, Callable, List
 from dataclasses import dataclass
 from enum import Enum
 import threading
@@ -83,8 +83,8 @@ class PlaybackController:
         self._duration: float = 0.0
         self._position: float = 0.0
         self._position_lock = threading.Lock()
-        self._position_callbacks: list[Callable[[float], None]] = []
-        self._state_callbacks: list[Callable[[PlaybackState], None]] = []
+        self._position_callbacks: List[Callable[[float], None]] = []
+        self._state_callbacks: List[Callable[[PlaybackState], None]] = []
         self._update_thread: Optional[threading.Thread] = None
         self._stop_update = False
         
@@ -379,7 +379,7 @@ class PlaybackController:
         """
         return self.config.speed
     
-    def cycle_speed(self, speeds: list[float] = None) -> float:
+    def cycle_speed(self, speeds: List[float] = None) -> float:
         """
         循环切换播放速度
         

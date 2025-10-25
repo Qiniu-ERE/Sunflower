@@ -5,7 +5,7 @@ Photo Display Manager
 
 import logging
 from pathlib import Path
-from typing import Optional, Callable, List, Dict, Any
+from typing import Optional, Callable, List, Dict, Any, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import threading
@@ -33,12 +33,12 @@ class TransitionType(Enum):
 @dataclass
 class DisplayConfig:
     """显示配置"""
-    window_size: tuple[int, int] = (1280, 720)  # 窗口大小
+    window_size: Tuple[int, int] = (1280, 720)  # 窗口大小
     transition_type: TransitionType = TransitionType.FADE  # 过渡效果
     transition_duration: float = 0.5  # 过渡时长（秒）
     transition_fps: int = 30  # 过渡动画帧率
     preload_count: int = 3  # 预加载照片数量
-    background_color: tuple[int, int, int] = (0, 0, 0)  # 背景颜色
+    background_color: Tuple[int, int, int] = (0, 0, 0)  # 背景颜色
     enable_transitions: bool = True  # 是否启用过渡动画
 
 
@@ -48,7 +48,7 @@ class PhotoItem:
     path: Path
     start_time: float  # 开始显示时间（秒）
     duration: float    # 显示时长（秒）
-    image: Optional[Image.Image] = None  # 预加载的图片对象
+    image: Optional['Image.Image'] = None  # 预加载的图片对象
 
 
 class PhotoDisplayManager:
@@ -218,7 +218,7 @@ class PhotoDisplayManager:
         else:
             logger.warning(f"Unsupported transition type: {transition_type}")
     
-    def _transition_fade(self, old_image: Image.Image, new_image: Image.Image):
+    def _transition_fade(self, old_image: 'Image.Image', new_image: 'Image.Image'):
         """
         淡入淡出过渡效果
         
@@ -246,7 +246,7 @@ class PhotoDisplayManager:
         except Exception as e:
             logger.error(f"Failed to perform fade transition: {e}")
     
-    def _transition_crossfade(self, old_image: Image.Image, new_image: Image.Image):
+    def _transition_crossfade(self, old_image: 'Image.Image', new_image: 'Image.Image'):
         """
         交叉淡化过渡效果
         
@@ -276,7 +276,7 @@ class PhotoDisplayManager:
         except Exception as e:
             logger.error(f"Failed to perform crossfade transition: {e}")
     
-    def _transition_slide(self, old_image: Image.Image, new_image: Image.Image):
+    def _transition_slide(self, old_image: 'Image.Image', new_image: 'Image.Image'):
         """
         滑动过渡效果
         
@@ -304,7 +304,7 @@ class PhotoDisplayManager:
         except Exception as e:
             logger.error(f"Failed to perform slide transition: {e}")
     
-    def generate_transition_frames(self, old_photo: PhotoItem, new_photo: PhotoItem) -> List[Image.Image]:
+    def generate_transition_frames(self, old_photo: PhotoItem, new_photo: PhotoItem) -> List['Image.Image']:
         """
         生成过渡动画帧序列
         
@@ -450,7 +450,7 @@ class PhotoDisplayManager:
         """
         return self._current_photo
     
-    def get_current_image(self) -> Optional[Image.Image]:
+    def get_current_image(self) -> Optional['Image.Image']:
         """
         获取当前照片的图片对象
         
