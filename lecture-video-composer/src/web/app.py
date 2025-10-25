@@ -76,6 +76,11 @@ def register_blueprints(app: Flask):
         """主页"""
         return app.send_static_file('index.html')
     
+    @app.route('/app.html')
+    def app_page():
+        """应用主界面"""
+        return app.send_static_file('app.html')
+    
     @app.route('/health')
     def health():
         """健康检查"""
