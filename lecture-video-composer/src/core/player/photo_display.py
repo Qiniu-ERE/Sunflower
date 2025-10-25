@@ -88,7 +88,7 @@ class PhotoDisplayManager:
     
     def load_timeline(self, timeline_items: List[Dict[str, Any]], photos_dir: Path):
         """
-        加载时间轴照片列表
+        加载时间轴照片列表（带路径验证）
         
         Args:
             timeline_items: 时间轴项列表
@@ -98,11 +98,27 @@ class PhotoDisplayManager:
         self._current_index = -1
         self._current_photo = None
         
+        # 规范化基础目录路径
+        photos_dir = photos_dir.resolve()
+        
         current_time = 0.0
         for item in timeline_items:
-            photo_path = photos_dir / item['photo']
-            duration = item['duration']
+            # 安全地构造照片路径 - 只取文件名，防止路径遍历攻击
+            photo_filename = Path(item['photo']).name
+            photo_path = (photos_dir / photo_filename).resolve()
             
+            # 验证路径在允许的目录内
+            try:
+                photo_path.relative_to(photos_dir)
+            except ValueError:
+                logger.error(f"Path traversal attempt blocked: {item['photo']}")
+                continue
+            
+            if not photo_path.exists():
+                logger.warning(f"Photo not found: {photo_path}")
+                continue
+            
+            duration = item['duration']
             photo_item = PhotoItem(
                 path=photo_path,
                 start_time=current_time,
@@ -118,7 +134,7 @@ class PhotoDisplayManager:
     
     def get_photo_at_time(self, time_position: float) -> Optional[PhotoItem]:
         """
-        获取指定时间应该显示的照片
+        获取指定时间应该显示的照片（使用二分查找优化）
         
         Args:
             time_position: 时间位置（秒）
@@ -126,13 +142,31 @@ class PhotoDisplayManager:
         Returns:
             照片项，如果没有则返回None
         """
-        for photo in self._photos:
-            if photo.start_time <= time_position < photo.start_time + photo.duration:
-                return photo
+        if not self._photos:
+            return None
         
-        # 如果超过最后一张照片的时间，返回最后一张
-        if self._photos and time_position >= self._photos[-1].start_time:
-            return self._photos[-1]
+        # 使用二分查找 O(log n) 而不是线性搜索 O(n)
+        import bisect
+        
+        # 找到插入点（第一个start_time > time_position的位置）
+        idx = bisect.bisect_right(
+            [p.start_time for p in self._photos],
+            time_position
+        )
+        
+        if idx == 0:
+            return None
+        
+        # 检查前一个照片
+        photo = self._photos[idx - 1]
+        
+        # 验证时间在照片的显示范围内
+        if time_position < photo.start_time + photo.duration:
+            return photo
+        
+        # 如果超过范围但是最后一张照片，仍然返回
+        if idx - 1 == len(self._photos) - 1:
+            return photo
         
         return None
     
@@ -306,7 +340,7 @@ class PhotoDisplayManager:
     
     def generate_transition_frames(self, old_photo: PhotoItem, new_photo: PhotoItem) -> List['Image.Image']:
         """
-        生成过渡动画帧序列
+        生成过渡动画帧序列（优化内存使用）
         
         Args:
             old_photo: 旧照片项
@@ -330,19 +364,19 @@ class PhotoDisplayManager:
             transition_type = self.config.transition_type
             
             if transition_type == TransitionType.CROSSFADE:
-                # 生成交叉淡化帧
+                # 优化：在循环外预处理图片，避免重复操作
+                old_resized = old_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
+                new_resized = new_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
+                
+                # 转换为RGBA模式（一次性）
+                if old_resized.mode != 'RGBA':
+                    old_resized = old_resized.convert('RGBA')
+                if new_resized.mode != 'RGBA':
+                    new_resized = new_resized.convert('RGBA')
+                
+                # 生成交叉淡化帧 - 循环中只做混合操作
                 for i in range(frame_count):
                     alpha = i / frame_count
-                    # 确保两张图片尺寸一致
-                    old_resized = old_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
-                    new_resized = new_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
-                    
-                    # 转换为RGBA模式以支持alpha混合
-                    if old_resized.mode != 'RGBA':
-                        old_resized = old_resized.convert('RGBA')
-                    if new_resized.mode != 'RGBA':
-                        new_resized = new_resized.convert('RGBA')
-                    
                     # 混合图片
                     blended = Image.blend(old_resized, new_resized, alpha)
                     frames.append(blended)
