@@ -143,6 +143,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    position: relative;
+    z-index: 100;
 }
 
 .sidebar-nav {

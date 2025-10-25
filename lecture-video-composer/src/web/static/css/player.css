@@ -9,6 +9,8 @@
     border-radius: var(--radius-xl);
     padding: var(--spacing-xl);
     box-shadow: var(--shadow-md);
+    max-width: 100%;
+    overflow: hidden;
 }
 
 /* ========== 照片显示区域 ========== */

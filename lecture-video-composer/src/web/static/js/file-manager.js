@@ -249,7 +249,21 @@ export class FileManager {
             uploadTask.status = 'uploading';
             
             const formData = new FormData();
-            formData.append('file', file);
+            
+            // 音频使用 'file' 字段，照片使用 'files' 字段
+            if (fileType === 'audio') {
+                formData.append('file', file);
+            } else {
+                formData.append('files', file);
+            }
+            
+            // 添加 session_id（从应用状态获取）
+            if (window.app && window.app.state) {
+                const sessionId = window.app.state.get('session.sessionId');
+                if (sessionId) {
+                    formData.append('session_id', sessionId);
+                }
+            }
             
             // 确定上传端点
             const endpoint = fileType === 'audio' 
