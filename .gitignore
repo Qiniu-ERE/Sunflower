@@ -33,3 +33,6 @@ lecture-video-composer/src/web/api/__pycache__/playback_api.cpython-39.pyc
 lecture-video-composer/src/web/api/__pycache__/project_api.cpython-39.pyc
 lecture-video-composer/src/web/services/__pycache__/__init__.cpython-39.pyc
 lecture-video-composer/src/web/services/__pycache__/session_manager.cpython-39.pyc
+
+# 忽略临时会话文件
+lecture-video-composer/data/temp/sessions/*.json
