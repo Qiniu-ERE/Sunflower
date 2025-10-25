@@ -745,17 +745,26 @@ class App {
         console.log('播放按钮disabled状态:', playBtn?.disabled);
         
         if (playBtn) {
-            playBtn.addEventListener('click', () => {
+            playBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 console.log('播放按钮被点击！');
                 console.log('播放器对象:', this.player);
                 console.log('播放器状态:', this.player?.state);
+                console.log('按钮disabled状态:', playBtn.disabled);
+                
+                if (!this.player) {
+                    console.error('播放器未初始化');
+                    return;
+                }
                 
                 if (this.player.state.isPlaying) {
                     console.log('执行暂停');
                     this.player.pause();
                 } else {
                     console.log('执行播放');
-                    this.player.play();
+                    this.player.play().catch(error => {
+                        console.error('播放失败:', error);
+                    });
                 }
             });
         } else {
