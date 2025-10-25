@@ -193,7 +193,7 @@ class App {
             // 隐藏占位符，显示播放器
             const photoPlaceholder = document.getElementById('photo-placeholder');
             if (photoPlaceholder) {
-                photoPlaceholder.style.display = 'none';
+                photoPlaceholder.classList.remove('show');
             }
             
             // 隐藏空状态提示
