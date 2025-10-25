@@ -60,10 +60,13 @@ def create_app(config_name: str = None) -> Flask:
 
 def register_blueprints(app: Flask):
     """注册蓝图"""
-    # TODO: 注册API蓝图
-    # from .api import project_bp, file_bp, playback_bp, export_bp
-    # app.register_blueprint(project_bp, url_prefix='/api/project')
-    # app.register_blueprint(file_bp, url_prefix='/api/file')
+    # 注册API蓝图
+    from .api import file_bp, project_bp
+    app.register_blueprint(file_bp, url_prefix='/api/file')
+    app.register_blueprint(project_bp, url_prefix='/api/project')
+    
+    # TODO: 注册其他蓝图
+    # from .api import playback_bp, export_bp
     # app.register_blueprint(playback_bp, url_prefix='/api/playback')
     # app.register_blueprint(export_bp, url_prefix='/api/export')
     

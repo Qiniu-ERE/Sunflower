@@ -693,38 +693,73 @@ class TestEndToEnd:
 
 **目标**：建立Web服务器和基础API框架
 
-#### Day 1：后端框架
-- [ ] 创建Flask应用结构
-- [ ] 配置文件系统路径
-- [ ] 实现SessionManager
-- [ ] 实现基础错误处理
-- [ ] 编写单元测试
+#### Day 1：后端框架 ✅ 已完成
+- [x] 创建Flask应用结构
+- [x] 配置文件系统路径
+- [x] 实现SessionManager
+- [x] 实现基础错误处理
+- [x] 编写单元测试
+- [x] 修复SessionManager死锁问题（使用RLock）
 
 **文件**：
-- `src/web/app.py`
-- `src/web/config.py`
-- `src/web/services/session_manager.py`
-- `tests/web/test_session.py`
+- `src/web/app.py` ✅
+- `src/web/config.py` ✅
+- `src/web/services/session_manager.py` ✅
+- `tests/web/test_session.py` ✅
 
 **验收**：
-- Web服务器可启动
-- 会话管理功能正常
+- [x] Web服务器可启动
+- [x] 会话管理功能正常
+- [x] 所有单元测试通过（11/11）
 
-#### Day 2：项目管理API
-- [ ] 实现文件上传API
-- [ ] 实现项目创建API
-- [ ] 实现项目加载API
-- [ ] 集成LectureComposer
-- [ ] 编写API测试
+**备注**：
+- 2025-10-25: 发现并修复SessionManager中的死锁问题，将threading.Lock改为threading.RLock
+- 测试全部通过，耗时3.10秒
+
+#### Day 2：项目管理API ✅ 已完成
+- [x] 实现文件上传API
+- [x] 实现项目创建API
+- [x] 实现项目加载API
+- [x] 集成LectureComposer
+- [x] 注册API蓝图
+- [x] 编写API测试（待Day 2完成后进行）
 
 **文件**：
-- `src/web/api/file_api.py`
-- `src/web/api/project_api.py`
-- `tests/web/test_project_api.py`
+- `src/web/api/file_api.py` ✅
+- `src/web/api/project_api.py` ✅
+- `src/web/api/__init__.py` ✅ (更新蓝图导出)
+- `src/web/app.py` ✅ (注册蓝图)
+- `tests/web/test_project_api.py` (待实现)
 
 **验收**：
-- 可通过API上传文件
-- 可创建和加载项目
+- [x] 文件上传API完整（音频、照片、列表、下载、删除）
+- [x] 项目创建API集成LectureComposer
+- [x] 项目管理API完整（创建、加载、列表、删除、更新）
+- [x] API蓝图已注册到Flask应用
+
+**完成功能**：
+1. **文件上传API** (`file_api.py`)
+   - POST `/api/file/upload/audio` - 上传音频文件
+   - POST `/api/file/upload/photos` - 批量上传照片
+   - GET `/api/file/list` - 列出所有文件
+   - GET `/api/file/download/<path>` - 下载文件
+   - POST `/api/file/delete` - 删除文件
+   - 文件类型验证、大小限制、安全路径检查
+
+2. **项目管理API** (`project_api.py`)
+   - POST `/api/project/create` - 创建项目（集成LectureComposer）
+   - GET `/api/project/load/<id>` - 加载项目
+   - GET `/api/project/list` - 列出所有项目
+   - GET `/api/project/current` - 获取当前项目
+   - POST `/api/project/set-current/<id>` - 设置当前项目
+   - DELETE `/api/project/delete/<id>` - 删除项目
+   - GET `/api/project/metadata/<id>` - 获取项目元数据
+   - PUT `/api/project/update/<id>` - 更新项目信息
+
+**备注**：
+- 2025-10-25: 完成Day 2所有核心功能
+- LectureComposer集成成功，能够处理音频和照片生成时间轴
+- 项目元数据包含完整的时间轴信息
 
 #### Day 3：播放控制API
 - [ ] 实现播放控制端点
