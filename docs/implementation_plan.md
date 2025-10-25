@@ -761,20 +761,45 @@ class TestEndToEnd:
 - LectureComposer集成成功，能够处理音频和照片生成时间轴
 - 项目元数据包含完整的时间轴信息
 
-#### Day 3：播放控制API
-- [ ] 实现播放控制端点
-- [ ] 集成SyncCoordinator
-- [ ] 实现状态查询API
-- [ ] 添加WebSocket支持（可选）
-- [ ] 编写API测试
+#### Day 3：播放控制API ✅ 已完成
+- [x] 实现播放控制端点
+- [x] 集成SyncCoordinator
+- [x] 实现状态查询API
+- [x] 添加WebSocket支持（可选）
+- [x] 编写API测试
 
 **文件**：
-- `src/web/api/playback_api.py`
-- `tests/web/test_playback_api.py`
+- `src/web/api/playback_api.py` ✅
+- `tests/web/test_playback_api.py` ✅
 
 **验收**：
-- 播放控制API功能完整
-- 状态查询准确
+- [x] 播放控制API功能完整
+- [x] 状态查询准确
+- [x] 所有单元测试通过（15/15）
+
+**完成功能**：
+1. **播放控制API** (`playback_api.py`)
+   - POST `/api/playback/play/<project_id>` - 开始播放
+   - POST `/api/playback/pause/<project_id>` - 暂停播放
+   - POST `/api/playback/stop/<project_id>` - 停止播放
+   - POST `/api/playback/seek/<project_id>` - 跳转到指定位置
+   - POST `/api/playback/volume/<project_id>` - 设置音量
+   - GET `/api/playback/status/<project_id>` - 获取播放状态
+   - 集成PlaybackController、PhotoDisplayManager和SyncCoordinator
+   - 完整的错误处理和状态管理
+
+2. **单元测试** (`test_playback_api.py`)
+   - 测试所有播放控制端点
+   - 测试错误场景（无会话、项目不存在等）
+   - Mock策略确保测试独立性
+   - 15个测试全部通过
+
+**备注**：
+- 2025-10-25: 完成Day 3所有核心功能
+- 解决了10个主要技术问题（详见 `docs/test_playback_api_fixes.md`）
+- API响应格式统一：`{'success': bool, 'data': {...}, 'message': str}`
+- 播放状态包含：state, position, duration, current_photo, volume
+- 已注册到Flask应用的蓝图系统
 
 ---
 
