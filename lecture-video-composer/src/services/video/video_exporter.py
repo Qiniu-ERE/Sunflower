@@ -16,19 +16,29 @@ import multiprocessing
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 尝试导入字幕服务
+try:
+    from ..subtitle.subtitle_service import SubtitleService, SubtitleConfig
+    SUBTITLE_SUPPORT = True
+except ImportError:
+    SUBTITLE_SUPPORT = False
+    logger.warning("Subtitle service not available")
+
 
 @dataclass
 class VideoExportConfig:
     """视频导出配置"""
-    resolution: str = "1920x1080"  # 视频分辨率
+    resolution: str = "1280x720"  # 视频分辨率 (默认720p)
     fps: int = 30  # 帧率
     video_codec: str = "libx264"  # 视频编码器
     audio_codec: str = "aac"  # 音频编码器
-    video_bitrate: str = "5000k"  # 视频比特率
+    video_bitrate: str = "3000k"  # 视频比特率 (720p适配)
     audio_bitrate: str = "192k"  # 音频比特率
     pixel_format: str = "yuv420p"  # 像素格式 (兼容性最好)
     preset: str = "medium"  # 编码速度预设 (ultrafast, fast, medium, slow, veryslow)
     crf: int = 23  # 恒定质量因子 (0-51, 越小质量越好，23是默认值)
+    enable_subtitles: bool = True  # 是否启用字幕
+    subtitle_style: str = "default"  # 字幕样式 (default, minimal, bold)
     
     def __post_init__(self):
         """验证配置参数"""
@@ -122,9 +132,24 @@ class VideoExporter:
             video_only_file = temp_dir / "video_only.mp4"
             self._concatenate_segments(segment_files, video_only_file)
             
-            # Step 3: 添加音频轨道
-            logger.info("Step 3: Adding audio track...")
-            self._add_audio_track(video_only_file, audio_file, output_file, audio_duration)
+            # Step 3: 生成字幕（如果启用）
+            subtitle_file = None
+            if self.config.enable_subtitles and SUBTITLE_SUPPORT:
+                logger.info("Step 3: Generating subtitles...")
+                subtitle_file = self._generate_subtitles(audio_file, temp_dir)
+            
+            # Step 4: 添加音频轨道
+            logger.info(f"Step {4 if subtitle_file else 3}: Adding audio track...")
+            video_with_audio = temp_dir / "video_with_audio.mp4"
+            self._add_audio_track(video_only_file, audio_file, video_with_audio, audio_duration)
+            
+            # Step 5: 嵌入字幕（如果有）
+            if subtitle_file:
+                logger.info("Step 5: Embedding subtitles...")
+                self._embed_subtitles(video_with_audio, subtitle_file, output_file)
+            else:
+                # 没有字幕，直接使用带音频的视频
+                shutil.move(str(video_with_audio), str(output_file))
             
             logger.info(f"Video exported successfully: {output_file}")
             return output_file
@@ -133,6 +158,102 @@ class VideoExporter:
             # 清理临时文件
             logger.info("Cleaning up temporary files...")
             shutil.rmtree(temp_dir, ignore_errors=True)
+    
+    def _generate_subtitles(self, audio_file: Path, output_dir: Path) -> Optional[Path]:
+        """
+        生成字幕文件
+        
+        Args:
+            audio_file: 音频文件路径
+            output_dir: 输出目录
+            
+        Returns:
+            生成的字幕文件路径，如果失败则返回None
+        """
+        try:
+            subtitle_config = SubtitleConfig(
+                model="base",
+                language="zh",
+                font_size=24,
+                font_color="white",
+                outline_color="black"
+            )
+            subtitle_service = SubtitleService(subtitle_config)
+            return subtitle_service.generate_subtitles(audio_file, output_dir)
+        except Exception as e:
+            logger.error(f"Failed to generate subtitles: {e}")
+            return None
+    
+    def _embed_subtitles(self, video_file: Path, subtitle_file: Path, output_file: Path):
+        """
+        将字幕嵌入到视频中
+        
+        Args:
+            video_file: 视频文件路径
+            subtitle_file: 字幕文件路径（SRT格式）
+            output_file: 输出文件路径
+        """
+        logger.info(f"Embedding subtitles: {subtitle_file}")
+        
+        # 解决方案：复制字幕文件到一个没有特殊字符的临时文件
+        # 这样可以完全避免FFmpeg 8.0的路径解析bug
+        temp_subtitle = subtitle_file.parent / "temp_subtitle.srt"
+        
+        try:
+            # 复制字幕文件到临时位置
+            shutil.copy2(subtitle_file, temp_subtitle)
+            logger.info(f"Created temporary subtitle file: {temp_subtitle}")
+            
+            # 使用简单的文件名（没有特殊字符）
+            vf_param = f"subtitles={temp_subtitle.name}"
+            
+            cmd = [
+                'ffmpeg',
+                '-y',
+                '-i', str(video_file),
+                '-vf', vf_param,
+                '-c:v', self.config.video_codec,
+                '-preset', self.config.preset,
+                '-crf', str(self.config.crf),
+                '-c:a', 'copy',
+                str(output_file)
+            ]
+            
+            logger.info(f"FFmpeg subtitle command: {' '.join(cmd[:6])}...")
+            
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=600,  # 增加超时时间，因为需要重新编码视频
+                    cwd=temp_subtitle.parent  # 设置工作目录为临时文件所在目录
+                )
+                
+                if result.returncode != 0:
+                    # 如果还是失败，记录详细错误并提供备选方案
+                    logger.error(f"FFmpeg subtitle embedding failed")
+                    logger.error(f"Error output: {result.stderr[-500:]}")  # 只显示最后500字符
+                    logger.warning("Subtitle embedding failed. Creating video without subtitles...")
+                    logger.warning(f"Subtitle file is available at: {subtitle_file}")
+                    logger.warning(f"You can manually add subtitles later using: ffmpeg -i video.mp4 -vf subtitles={subtitle_file} output.mp4")
+                    
+                    # 复制无字幕视频作为输出
+                    shutil.copy2(video_file, output_file)
+                    logger.info(f"Video created without subtitles: {output_file}")
+                    return
+                
+                logger.info("Subtitles embedded successfully")
+                
+            except subprocess.TimeoutExpired:
+                logger.error("Timeout embedding subtitles")
+                # 超时也使用备用方案
+                shutil.copy2(video_file, output_file)
+                logger.warning(f"Video created without subtitles due to timeout: {output_file}")
+        finally:
+            # 清理临时字幕文件
+            if temp_subtitle.exists():
+                temp_subtitle.unlink()
     
     def _create_single_segment(self, item_data: tuple) -> Path:
         """
