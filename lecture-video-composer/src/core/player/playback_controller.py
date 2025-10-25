@@ -38,6 +38,21 @@ class PlaybackConfig:
     speed_change_smooth: bool = True  # 是否平滑切换速度
 
 
+class SpeedLock:
+    """线程安全的速度访问封装"""
+    def __init__(self, speed: float = 1.0):
+        self._speed = speed
+        self._lock = threading.Lock()
+    
+    def get(self) -> float:
+        with self._lock:
+            return self._speed
+    
+    def set(self, speed: float):
+        with self._lock:
+            self._speed = speed
+
+
 class PlaybackController:
     """
     播放控制器
@@ -255,23 +270,31 @@ class PlaybackController:
             
             # pygame.mixer.music.set_pos()接受秒数
             # 但并不是所有格式都支持
+            set_pos_success = False
             try:
                 pygame.mixer.music.set_pos(position)
-            except:
-                logger.warning("set_pos not supported, using play with start position")
-                pygame.mixer.music.play(start=position)
+                set_pos_success = True
+            except (NotImplementedError, pygame.error) as e:
+                logger.warning(f"set_pos not supported: {e}, using play with start position")
             
             with self._position_lock:
                 self._position = position
             
             if was_playing:
-                pygame.mixer.music.play()
+                if not set_pos_success:
+                    # 如果 set_pos 失败，使用 play(start=position)
+                    pygame.mixer.music.play(start=position)
+                else:
+                    # 如果 set_pos 成功，正常播放
+                    pygame.mixer.music.play()
                 self._state = PlaybackState.PLAYING
             
             self._notify_position_change()
             logger.info(f"Seeked to: {position:.2f}s")
             return True
             
+        except KeyboardInterrupt:
+            raise
         except Exception as e:
             logger.error(f"Failed to seek: {e}")
             return False
@@ -301,19 +324,28 @@ class PlaybackController:
     
     def set_speed(self, speed: float) -> bool:
         """
-        设置播放速度
+        设置照片切换速度倍率（实验性功能）
         
-        注意：pygame.mixer不原生支持倍速播放，此方法通过调整时间轴来模拟倍速效果。
-        这意味着音频实际以正常速度播放，但位置更新会根据速度倍率调整。
+        ⚠️ 重要限制：
+        - 此功能仅影响照片切换时间，不改变音频播放速度
+        - pygame.mixer 不支持原生倍速播放
+        - 音频始终以正常速度播放，但时间轴位置更新会按倍率调整
+        - 这会导致音频与照片不同步的视觉效果
         
-        要实现真正的倍速播放（包括音高变化），需要使用其他库如pydub + ffmpeg。
+        推荐用途：
+        - 开发测试：快速预览照片切换
+        - 非生产环境：实验性功能
+        
+        实现真正的音频倍速播放需要：
+        - 使用 pydub + ffmpeg 进行音频处理
+        - 或使用支持倍速的音频库（如 sounddevice）
         
         Args:
-            speed: 播放速度 (0.5-2.0)
+            speed: 照片切换速度倍率 (0.5-2.0)
                   1.0 = 正常速度
-                  0.5 = 半速播放
-                  1.5 = 1.5倍速
-                  2.0 = 2倍速
+                  0.5 = 慢速（照片停留更久）
+                  1.5 = 1.5倍速（照片切换更快）
+                  2.0 = 2倍速（照片切换最快）
             
         Returns:
             是否成功设置

@@ -18,3 +18,10 @@ lecture-video-composer/src/core/player/__pycache__/playback_controller.cpython-3
 lecture-video-composer/src/core/player/__pycache__/playback_controller.cpython-314.pyc
 lecture-video-composer/src/core/player/__pycache__/sync_coordinator.cpython-313.pyc
 lecture-video-composer/src/core/player/__pycache__/sync_coordinator.cpython-314.pyc
+lecture-video-composer/src/core/__pycache__/lecture_composer.cpython-313.pyc
+lecture-video-composer/src/core/timeline/__pycache__/timeline_sync.cpython-313.pyc
+lecture-video-composer/src/services/audio/__pycache__/audio_service.cpython-313.pyc
+lecture-video-composer/src/services/image/__pycache__/image_service.cpython-313.pyc
+lecture-video-composer/src/services/metadata/__pycache__/metadata_service.cpython-313.pyc
+lecture-video-composer/src/services/subtitle/__pycache__/subtitle_service.cpython-313.pyc
+lecture-video-composer/src/services/video/__pycache__/video_exporter.cpython-313.pyc

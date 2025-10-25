@@ -231,7 +231,7 @@ def test_integrated_features(audio_file: Path, photos_dir: Path):
         # 添加进度回调
         def on_sync_update(position: float, photo):
             photo_name = photo.path.name if photo else "None"
-            speed = coordinator.playback_controller.get_speed()
+            speed = coordinator.playback.get_speed()
             print(f"\r[{position:6.2f}s @ {speed:.1f}x] {photo_name}", end='', flush=True)
         
         coordinator.add_sync_callback(on_sync_update)
