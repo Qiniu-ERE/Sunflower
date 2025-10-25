@@ -312,11 +312,23 @@ class App {
         const photoInput = document.getElementById('photos-input');
         
         if (audioDropzone && audioInput) {
-            this.fileManager.initDropzone(audioDropzone, audioInput, 'audio');
+            try {
+                this.fileManager.initDropzone(audioDropzone, audioInput, 'audio');
+            } catch (error) {
+                console.error('初始化音频上传区失败:', error);
+            }
+        } else {
+            console.warn('音频上传区元素未找到');
         }
         
         if (photoDropzone && photoInput) {
-            this.fileManager.initDropzone(photoDropzone, photoInput, 'image');
+            try {
+                this.fileManager.initDropzone(photoDropzone, photoInput, 'image');
+            } catch (error) {
+                console.error('初始化照片上传区失败:', error);
+            }
+        } else {
+            console.warn('照片上传区元素未找到');
         }
         
         // 创建项目按钮
@@ -333,7 +345,9 @@ class App {
      */
     async updateFileList() {
         try {
-            const data = await this.api.get('/file/list');
+            const sessionId = this.state.get('session.sessionId');
+            const params = sessionId ? `?session_id=${sessionId}` : '';
+            const data = await this.api.get(`/file/list${params}`);
             
             // 更新状态
             this.state.update('uploads', {
@@ -380,7 +394,11 @@ class App {
     async deleteFile(path, type) {
         confirm('确认删除该文件？', async () => {
             try {
-                await this.api.post('/file/delete', { path });
+                const sessionId = this.state.get('session.sessionId');
+                await this.api.post('/file/delete', { 
+                    path,
+                    session_id: sessionId
+                });
                 showNotification('文件已删除', 'success');
                 this.updateFileList();
             } catch (error) {
@@ -399,8 +417,10 @@ class App {
         const loader = showLoading('创建项目中...');
         
         try {
+            const sessionId = this.state.get('session.sessionId');
             const data = await this.api.post('/project/create', {
-                title: projectName
+                title: projectName,
+                session_id: sessionId
             });
             
             showNotification('项目创建成功', 'success');
@@ -480,7 +500,9 @@ class App {
         
         try {
             // 获取项目详情
-            const project = await this.api.get(`/project/load/${projectId}`);
+            const sessionId = this.state.get('session.sessionId');
+            const params = sessionId ? `?session_id=${sessionId}` : '';
+            const project = await this.api.get(`/project/load/${projectId}${params}`);
             
             // 更新状态
             this.state.update('session', {
@@ -515,7 +537,9 @@ class App {
     async deleteProject(projectId) {
         confirm('确认删除该项目？', async () => {
             try {
-                await this.api.delete(`/project/delete/${projectId}`);
+                const sessionId = this.state.get('session.sessionId');
+                const params = sessionId ? `?session_id=${sessionId}` : '';
+                await this.api.delete(`/project/delete/${projectId}${params}`);
                 showNotification('项目已删除', 'success');
                 await this.loadProjects();
             } catch (error) {
@@ -748,6 +772,13 @@ class App {
 
 // 创建全局应用实例
 window.app = null;
+
+// 全局函数，供HTML内联事件使用
+window.switchView = function(viewName) {
+    if (window.app) {
+        window.app.showView(viewName);
+    }
+};
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
