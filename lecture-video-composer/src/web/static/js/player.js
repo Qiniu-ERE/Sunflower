@@ -523,6 +523,11 @@ export class LecturePlayer extends EventBus {
             return;
         }
         
+        // 先清空画布
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 绘制图片
         drawImageCentered(this.ctx, photo.image, 
             this.canvas.width, this.canvas.height);
     }
