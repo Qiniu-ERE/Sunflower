@@ -55,10 +55,11 @@ class SessionManager:
         初始化会话管理器
         
         Args:
-            session_dir: 会话存储目录
+            session_dir: 会话存储目录（Path对象或字符串）
             max_age: 会话最大年龄（秒），默认24小时
         """
-        self.session_dir = session_dir
+        # 转换为Path对象（如果是字符串）
+        self.session_dir = Path(session_dir) if session_dir and not isinstance(session_dir, Path) else session_dir
         self.max_age = max_age
         self._sessions: Dict[str, Session] = {}
         self._lock = threading.RLock()  # 使用可重入锁避免死锁
