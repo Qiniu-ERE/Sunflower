@@ -82,8 +82,9 @@ def project_with_files(client, session_id, temp_dir):
         
         # 创建项目 - 使用正确的参数名
         project_data = {
-            'audio_path': audio_path,
-            'photo_paths': photo_paths,
+            'session_id': session_id,
+            'audio_file': audio_path,
+            'photo_files': photo_paths,
             'title': 'Test Playback Project'
         }
         response = client.post(
@@ -95,7 +96,7 @@ def project_with_files(client, session_id, temp_dir):
         result = json.loads(response.data)
         if not result.get('success'):
             raise Exception(f"Project creation failed: {result.get('error')}")
-        return result['data']['project_id']
+        return result['project_id']
 
 
 @patch('src.web.api.playback_api.PhotoDisplayManager')

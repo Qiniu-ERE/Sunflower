@@ -36,7 +36,8 @@ def uploaded_files(client, session_id, temp_dir):
         content_type='multipart/form-data'
     )
     audio_result = json.loads(audio_response.data)
-    audio_file = audio_result['filepath']
+    # API返回结构: { success: True, data: { path: '...', ... } }
+    audio_file = audio_result['data']['path']
     
     # 上传照片
     photo1 = (BytesIO(b'fake image 1'), 'photo1.jpg')
@@ -51,7 +52,8 @@ def uploaded_files(client, session_id, temp_dir):
         content_type='multipart/form-data'
     )
     photos_result = json.loads(photos_response.data)
-    photo_files = photos_result['filepaths']
+    # API返回结构: { success: True, data: { uploaded: [{path: '...'}, ...] } }
+    photo_files = [item['path'] for item in photos_result['data']['uploaded']]
     
     return {
         'audio_file': audio_file,
