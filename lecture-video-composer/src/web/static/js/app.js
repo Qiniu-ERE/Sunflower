@@ -53,6 +53,12 @@ class App {
             // 恢复用户偏好设置
             this.restorePreferences();
             
+            // 初始化完成后，订阅preferences变化
+            this.state.subscribe('preferences', (prefs) => {
+                console.log('偏好设置更新:', prefs);
+                this.applyPreferences(prefs);
+            });
+            
         } catch (error) {
             console.error('应用初始化失败:', error);
             showNotification('应用初始化失败', 'error');
@@ -101,10 +107,8 @@ class App {
             console.log('视图切换:', view);
         });
         
-        this.state.subscribe('preferences', (prefs) => {
-            console.log('偏好设置更新:', prefs);
-            this.applyPreferences(prefs);
-        });
+        // 注意：不在这里订阅preferences，避免初始化时的错误
+        // preferences的变更会在restorePreferences中处理
     }
 
     /**
@@ -148,13 +152,13 @@ class App {
      * 初始化播放器
      */
     initPlayer() {
-        const prefs = this.state.get('preferences');
+        const prefs = this.state.get('preferences') || {};
         
         this.player = new LecturePlayer('photo-canvas', {
-            transitionDuration: prefs.transitionDuration,
-            transitionType: prefs.transitionType,
+            transitionDuration: prefs.transitionDuration || 300,
+            transitionType: prefs.transitionType || 'fade',
             autoPlay: false,
-            volume: prefs.volume
+            volume: prefs.volume !== undefined ? prefs.volume : 1.0
         });
         
         // 监听播放器事件
@@ -687,7 +691,7 @@ class App {
      * 恢复用户偏好设置
      */
     restorePreferences() {
-        const prefs = this.state.get('preferences');
+        const prefs = this.state.get('preferences') || {};
         
         // 恢复音量
         if (this.player && prefs.volume !== undefined) {
@@ -707,6 +711,8 @@ class App {
      * 应用偏好设置
      */
     applyPreferences(prefs) {
+        if (!prefs) return;
+        
         // 主题
         if (prefs.theme) {
             document.body.setAttribute('data-theme', prefs.theme);
@@ -716,7 +722,7 @@ class App {
         if (this.player && prefs.transitionType) {
             this.player.setOptions({
                 transitionType: prefs.transitionType,
-                transitionDuration: prefs.transitionDuration
+                transitionDuration: prefs.transitionDuration || 300
             });
         }
     }
