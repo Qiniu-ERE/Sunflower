@@ -556,24 +556,24 @@ class App {
             // 如果有项目，显示列表
             if (data.projects && data.projects.length > 0) {
                 projectsList.innerHTML = (data.projects || []).map(project => `
-                    <div class="project-card" data-project-id="${project.id}">
+                    <div class="project-card" data-project-id="${project.project_id}">
                         <div class="project-thumbnail">
                             <i class="fas fa-folder"></i>
                         </div>
                         <div class="project-info">
                             <h3>${project.title}</h3>
-                            <p>${project.audio_duration ? formatTime(project.audio_duration) : '无音频'}</p>
+                            <p>${project.duration ? formatTime(project.duration) : '无音频'}</p>
                             <p>${project.photo_count || 0} 张照片</p>
                             <small>${new Date(project.created_at).toLocaleString()}</small>
                         </div>
                         <div class="project-actions">
-                            <button class="btn btn-primary" onclick="app.openProject('${project.id}')">
+                            <button class="btn btn-primary" onclick="app.openProject('${project.project_id}')">
                                 <i class="fas fa-play"></i> 打开
                             </button>
-                            <button class="btn btn-secondary" onclick="app.editProject('${project.id}')">
+                            <button class="btn btn-secondary" onclick="app.editProject('${project.project_id}')">
                                 <i class="fas fa-edit"></i> 编辑
                             </button>
-                            <button class="btn btn-danger" onclick="app.deleteProject('${project.id}')">
+                            <button class="btn btn-danger" onclick="app.deleteProject('${project.project_id}')">
                                 <i class="fas fa-trash"></i> 删除
                             </button>
                         </div>
