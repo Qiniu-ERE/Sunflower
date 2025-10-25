@@ -29,6 +29,9 @@ class App {
             // 初始化状态管理器
             this.initStateManager();
             
+            // 创建或获取会话
+            await this.ensureSession();
+            
             // 初始化文件管理器
             this.initFileManager();
             
@@ -53,6 +56,34 @@ class App {
         } catch (error) {
             console.error('应用初始化失败:', error);
             showNotification('应用初始化失败', 'error');
+        }
+    }
+
+    /**
+     * 确保会话存在
+     */
+    async ensureSession() {
+        try {
+            // 尝试获取现有会话信息
+            const sessionInfo = await this.api.get('/session/info');
+            if (sessionInfo && sessionInfo.session_id) {
+                this.state.set('session.sessionId', sessionInfo.session_id);
+                console.log('使用现有会话:', sessionInfo.session_id);
+                return;
+            }
+        } catch (error) {
+            console.log('未找到现有会话，创建新会话');
+        }
+        
+        // 创建新会话
+        try {
+            const data = await this.api.post('/session/create', {});
+            if (data && data.session_id) {
+                this.state.set('session.sessionId', data.session_id);
+                console.log('创建新会话:', data.session_id);
+            }
+        } catch (error) {
+            console.error('创建会话失败:', error);
         }
     }
 
@@ -271,10 +302,10 @@ class App {
      * 初始化文件上传
      */
     initFileUpload() {
-        const audioDropzone = document.getElementById('audio-dropzone');
-        const photoDropzone = document.getElementById('photo-dropzone');
+        const audioDropzone = document.getElementById('audio-drop-zone');
+        const photoDropzone = document.getElementById('photos-drop-zone');
         const audioInput = document.getElementById('audio-input');
-        const photoInput = document.getElementById('photo-input');
+        const photoInput = document.getElementById('photos-input');
         
         if (audioDropzone && audioInput) {
             this.fileManager.initDropzone(audioDropzone, audioInput, 'audio');
@@ -383,38 +414,54 @@ class App {
      */
     async loadProjects() {
         try {
-            const data = await this.api.get('/project/list');
+            // 获取session_id（从cookie或其他地方）
+            const sessionId = this.state.get('session.sessionId');
+            const params = sessionId ? `?session_id=${sessionId}` : '';
+            
+            const data = await this.api.get(`/project/list${params}`);
             
             // 更新状态
             this.state.set('projects', data.projects || []);
             
-            const projectsGrid = document.getElementById('projects-grid');
-            if (!projectsGrid) return;
+            const projectsList = document.getElementById('projects-list');
+            const projectsEmpty = document.getElementById('projects-empty');
             
-            projectsGrid.innerHTML = (data.projects || []).map(project => `
-                <div class="project-card" data-project-id="${project.id}">
-                    <div class="project-thumbnail">
-                        <i class="fas fa-folder"></i>
+            if (!projectsList) return;
+            
+            // 如果有项目，显示列表
+            if (data.projects && data.projects.length > 0) {
+                projectsList.innerHTML = (data.projects || []).map(project => `
+                    <div class="project-card" data-project-id="${project.id}">
+                        <div class="project-thumbnail">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="project-info">
+                            <h3>${project.title}</h3>
+                            <p>${project.audio_duration ? formatTime(project.audio_duration) : '无音频'}</p>
+                            <p>${project.photo_count || 0} 张照片</p>
+                            <small>${new Date(project.created_at).toLocaleString()}</small>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-primary" onclick="app.openProject('${project.id}')">
+                                <i class="fas fa-play"></i> 打开
+                            </button>
+                            <button class="btn btn-secondary" onclick="app.editProject('${project.id}')">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button class="btn btn-danger" onclick="app.deleteProject('${project.id}')">
+                                <i class="fas fa-trash"></i> 删除
+                            </button>
+                        </div>
                     </div>
-                    <div class="project-info">
-                        <h3>${project.title}</h3>
-                        <p>${project.audio_duration ? formatTime(project.audio_duration) : '无音频'}</p>
-                        <p>${project.photo_count || 0} 张照片</p>
-                        <small>${new Date(project.created_at).toLocaleString()}</small>
-                    </div>
-                    <div class="project-actions">
-                        <button class="btn btn-primary" onclick="app.openProject('${project.id}')">
-                            <i class="fas fa-play"></i> 打开
-                        </button>
-                        <button class="btn btn-secondary" onclick="app.editProject('${project.id}')">
-                            <i class="fas fa-edit"></i> 编辑
-                        </button>
-                        <button class="btn btn-danger" onclick="app.deleteProject('${project.id}')">
-                            <i class="fas fa-trash"></i> 删除
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+                projectsList.style.display = '';
+                if (projectsEmpty) projectsEmpty.style.display = 'none';
+            } else {
+                // 没有项目，显示空状态
+                projectsList.innerHTML = '';
+                projectsList.style.display = 'none';
+                if (projectsEmpty) projectsEmpty.style.display = '';
+            }
             
         } catch (error) {
             console.error('加载项目列表失败:', error);
