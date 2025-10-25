@@ -6,3 +6,7 @@ lecture-video-composer/src/services/image/__pycache__/image_service.cpython-39.p
 lecture-video-composer/src/services/metadata/__pycache__/metadata_service.cpython-39.pyc
 lecture-video-composer/src/services/video/__pycache__/video_exporter.cpython-39.pyc
 lecture-video-composer/src/services/subtitle/__pycache__/subtitle_service.cpython-39.pyc
+lecture-video-composer/src/core/player/__pycache__/__init__.cpython-39.pyc
+lecture-video-composer/src/core/player/__pycache__/photo_display.cpython-39.pyc
+lecture-video-composer/src/core/player/__pycache__/playback_controller.cpython-39.pyc
+lecture-video-composer/src/core/player/__pycache__/sync_coordinator.cpython-39.pyc
