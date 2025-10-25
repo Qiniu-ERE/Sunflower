@@ -268,7 +268,15 @@ export function drawImageCentered(ctx, image, canvasWidth, canvasHeight) {
         offsetY = (canvasHeight - drawHeight) / 2;
     }
     
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    // 不再清空画布，由调用方负责
+    // ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    
+    console.log('drawImageCentered参数:', {
+        imgWidth: image.width,
+        imgHeight: image.height,
+        drawWidth, drawHeight, offsetX, offsetY
+    });
+    
     ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
 }
 

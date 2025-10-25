@@ -22,6 +22,8 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     margin-bottom: var(--spacing-xl);
+    z-index: 10;
+    isolation: isolate;
 }
 
 #photo-canvas {
@@ -88,11 +90,17 @@
     padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-lg);
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
 }
 
 /* ========== 时间轴 ========== */
 .timeline-container {
     margin-bottom: var(--spacing-xl);
+    position: relative;
+    z-index: auto;
+    isolation: isolate;
 }
 
 .timeline {
@@ -102,6 +110,8 @@
     border-radius: 999px;
     cursor: pointer;
     margin-bottom: var(--spacing-md);
+    overflow: hidden;
+    isolation: isolate;
 }
 
 .timeline:hover {
@@ -117,6 +127,8 @@
     border-radius: 999px;
     width: 0%;
     transition: width 100ms linear;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .timeline-markers {
@@ -125,6 +137,8 @@
     top: 0;
     right: 0;
     bottom: 0;
+    z-index: 2;
+    pointer-events: none;
 }
 
 .timeline-marker {
@@ -162,6 +176,7 @@
     cursor: grab;
     box-shadow: var(--shadow-md);
     transition: transform var(--transition-fast);
+    z-index: 3;
 }
 
 .timeline-handle:active {
