@@ -96,15 +96,27 @@ def create_project():
         # 使用LectureComposer处理
         try:
             composer = LectureComposer(
-                audio_path=str(audio_file),
-                photo_dir=str(photo_files[0].parent) if photo_files else None
+                audio_file=audio_file,
+                photo_files=photo_files,
+                output_dir=project_dir
             )
             
-            # 生成元数据
-            metadata = composer.generate_metadata()
+            # 处理项目但不保存（我们会手动保存元数据）
+            project_metadata = composer.process(title=project_title, save=False)
             
             # 保存元数据到项目目录
             metadata_path = project_dir / 'metadata.json'
+            
+            # 转换时间轴为简单格式
+            timeline_items = []
+            if composer.timeline:
+                for item in composer.timeline.items:
+                    timeline_items.append({
+                        'timestamp': item.timestamp.isoformat(),
+                        'offset': item.offset_seconds,
+                        'photo': item.file_path.name,
+                        'duration': item.duration
+                    })
             
             # 增强元数据
             enhanced_metadata = {
@@ -114,8 +126,8 @@ def create_project():
                 'audio_file': str(audio_file.relative_to(upload_dir)),
                 'photo_count': len(photo_files),
                 'photo_files': [str(p.relative_to(upload_dir)) for p in photo_files],
-                'duration': metadata.get('duration', 0),
-                'timeline': metadata.get('timeline', []),
+                'duration': composer.audio_metadata.duration if composer.audio_metadata else 0,
+                'timeline': timeline_items,
                 'version': 'v2.2'
             }
             
