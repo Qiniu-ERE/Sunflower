@@ -64,3 +64,44 @@ def session_id(client):
     response = client.post('/api/session/create')
     data = json.loads(response.data)
     return data['session_id']
+
+
+@pytest.fixture(autouse=True)
+def mock_lecture_composer(monkeypatch):
+    """Mock LectureComposer to avoid audio validation issues in tests"""
+    from unittest.mock import MagicMock
+    from src.core.lecture_composer import LectureComposer
+    
+    original_init = LectureComposer.__init__
+    original_process = LectureComposer.process
+    
+    def mock_init(self, audio_file, photo_files, output_dir):
+        """Mock initialization"""
+        self.audio_file = audio_file
+        self.photo_files = photo_files
+        self.output_dir = output_dir
+        self.audio_metadata = MagicMock()
+        self.audio_metadata.duration = 120.0  # 2 minutes
+        self.timeline = MagicMock()
+        self.timeline.items = []
+        
+        # Create mock timeline items
+        for i, photo in enumerate(photo_files):
+            item = MagicMock()
+            item.timestamp = MagicMock()
+            item.timestamp.isoformat = lambda: f'2024-01-01T00:0{i}:00'
+            item.offset_seconds = i * 10.0
+            item.file_path = photo
+            item.duration = 10.0
+            self.timeline.items.append(item)
+    
+    def mock_process(self, title=None, save=True):
+        """Mock process method"""
+        return {
+            'title': title or 'Test Project',
+            'duration': 120.0,
+            'photo_count': len(self.photo_files)
+        }
+    
+    monkeypatch.setattr(LectureComposer, '__init__', mock_init)
+    monkeypatch.setattr(LectureComposer, 'process', mock_process)

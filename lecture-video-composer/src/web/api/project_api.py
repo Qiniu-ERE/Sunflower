@@ -30,8 +30,9 @@ def create_project():
     
     请求：
         JSON数据，包含：
-        - audio_path: 音频文件路径（相对于上传目录）
-        - photo_paths: 照片文件路径列表
+        - session_id: 会话ID
+        - audio_file: 音频文件路径（可以是完整路径或相对路径）
+        - photo_files: 照片文件路径列表
         - title: 项目标题（可选）
         
     返回：
@@ -47,25 +48,37 @@ def create_project():
                 'error': '缺少请求数据'
             }), 400
         
-        if 'audio_path' not in data:
+        # 检查session_id
+        session_id = data.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
+        if 'audio_file' not in data:
             return jsonify({
                 'success': False,
                 'error': '缺少音频文件路径'
             }), 400
         
-        if 'photo_paths' not in data or not data['photo_paths']:
+        if 'photo_files' not in data or not data['photo_files']:
             return jsonify({
                 'success': False,
                 'error': '缺少照片文件'
             }), 400
         
-        # 获取会话信息
-        session_id = session.get('session_id')
+        # 获取上传目录
         upload_dir = Path(current_app.config['UPLOAD_FOLDER']) / session_id
         
-        # 获取文件完整路径
-        audio_file = upload_dir / data['audio_path']
-        photo_files = [upload_dir / p for p in data['photo_paths']]
+        # 获取文件路径（可能是完整路径或相对路径）
+        audio_file = Path(data['audio_file'])
+        photo_files = [Path(p) for p in data['photo_files']]
+        
+        # 如果是相对路径，加上上传目录前缀
+        if not audio_file.is_absolute():
+            audio_file = upload_dir / audio_file
+            photo_files = [upload_dir / p for p in photo_files]
         
         # 验证文件存在
         if not audio_file.exists():
@@ -162,16 +175,9 @@ def create_project():
         
         return jsonify({
             'success': True,
-            'message': '项目创建成功',
-            'data': {
-                'project_id': project_id,
-                'title': project_title,
-                'created_at': enhanced_metadata['created_at'],
-                'audio_file': enhanced_metadata['audio_file'],
-                'photo_count': len(photo_files),
-                'duration': enhanced_metadata['duration'],
-                'metadata_path': str(metadata_path.relative_to(project_dir.parent))
-            }
+            'project_id': project_id,
+            'title': project_title,
+            'metadata': enhanced_metadata
         })
         
     except Exception as e:
@@ -189,12 +195,19 @@ def load_project(project_id: str):
     
     参数：
         project_id: 项目ID
+        session_id: 会话ID（查询参数）
         
     返回：
         JSON响应，包含完整的项目元数据
     """
     try:
-        session_id = session.get('session_id')
+        session_id = request.args.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
         session_manager = get_session_manager()
         
         # 从会话获取项目
@@ -223,8 +236,8 @@ def load_project(project_id: str):
         
         return jsonify({
             'success': True,
-            'message': '项目加载成功',
-            'data': metadata
+            'project_id': metadata['project_id'],
+            'title': metadata['title']
         })
         
     except Exception as e:
@@ -244,7 +257,13 @@ def list_projects():
         JSON响应，包含项目列表
     """
     try:
-        session_id = session.get('session_id')
+        session_id = request.args.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
         session_manager = get_session_manager()
         
         # 获取会话
@@ -253,10 +272,8 @@ def list_projects():
         if not sess:
             return jsonify({
                 'success': True,
-                'data': {
-                    'projects': [],
-                    'current_project_id': None
-                }
+                'projects': [],
+                'current_project_id': None
             })
         
         # 构建项目列表
@@ -275,11 +292,8 @@ def list_projects():
         
         return jsonify({
             'success': True,
-            'data': {
-                'projects': projects,
-                'current_project_id': sess.current_project_id,
-                'count': len(projects)
-            }
+            'projects': projects,
+            'current_project_id': sess.current_project_id
         })
         
     except Exception as e:
@@ -299,7 +313,13 @@ def get_current_project():
         JSON响应，包含当前项目信息
     """
     try:
-        session_id = session.get('session_id')
+        session_id = request.args.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
         session_manager = get_session_manager()
         
         project_info = session_manager.get_current_project(session_id)
@@ -310,24 +330,9 @@ def get_current_project():
                 'error': '没有当前项目'
             }), 404
         
-        # 读取元数据
-        metadata_path = Path(project_info.metadata_path)
-        
-        if metadata_path.exists():
-            with open(metadata_path, 'r', encoding='utf-8') as f:
-                metadata = json.load(f)
-        else:
-            metadata = {
-                'project_id': project_info.project_id,
-                'title': project_info.title,
-                'created_at': project_info.created_at,
-                'photo_count': project_info.photo_count,
-                'duration': project_info.duration
-            }
-        
         return jsonify({
             'success': True,
-            'data': metadata
+            'project_id': project_info.project_id
         })
         
     except Exception as e:
@@ -345,12 +350,19 @@ def set_current_project(project_id: str):
     
     参数：
         project_id: 项目ID
+        session_id: 会话ID（查询参数）
         
     返回：
         JSON响应
     """
     try:
-        session_id = session.get('session_id')
+        session_id = request.args.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
         session_manager = get_session_manager()
         
         success = session_manager.set_current_project(session_id, project_id)
@@ -363,7 +375,7 @@ def set_current_project(project_id: str):
         
         return jsonify({
             'success': True,
-            'message': '当前项目已更新'
+            'project_id': project_id
         })
         
     except Exception as e:
@@ -381,12 +393,19 @@ def delete_project(project_id: str):
     
     参数：
         project_id: 项目ID
+        session_id: 会话ID（查询参数）
         
     返回：
         JSON响应
     """
     try:
-        session_id = session.get('session_id')
+        session_id = request.args.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
         session_manager = get_session_manager()
         
         # 获取项目信息
@@ -411,8 +430,7 @@ def delete_project(project_id: str):
         session_manager.remove_project(session_id, project_id)
         
         return jsonify({
-            'success': True,
-            'message': '项目已删除'
+            'success': True
         })
         
     except Exception as e:
@@ -430,12 +448,19 @@ def get_project_metadata(project_id: str):
     
     参数：
         project_id: 项目ID
+        session_id: 会话ID（查询参数）
         
     返回：
         JSON响应，包含完整元数据
     """
     try:
-        session_id = session.get('session_id')
+        session_id = request.args.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
         session_manager = get_session_manager()
         
         project_info = session_manager.get_project(session_id, project_id)
@@ -459,7 +484,7 @@ def get_project_metadata(project_id: str):
         
         return jsonify({
             'success': True,
-            'data': metadata
+            'metadata': metadata
         })
         
     except Exception as e:
@@ -479,7 +504,7 @@ def update_project(project_id: str):
         project_id: 项目ID
         
     请求：
-        JSON数据，包含要更新的字段（title等）
+        JSON数据，包含session_id和要更新的字段（title等）
         
     返回：
         JSON响应
@@ -493,7 +518,13 @@ def update_project(project_id: str):
                 'error': '缺少更新数据'
             }), 400
         
-        session_id = session.get('session_id')
+        session_id = data.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': '缺少session_id'
+            }), 400
+        
         session_manager = get_session_manager()
         
         project_info = session_manager.get_project(session_id, project_id)
@@ -524,8 +555,7 @@ def update_project(project_id: str):
         
         return jsonify({
             'success': True,
-            'message': '项目已更新',
-            'data': metadata
+            'title': metadata['title']
         })
         
     except Exception as e:
