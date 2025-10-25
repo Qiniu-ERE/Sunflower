@@ -181,7 +181,10 @@ export function showLoading(message = '加载中...') {
         `;
         document.body.appendChild(loader);
     } else {
-        loader.querySelector('.loading-message').textContent = message;
+        const messageEl = loader.querySelector('.loading-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
     }
     loader.classList.add('show');
     return loader;

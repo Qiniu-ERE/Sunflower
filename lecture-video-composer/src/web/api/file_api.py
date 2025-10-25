@@ -76,7 +76,7 @@ def save_uploaded_file(file: FileStorage, upload_dir: Path, prefix: str = '') ->
     Args:
         file: 上传的文件
         upload_dir: 上传目录
-        prefix: 文件名前缀
+        prefix: 文件名前缀（未使用，保留原始文件名）
         
     Returns:
         保存的文件路径
@@ -84,18 +84,33 @@ def save_uploaded_file(file: FileStorage, upload_dir: Path, prefix: str = '') ->
     # 创建上传目录
     upload_dir.mkdir(parents=True, exist_ok=True)
     
-    # 生成安全的文件名
-    original_filename = secure_filename(file.filename)
-    ext = Path(original_filename).suffix
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    # 使用原始文件名（保留时间戳格式）
+    # 文件名格式应为: YYYY-MM-DD-HH:MM:SS.ext
+    # 注意：不使用 secure_filename，因为它会移除冒号，而时间戳格式需要冒号
+    original_filename = file.filename
     
-    if prefix:
-        filename = f"{prefix}_{timestamp}{ext}"
-    else:
-        name = Path(original_filename).stem
-        filename = f"{name}_{timestamp}{ext}"
+    # 基本安全检查：防止路径遍历攻击
+    # 移除路径分隔符和特殊字符，但保留冒号、连字符、点和下划线
+    safe_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.:')
+    filename = ''.join(c for c in original_filename if c in safe_chars)
     
+    # 确保文件名不为空
+    if not filename or filename.startswith('.'):
+        # 如果清理后的文件名无效，使用时间戳生成新文件名
+        ext = Path(original_filename).suffix if '.' in original_filename else ''
+        timestamp = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
+        filename = f"{prefix}{timestamp}{ext}" if prefix else f"{timestamp}{ext}"
+    
+    # 处理文件名冲突：如果文件已存在，添加后缀
     filepath = upload_dir / filename
+    if filepath.exists():
+        # 文件已存在，添加时间戳后缀
+        stem = Path(filename).stem
+        ext = Path(filename).suffix
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"{stem}_{timestamp}{ext}"
+        filepath = upload_dir / filename
+        current_app.logger.warning(f"File {original_filename} already exists, renamed to {filename}")
     
     # 保存文件
     file.save(str(filepath))

@@ -26,6 +26,7 @@ class Config:
     UPLOAD_DIR = DATA_DIR / 'uploads'
     UPLOAD_FOLDER = DATA_DIR / 'uploads'  # Flask使用的配置名
     PROJECTS_DIR = DATA_DIR / 'projects'
+    PROJECTS_FOLDER = DATA_DIR / 'projects'  # Flask使用的配置名（与PROJECTS_DIR相同）
     EXPORTS_DIR = DATA_DIR / 'exports'
     TEMP_DIR = DATA_DIR / 'temp'
     

@@ -368,29 +368,35 @@ class App {
         try {
             const sessionId = this.state.get('session.sessionId');
             const params = sessionId ? `?session_id=${sessionId}` : '';
-            const data = await this.api.get(`/file/list${params}`);
+            const response = await this.api.get(`/file/list${params}`);
             
-            console.log('文件列表数据:', data);
+            console.log('文件列表数据:', response);
+            
+            // API返回格式: { data: { audio: [...], photos: [...] }, success: true }
+            const audioFiles = response.data?.audio || [];
+            const photoFiles = response.data?.photos || [];
             
             // 更新状态
             this.state.update('uploads', {
-                audioFiles: data.audio_files || [],
-                photoFiles: data.photo_files || []
+                audioFiles: audioFiles,
+                photoFiles: photoFiles
             });
             
             // 更新音频列表
             const audioList = document.getElementById('audio-file-list');
             if (audioList) {
-                if (data.audio_files && data.audio_files.length > 0) {
-                    audioList.innerHTML = data.audio_files.map(file => `
-                        <div class="file-item">
-                            <span class="file-icon">🎵</span>
-                            <span class="file-name">${file.name}</span>
-                            <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'audio')">
-                                <span>🗑️</span>
-                            </button>
-                        </div>
-                    `).join('');
+                if (audioFiles.length > 0) {
+                    audioList.innerHTML = audioFiles
+                        .filter(file => file.filename !== '.DS_Store') // 过滤掉系统文件
+                        .map(file => `
+                            <div class="file-item">
+                                <span class="file-icon">🎵</span>
+                                <span class="file-name">${file.filename}</span>
+                                <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'audio')">
+                                    <span>🗑️</span>
+                                </button>
+                            </div>
+                        `).join('');
                 } else {
                     audioList.innerHTML = '';
                 }
@@ -399,23 +405,25 @@ class App {
             // 更新照片列表
             const photoList = document.getElementById('photos-file-list');
             if (photoList) {
-                if (data.photo_files && data.photo_files.length > 0) {
-                    photoList.innerHTML = data.photo_files.map(file => `
-                        <div class="file-item">
-                            <span class="file-icon">📸</span>
-                            <span class="file-name">${file.name}</span>
-                            <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'photo')">
-                                <span>🗑️</span>
-                            </button>
-                        </div>
-                    `).join('');
+                if (photoFiles.length > 0) {
+                    photoList.innerHTML = photoFiles
+                        .filter(file => file.filename !== '.DS_Store') // 过滤掉系统文件
+                        .map(file => `
+                            <div class="file-item">
+                                <span class="file-icon">📸</span>
+                                <span class="file-name">${file.filename}</span>
+                                <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'photo')">
+                                    <span>🗑️</span>
+                                </button>
+                            </div>
+                        `).join('');
                 } else {
                     photoList.innerHTML = '';
                 }
             }
             
             // 更新创建项目按钮状态
-            this.updateCreateButtonState(data.audio_files, data.photo_files);
+            this.updateCreateButtonState(audioFiles, photoFiles);
             
         } catch (error) {
             console.error('获取文件列表失败:', error);
@@ -449,7 +457,7 @@ class App {
             try {
                 const sessionId = this.state.get('session.sessionId');
                 await this.api.post('/file/delete', { 
-                    path,
+                    filepath: path,  // 修改为 filepath 以匹配后端参数名
                     session_id: sessionId
                 });
                 showNotification('文件已删除', 'success');
@@ -467,17 +475,57 @@ class App {
         const projectName = prompt('请输入项目名称:');
         if (!projectName) return;
         
+        // 获取已上传的文件
+        const uploads = this.state.get('uploads');
+        const audioFiles = uploads?.audioFiles || [];
+        const photoFiles = uploads?.photoFiles || [];
+        
+        // 验证是否有必需的文件
+        if (audioFiles.length === 0) {
+            showNotification('请先上传音频文件', 'error');
+            return;
+        }
+        
+        if (photoFiles.length === 0) {
+            showNotification('请先上传照片文件', 'error');
+            return;
+        }
+        
         const loader = showLoading('创建项目中...');
         
         try {
             const sessionId = this.state.get('session.sessionId');
+            
+            // 准备文件路径（排除.DS_Store等系统文件）
+            const audioFile = audioFiles.find(f => f.filename !== '.DS_Store')?.path;
+            const photoFilePaths = photoFiles
+                .filter(f => f.filename !== '.DS_Store')
+                .map(f => f.path);
+            
+            if (!audioFile) {
+                showNotification('未找到有效的音频文件', 'error');
+                hideLoading();
+                return;
+            }
+            
+            if (photoFilePaths.length === 0) {
+                showNotification('未找到有效的照片文件', 'error');
+                hideLoading();
+                return;
+            }
+            
             const data = await this.api.post('/project/create', {
                 title: projectName,
+                audio_file: audioFile,
+                photo_files: photoFilePaths,
                 session_id: sessionId
             });
             
             showNotification('项目创建成功', 'success');
             await this.loadProjects();
+            
+            // 切换到项目视图
+            this.showView('projects');
             
         } catch (error) {
             showNotification('创建项目失败: ' + error.message, 'error');
@@ -852,6 +900,30 @@ window.app = null;
 window.switchView = function(viewName) {
     if (window.app) {
         window.app.showView(viewName);
+    }
+};
+
+window.deleteFile = function(path, type) {
+    if (window.app) {
+        window.app.deleteFile(path, type);
+    }
+};
+
+window.openProject = function(projectId) {
+    if (window.app) {
+        window.app.openProject(projectId);
+    }
+};
+
+window.editProject = function(projectId) {
+    if (window.app) {
+        window.app.editProject(projectId);
+    }
+};
+
+window.deleteProject = function(projectId) {
+    if (window.app) {
+        window.app.deleteProject(projectId);
     }
 };
 
