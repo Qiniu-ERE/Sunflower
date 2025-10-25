@@ -172,7 +172,15 @@ class App {
                 setVolume: () => {},
                 setPlaybackRate: () => {},
                 setOptions: () => {},
-                getState: () => ({ currentTime: 0, duration: 0, volume: 1 })
+                getState: () => ({ currentTime: 0, duration: 0, volume: 1 }),
+                loadProject: async () => {
+                    throw new Error('播放器未正确初始化');
+                },
+                play: () => {},
+                pause: () => {},
+                stop: () => {},
+                seek: () => {},
+                state: { isPlaying: false, currentTime: 0, duration: 0, volume: 1 }
             };
             return;
         }
@@ -555,6 +563,7 @@ class App {
             
             // 如果有项目，显示列表
             if (data.projects && data.projects.length > 0) {
+                console.log('显示项目列表:', data.projects);
                 projectsList.innerHTML = (data.projects || []).map(project => `
                     <div class="project-card" data-project-id="${project.project_id}">
                         <div class="project-thumbnail">
@@ -567,13 +576,13 @@ class App {
                             <small>${new Date(project.created_at).toLocaleString()}</small>
                         </div>
                         <div class="project-actions">
-                            <button class="btn btn-primary" onclick="app.openProject('${project.project_id}')">
+                            <button class="btn btn-primary" onclick="window.app.openProject('${project.project_id}')">
                                 <i class="fas fa-play"></i> 打开
                             </button>
-                            <button class="btn btn-secondary" onclick="app.editProject('${project.project_id}')">
+                            <button class="btn btn-secondary" onclick="window.app.editProject('${project.project_id}')">
                                 <i class="fas fa-edit"></i> 编辑
                             </button>
-                            <button class="btn btn-danger" onclick="app.deleteProject('${project.project_id}')">
+                            <button class="btn btn-danger" onclick="window.app.deleteProject('${project.project_id}')">
                                 <i class="fas fa-trash"></i> 删除
                             </button>
                         </div>
@@ -605,9 +614,20 @@ class App {
             const params = sessionId ? `?session_id=${sessionId}` : '';
             const project = await this.api.get(`/project/load/${projectId}${params}`);
             
+            console.log('加载的项目数据:', project);
+            
+            // 验证数据
+            if (!project.audio_path) {
+                throw new Error('项目缺少音频路径');
+            }
+            
+            if (!project.timeline || project.timeline.length === 0) {
+                throw new Error('项目缺少时间轴数据');
+            }
+            
             // 更新状态
             this.state.update('session', {
-                projectId: project.id,
+                projectId: project.project_id,
                 projectName: project.title
             });
             
@@ -615,6 +635,12 @@ class App {
             const audioUrl = project.audio_path;
             const photoUrls = project.timeline.map(item => item.photo);
             const photoTimestamps = project.timeline.map(item => item.offset);
+            
+            console.log('播放器数据:', {
+                audioUrl,
+                photoCount: photoUrls.length,
+                timestampCount: photoTimestamps.length
+            });
             
             // 加载到播放器
             await this.player.loadProject(audioUrl, photoUrls, photoTimestamps);

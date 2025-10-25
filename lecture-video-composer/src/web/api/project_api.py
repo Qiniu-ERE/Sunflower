@@ -234,10 +234,31 @@ def load_project(project_id: str):
         # 设置为当前项目
         session_manager.set_current_project(session_id, project_id)
         
+        # 构建完整的项目数据，包含播放器需要的所有信息
+        upload_dir = Path(current_app.config['UPLOAD_FOLDER']) / session_id
+        
+        # 构建音频URL路径
+        audio_path = f'/uploads/{session_id}/{metadata["audio_file"]}'
+        
+        # 构建照片URL路径
+        timeline_with_urls = []
+        for item in metadata.get('timeline', []):
+            timeline_item = item.copy()
+            # 将相对路径转换为完整的URL
+            photo_filename = item['photo']
+            timeline_item['photo'] = f'/uploads/{session_id}/photos/{photo_filename}'
+            timeline_with_urls.append(timeline_item)
+        
+        # 返回完整的元数据
         return jsonify({
             'success': True,
             'project_id': metadata['project_id'],
-            'title': metadata['title']
+            'title': metadata['title'],
+            'audio_path': audio_path,
+            'duration': metadata.get('duration', 0),
+            'photo_count': metadata.get('photo_count', 0),
+            'timeline': timeline_with_urls,
+            'created_at': metadata.get('created_at')
         })
         
     except Exception as e:
