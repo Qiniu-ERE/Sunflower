@@ -19,14 +19,29 @@
 ```
 lecture-video-composer/
 ├── docs/                    # 项目文档
+│   ├── 视频导出模块文档.md
+│   ├── 字幕功能文档.md
+│   ├── 播放器模块文档.md    # 新增 v2.1
+│   └── v2.0_更新说明.md
 ├── src/                     # 源代码
 │   ├── core/               # 核心模块
-│   ├── ui/                 # 用户界面
-│   ├── utils/              # 工具函数
+│   │   ├── lecture_composer.py      # 主合成器
+│   │   ├── timeline/                # 时间轴管理
+│   │   └── player/                  # 播放器模块 (新增 v2.1)
+│   │       ├── playback_controller.py   # 播放控制
+│   │       ├── photo_display.py         # 照片显示
+│   │       └── sync_coordinator.py      # 同步协调
 │   └── services/           # 业务服务
+│       ├── audio/          # 音频处理
+│       ├── video/          # 视频导出
+│       ├── image/          # 图片处理
+│       ├── subtitle/       # 字幕生成 (v2.0)
+│       └── metadata/       # 元数据管理
 ├── tests/                   # 测试代码
 ├── examples/               # 示例项目
-└── tools/                  # 开发工具
+│   ├── basic/              # 基础示例
+│   └── player/             # 播放器示例 (新增 v2.1)
+└── requirements.txt        # Python依赖
 ```
 
 ## 🚀 快速开始
@@ -64,8 +79,10 @@ npm run dev
 - [产品需求文档 (PRD)](./docs/PRD_演讲视频合成系统.md)
 - [视频导出模块文档](./docs/视频导出模块文档.md) - 720p视频导出功能
 - [字幕功能文档](./docs/字幕功能文档.md) - AI自动字幕生成 (v2.0)
+- [播放器模块文档](./docs/播放器模块文档.md) - 实时播放与同步 (v2.1) 🆕
 - [技术架构文档](./docs/architecture/README.md)
 - [MVP实现文档](./docs/MVP_实现文档.md)
+- [v2.0更新说明](./docs/v2.0_更新说明.md)
 
 ## 🎯 开发路线图
 

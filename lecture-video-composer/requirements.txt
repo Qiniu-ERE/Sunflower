@@ -10,6 +10,9 @@ mutagen>=1.47.0
 # Subtitle generation (optional, for automatic subtitle support)
 openai-whisper>=20231117
 
+# Player module dependencies (for real-time playback)
+pygame>=2.5.0
+
 # Development and testing
 pytest>=7.4.0
 pytest-cov>=4.1.0
