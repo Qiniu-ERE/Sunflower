@@ -24,6 +24,7 @@ class Config:
     # 数据存储目录
     DATA_DIR = BASE_DIR / 'data'
     UPLOAD_DIR = DATA_DIR / 'uploads'
+    UPLOAD_FOLDER = DATA_DIR / 'uploads'  # Flask使用的配置名
     PROJECTS_DIR = DATA_DIR / 'projects'
     EXPORTS_DIR = DATA_DIR / 'exports'
     TEMP_DIR = DATA_DIR / 'temp'
