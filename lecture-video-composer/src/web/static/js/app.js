@@ -190,6 +190,64 @@ class App {
             console.log('项目已加载:', data);
             this.updatePlayerUI();
             
+            // 隐藏占位符，显示播放器
+            const photoPlaceholder = document.getElementById('photo-placeholder');
+            if (photoPlaceholder) {
+                photoPlaceholder.style.display = 'none';
+            }
+            
+            // 隐藏空状态提示
+            const playerEmpty = document.getElementById('player-empty');
+            if (playerEmpty) {
+                playerEmpty.style.display = 'none';
+            }
+            
+            // 显示播放器容器
+            const playerContainer = document.querySelector('.player-container');
+            if (playerContainer) {
+                playerContainer.style.display = 'block';
+            }
+            
+            // 启用播放控制按钮
+            const playBtn = document.getElementById('play-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            
+            console.log('准备启用播放按钮...');
+            console.log('播放按钮before:', playBtn, 'disabled=', playBtn?.disabled);
+            console.log('停止按钮before:', stopBtn, 'disabled=', stopBtn?.disabled);
+            
+            if (playBtn) {
+                playBtn.disabled = false;
+                playBtn.removeAttribute('disabled');
+                console.log('播放按钮after:', 'disabled=', playBtn.disabled);
+            }
+            if (stopBtn) {
+                stopBtn.disabled = false;
+                stopBtn.removeAttribute('disabled');
+                console.log('停止按钮after:', 'disabled=', stopBtn.disabled);
+            }
+            
+            // 更新项目信息显示
+            const projectName = this.state.get('session.projectName');
+            const currentProjectName = document.getElementById('current-project-name');
+            if (currentProjectName && projectName) {
+                currentProjectName.textContent = projectName;
+            }
+            
+            // 更新快速信息面板
+            const quickInfo = document.getElementById('project-quick-info');
+            if (quickInfo) {
+                quickInfo.style.display = 'block';
+                
+                const quickDuration = document.getElementById('quick-duration');
+                const quickPhotos = document.getElementById('quick-photos');
+                const quickStatus = document.getElementById('quick-status');
+                
+                if (quickDuration) quickDuration.textContent = formatTime(data.duration);
+                if (quickPhotos) quickPhotos.textContent = `${data.photoCount} 张`;
+                if (quickStatus) quickStatus.textContent = '就绪';
+            }
+            
             // 加载时间轴数据
             if (this.timeline && data.photos) {
                 const photos = data.photos.map((url, index) => ({
@@ -638,6 +696,8 @@ class App {
             
             console.log('播放器数据:', {
                 audioUrl,
+                photoUrls,
+                photoTimestamps,
                 photoCount: photoUrls.length,
                 timestampCount: photoTimestamps.length
             });
@@ -681,14 +741,25 @@ class App {
     initPlaybackControls() {
         // 播放/暂停
         const playBtn = document.getElementById('play-btn');
+        console.log('播放按钮元素:', playBtn);
+        console.log('播放按钮disabled状态:', playBtn?.disabled);
+        
         if (playBtn) {
             playBtn.addEventListener('click', () => {
+                console.log('播放按钮被点击！');
+                console.log('播放器对象:', this.player);
+                console.log('播放器状态:', this.player?.state);
+                
                 if (this.player.state.isPlaying) {
+                    console.log('执行暂停');
                     this.player.pause();
                 } else {
+                    console.log('执行播放');
                     this.player.play();
                 }
             });
+        } else {
+            console.error('未找到播放按钮元素！');
         }
         
         // 停止
