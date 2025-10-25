@@ -36,8 +36,10 @@ class DisplayConfig:
     window_size: tuple[int, int] = (1280, 720)  # 窗口大小
     transition_type: TransitionType = TransitionType.FADE  # 过渡效果
     transition_duration: float = 0.5  # 过渡时长（秒）
+    transition_fps: int = 30  # 过渡动画帧率
     preload_count: int = 3  # 预加载照片数量
     background_color: tuple[int, int, int] = (0, 0, 0)  # 背景颜色
+    enable_transitions: bool = True  # 是否启用过渡动画
 
 
 @dataclass
@@ -154,7 +156,7 @@ class PhotoDisplayManager:
     
     def _switch_to_photo(self, photo: Optional[PhotoItem]):
         """
-        切换到指定照片
+        切换到指定照片（带过渡效果）
         
         Args:
             photo: 目标照片项
@@ -163,11 +165,16 @@ class PhotoDisplayManager:
             return
         
         old_photo = self._current_photo
-        self._current_photo = photo
         
         # 确保照片已加载
         if photo and not photo.image:
             self._load_photo(photo)
+        
+        # 执行过渡效果（如果启用）
+        if self.config.enable_transitions and old_photo and photo:
+            self._perform_transition(old_photo, photo)
+        
+        self._current_photo = photo
         
         # 更新索引
         if photo:
@@ -182,9 +189,196 @@ class PhotoDisplayManager:
         self._notify_display_change()
         
         if old_photo:
-            logger.info(f"Switched from {old_photo.path.name} to {photo.path.name if photo else 'None'}")
+            logger.info(f"Switched from {old_photo.path.name} to {photo.path.name if photo else 'None'} "
+                       f"(transition: {self.config.transition_type.value})")
         else:
             logger.info(f"Switched to {photo.path.name if photo else 'None'}")
+    
+    def _perform_transition(self, old_photo: PhotoItem, new_photo: PhotoItem):
+        """
+        执行照片过渡动画
+        
+        Args:
+            old_photo: 旧照片项
+            new_photo: 新照片项
+        """
+        if not old_photo.image or not new_photo.image:
+            return
+        
+        transition_type = self.config.transition_type
+        
+        if transition_type == TransitionType.NONE:
+            return
+        elif transition_type == TransitionType.FADE:
+            self._transition_fade(old_photo.image, new_photo.image)
+        elif transition_type == TransitionType.CROSSFADE:
+            self._transition_crossfade(old_photo.image, new_photo.image)
+        elif transition_type == TransitionType.SLIDE:
+            self._transition_slide(old_photo.image, new_photo.image)
+        else:
+            logger.warning(f"Unsupported transition type: {transition_type}")
+    
+    def _transition_fade(self, old_image: Image.Image, new_image: Image.Image):
+        """
+        淡入淡出过渡效果
+        
+        逻辑：旧照片淡出（alpha逐渐变为0），然后新照片淡入（alpha从0变为255）
+        
+        Args:
+            old_image: 旧图片
+            new_image: 新图片
+        """
+        try:
+            duration = self.config.transition_duration
+            fps = self.config.transition_fps
+            frames = int(duration * fps)
+            
+            if frames <= 0:
+                return
+            
+            # 注意：这里只是生成过渡帧的逻辑示例
+            # 实际显示需要由GUI层（如pygame surface或tkinter canvas）处理
+            logger.debug(f"Fade transition: {frames} frames over {duration:.2f}s")
+            
+            # 这里我们只记录过渡信息，实际的渲染由调用者处理
+            # 可以通过回调返回过渡帧序列
+            
+        except Exception as e:
+            logger.error(f"Failed to perform fade transition: {e}")
+    
+    def _transition_crossfade(self, old_image: Image.Image, new_image: Image.Image):
+        """
+        交叉淡化过渡效果
+        
+        逻辑：旧照片和新照片同时过渡，旧照片alpha从255->0，新照片alpha从0->255
+        
+        Args:
+            old_image: 旧图片
+            new_image: 新图片
+        """
+        try:
+            duration = self.config.transition_duration
+            fps = self.config.transition_fps
+            frames = int(duration * fps)
+            
+            if frames <= 0:
+                return
+            
+            logger.debug(f"Crossfade transition: {frames} frames over {duration:.2f}s")
+            
+            # 交叉淡化的实现示例（需要GUI层支持）
+            # for frame_num in range(frames):
+            #     alpha = frame_num / frames  # 0.0 -> 1.0
+            #     # 混合两张图片
+            #     blended = Image.blend(old_image, new_image, alpha)
+            #     # 显示混合后的图片
+            
+        except Exception as e:
+            logger.error(f"Failed to perform crossfade transition: {e}")
+    
+    def _transition_slide(self, old_image: Image.Image, new_image: Image.Image):
+        """
+        滑动过渡效果
+        
+        逻辑：新照片从右侧滑入，推出旧照片
+        
+        Args:
+            old_image: 旧图片
+            new_image: 新图片
+        """
+        try:
+            duration = self.config.transition_duration
+            fps = self.config.transition_fps
+            frames = int(duration * fps)
+            
+            if frames <= 0:
+                return
+            
+            logger.debug(f"Slide transition: {frames} frames over {duration:.2f}s")
+            
+            # 滑动效果的实现示例（需要GUI层支持）
+            # for frame_num in range(frames):
+            #     offset = int((frame_num / frames) * old_image.width)
+            #     # 旧照片向左移动，新照片从右侧进入
+            
+        except Exception as e:
+            logger.error(f"Failed to perform slide transition: {e}")
+    
+    def generate_transition_frames(self, old_photo: PhotoItem, new_photo: PhotoItem) -> List[Image.Image]:
+        """
+        生成过渡动画帧序列
+        
+        Args:
+            old_photo: 旧照片项
+            new_photo: 新照片项
+            
+        Returns:
+            过渡帧图片列表
+        """
+        if not old_photo.image or not new_photo.image:
+            return []
+        
+        frames = []
+        duration = self.config.transition_duration
+        fps = self.config.transition_fps
+        frame_count = int(duration * fps)
+        
+        if frame_count <= 0:
+            return [new_photo.image]
+        
+        try:
+            transition_type = self.config.transition_type
+            
+            if transition_type == TransitionType.CROSSFADE:
+                # 生成交叉淡化帧
+                for i in range(frame_count):
+                    alpha = i / frame_count
+                    # 确保两张图片尺寸一致
+                    old_resized = old_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
+                    new_resized = new_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
+                    
+                    # 转换为RGBA模式以支持alpha混合
+                    if old_resized.mode != 'RGBA':
+                        old_resized = old_resized.convert('RGBA')
+                    if new_resized.mode != 'RGBA':
+                        new_resized = new_resized.convert('RGBA')
+                    
+                    # 混合图片
+                    blended = Image.blend(old_resized, new_resized, alpha)
+                    frames.append(blended)
+                    
+            elif transition_type == TransitionType.FADE:
+                # 先淡出旧照片，再淡入新照片
+                half_frames = frame_count // 2
+                
+                # 淡出阶段
+                for i in range(half_frames):
+                    alpha = 1.0 - (i / half_frames)
+                    img = old_photo.image.copy()
+                    if img.mode != 'RGBA':
+                        img = img.convert('RGBA')
+                    # 调整alpha通道
+                    img.putalpha(int(255 * alpha))
+                    frames.append(img)
+                
+                # 淡入阶段
+                for i in range(half_frames):
+                    alpha = i / half_frames
+                    img = new_photo.image.copy()
+                    if img.mode != 'RGBA':
+                        img = img.convert('RGBA')
+                    img.putalpha(int(255 * alpha))
+                    frames.append(img)
+            else:
+                # 默认直接返回新图片
+                frames.append(new_photo.image)
+            
+            logger.debug(f"Generated {len(frames)} transition frames")
+            return frames
+            
+        except Exception as e:
+            logger.error(f"Failed to generate transition frames: {e}")
+            return [new_photo.image]
     
     def _load_photo(self, photo: PhotoItem) -> bool:
         """

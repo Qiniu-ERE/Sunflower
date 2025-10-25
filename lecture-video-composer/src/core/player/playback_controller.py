@@ -33,8 +33,24 @@ class PlaybackState(Enum):
 class PlaybackConfig:
     """播放配置"""
     volume: float = 1.0  # 音量 (0.0-1.0)
-    speed: float = 1.0   # 播放速度 (0.5-2.0)
+    speed: float = 1.0   # 播放速度 (0.5-2.0，注意：pygame不原生支持，通过时间轴模拟)
     buffer_size: int = 4096  # 缓冲区大小
+    speed_change_smooth: bool = True  # 是否平滑切换速度
+
+
+class SpeedLock:
+    """线程安全的速度访问封装"""
+    def __init__(self, speed: float = 1.0):
+        self._speed = speed
+        self._lock = threading.Lock()
+    
+    def get(self) -> float:
+        with self._lock:
+            return self._speed
+    
+    def set(self, speed: float):
+        with self._lock:
+            self._speed = speed
 
 
 class PlaybackController:
@@ -254,23 +270,31 @@ class PlaybackController:
             
             # pygame.mixer.music.set_pos()接受秒数
             # 但并不是所有格式都支持
+            set_pos_success = False
             try:
                 pygame.mixer.music.set_pos(position)
-            except:
-                logger.warning("set_pos not supported, using play with start position")
-                pygame.mixer.music.play(start=position)
+                set_pos_success = True
+            except (NotImplementedError, pygame.error) as e:
+                logger.warning(f"set_pos not supported: {e}, using play with start position")
             
             with self._position_lock:
                 self._position = position
             
             if was_playing:
-                pygame.mixer.music.play()
+                if not set_pos_success:
+                    # 如果 set_pos 失败，使用 play(start=position)
+                    pygame.mixer.music.play(start=position)
+                else:
+                    # 如果 set_pos 成功，正常播放
+                    pygame.mixer.music.play()
                 self._state = PlaybackState.PLAYING
             
             self._notify_position_change()
             logger.info(f"Seeked to: {position:.2f}s")
             return True
             
+        except KeyboardInterrupt:
+            raise
         except Exception as e:
             logger.error(f"Failed to seek: {e}")
             return False
@@ -297,6 +321,94 @@ class PlaybackController:
         except Exception as e:
             logger.error(f"Failed to set volume: {e}")
             return False
+    
+    def set_speed(self, speed: float) -> bool:
+        """
+        设置照片切换速度倍率（实验性功能）
+        
+        ⚠️ 重要限制：
+        - 此功能仅影响照片切换时间，不改变音频播放速度
+        - pygame.mixer 不支持原生倍速播放
+        - 音频始终以正常速度播放，但时间轴位置更新会按倍率调整
+        - 这会导致音频与照片不同步的视觉效果
+        
+        推荐用途：
+        - 开发测试：快速预览照片切换
+        - 非生产环境：实验性功能
+        
+        实现真正的音频倍速播放需要：
+        - 使用 pydub + ffmpeg 进行音频处理
+        - 或使用支持倍速的音频库（如 sounddevice）
+        
+        Args:
+            speed: 照片切换速度倍率 (0.5-2.0)
+                  1.0 = 正常速度
+                  0.5 = 慢速（照片停留更久）
+                  1.5 = 1.5倍速（照片切换更快）
+                  2.0 = 2倍速（照片切换最快）
+            
+        Returns:
+            是否成功设置
+        """
+        try:
+            if not 0.5 <= speed <= 2.0:
+                raise ValueError(f"Invalid speed: {speed}. Must be between 0.5 and 2.0")
+            
+            old_speed = self.config.speed
+            self.config.speed = speed
+            
+            logger.info(f"Playback speed changed: {old_speed:.2f}x -> {speed:.2f}x")
+            logger.warning(
+                "Note: pygame does not support native speed change. "
+                "Speed is simulated by adjusting timeline position updates. "
+                "Audio pitch will NOT change."
+            )
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to set speed: {e}")
+            return False
+    
+    def get_speed(self) -> float:
+        """
+        获取当前播放速度
+        
+        Returns:
+            当前播放速度
+        """
+        return self.config.speed
+    
+    def cycle_speed(self, speeds: list[float] = None) -> float:
+        """
+        循环切换播放速度
+        
+        Args:
+            speeds: 可选的速度列表，默认为 [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+            
+        Returns:
+            新的播放速度
+        """
+        if speeds is None:
+            speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+        
+        try:
+            current_speed = self.config.speed
+            # 找到下一个速度
+            try:
+                current_index = speeds.index(current_speed)
+                next_index = (current_index + 1) % len(speeds)
+            except ValueError:
+                # 当前速度不在列表中，使用第一个
+                next_index = 0
+            
+            new_speed = speeds[next_index]
+            self.set_speed(new_speed)
+            return new_speed
+            
+        except Exception as e:
+            logger.error(f"Failed to cycle speed: {e}")
+            return self.config.speed
     
     def get_position(self) -> float:
         """
@@ -386,7 +498,7 @@ class PlaybackController:
             self._update_thread.join(timeout=1.0)
     
     def _update_position_loop(self):
-        """位置更新循环"""
+        """位置更新循环（支持倍速）"""
         last_time = time.time()
         
         while not self._stop_update and self._state == PlaybackState.PLAYING:
@@ -394,9 +506,10 @@ class PlaybackController:
             elapsed = current_time - last_time
             last_time = current_time
             
-            # 更新位置
+            # 更新位置（应用播放速度）
             with self._position_lock:
-                self._position += elapsed
+                # 使用速度倍率调整位置增量
+                self._position += elapsed * self.config.speed
                 if self._position >= self._duration:
                     self._position = self._duration
                     self._stop_update = True
