@@ -81,6 +81,27 @@ def register_blueprints(app: Flask):
         """应用主界面"""
         return app.send_static_file('app.html')
     
+    @app.route('/uploads/<path:filepath>')
+    def serve_upload(filepath):
+        """提供上传文件访问"""
+        try:
+            upload_dir = Path(app.config['UPLOAD_FOLDER'])
+            file_path = upload_dir / filepath
+            
+            # 安全检查：确保文件在上传目录内
+            if not file_path.resolve().is_relative_to(upload_dir.resolve()):
+                app.logger.warning(f"Attempted path traversal: {filepath}")
+                return jsonify({'error': 'Invalid file path'}), 403
+            
+            if not file_path.exists():
+                app.logger.warning(f"File not found: {file_path}")
+                return jsonify({'error': 'File not found'}), 404
+            
+            return send_file(file_path)
+        except Exception as e:
+            app.logger.error(f"Error serving file {filepath}: {e}")
+            return jsonify({'error': 'File access error'}), 500
+    
     @app.route('/health')
     def health():
         """健康检查"""
