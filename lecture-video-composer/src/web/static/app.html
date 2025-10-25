@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>演讲视频合成系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/player.css">
+</head>
+<body>
+    <!-- 主容器 -->
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🎬</span>
+                    <span class="logo-text">演讲视频合成系统</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="help-btn" title="帮助">
+                        <span>❓</span>
+                    </button>
+                    <div class="project-info">
+                        <span class="project-name" id="current-project-name">未加载项目</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="app-main">
+            <!-- 左侧边栏 -->
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <button class="nav-item active" data-view="upload">
+                        <span class="nav-icon">📤</span>
+                        <span class="nav-text">文件上传</span>
+                    </button>
+                    <button class="nav-item" data-view="projects">
+                        <span class="nav-icon">📁</span>
+                        <span class="nav-text">项目管理</span>
+                    </button>
+                    <button class="nav-item" data-view="player">
+                        <span class="nav-icon">▶️</span>
+                        <span class="nav-text">播放器</span>
+                    </button>
+                    <button class="nav-item" data-view="export" disabled>
+                        <span class="nav-icon">💾</span>
+                        <span class="nav-text">视频导出</span>
+                    </button>
+                </nav>
+
+                <!-- 项目快速信息 -->
+                <div class="project-quick-info" id="project-quick-info" style="display: none;">
+                    <div class="quick-info-header">当前项目</div>
+                    <div class="quick-info-item">
+                        <span class="info-label">时长:</span>
+                        <span class="info-value" id="quick-duration">--:--</span>
+                    </div>
+                    <div class="quick-info-item">
+                        <span class="info-label">照片:</span>
+                        <span class="info-value" id="quick-photos">0</span>
+                    </div>
+                    <div class="quick-info-item">
+                        <span class="info-label">状态:</span>
+                        <span class="info-value" id="quick-status">就绪</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 内容区域 -->
+            <div class="content-area">
+                <!-- 文件上传视图 -->
+                <section class="view active" id="upload-view">
+                    <div class="view-header">
+                        <h2>文件上传</h2>
+                        <p class="view-subtitle">上传音频文件和照片以创建新项目</p>
+                    </div>
+
+                    <div class="upload-section">
+                        <!-- 音频上传区 -->
+                        <div class="upload-card">
+                            <div class="upload-header">
+                                <span class="upload-icon">🎵</span>
+                                <h3>音频文件</h3>
+                            </div>
+                            <div class="drop-zone" id="audio-drop-zone">
+                                <div class="drop-zone-content">
+                                    <span class="drop-icon">📁</span>
+                                    <p class="drop-text">拖拽音频文件到此处</p>
+                                    <p class="drop-hint">或点击选择文件</p>
+                                    <p class="drop-format">支持: MP3, WAV, M4A, AAC, OGG</p>
+                                </div>
+                                <input type="file" id="audio-input" accept=".mp3,.wav,.m4a,.aac,.ogg" hidden>
+                            </div>
+                            <div class="file-list" id="audio-file-list"></div>
+                        </div>
+
+                        <!-- 照片上传区 -->
+                        <div class="upload-card">
+                            <div class="upload-header">
+                                <span class="upload-icon">📸</span>
+                                <h3>照片文件</h3>
+                            </div>
+                            <div class="drop-zone" id="photos-drop-zone">
+                                <div class="drop-zone-content">
+                                    <span class="drop-icon">📁</span>
+                                    <p class="drop-text">拖拽照片文件到此处</p>
+                                    <p class="drop-hint">或点击选择文件（可多选）</p>
+                                    <p class="drop-format">支持: JPG, JPEG, PNG</p>
+                                </div>
+                                <input type="file" id="photos-input" accept=".jpg,.jpeg,.png" multiple hidden>
+                            </div>
+                            <div class="file-list" id="photos-file-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- 创建项目按钮 -->
+                    <div class="action-bar">
+                        <input type="text" id="project-title" class="input" placeholder="项目名称（可选）">
+                        <button class="btn btn-primary btn-large" id="create-project-btn" disabled>
+                            <span>创建项目</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 项目管理视图 -->
+                <section class="view" id="projects-view">
+                    <div class="view-header">
+                        <h2>项目管理</h2>
+                        <p class="view-subtitle">管理您的所有演讲视频项目</p>
+                    </div>
+
+                    <div class="projects-container">
+                        <div class="projects-list" id="projects-list">
+                            <!-- 项目卡片将通过JavaScript动态插入 -->
+                        </div>
+                        <div class="empty-state" id="projects-empty">
+                            <span class="empty-icon">📂</span>
+                            <p>还没有项目</p>
+                            <p class="empty-hint">前往"文件上传"创建第一个项目</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 播放器视图 -->
+                <section class="view" id="player-view">
+                    <div class="view-header">
+                        <h2>播放器</h2>
+                        <p class="view-subtitle">预览和控制演讲视频播放</p>
+                    </div>
+
+                    <div class="player-container">
+                        <!-- 照片显示区域 -->
+                        <div class="photo-display">
+                            <canvas id="photo-canvas" width="1280" height="720"></canvas>
+                            <div class="photo-placeholder" id="photo-placeholder">
+                                <span class="placeholder-icon">🖼️</span>
+                                <p>等待加载照片...</p>
+                            </div>
+                            <div class="photo-info" id="photo-info">
+                                <span class="photo-name" id="current-photo-name">--</span>
+                            </div>
+                        </div>
+
+                        <!-- 播放控制区域 -->
+                        <div class="player-controls">
+                            <!-- 时间轴 -->
+                            <div class="timeline-container">
+                                <div class="timeline" id="timeline">
+                                    <div class="timeline-progress" id="timeline-progress"></div>
+                                    <div class="timeline-markers" id="timeline-markers"></div>
+                                    <div class="timeline-handle" id="timeline-handle"></div>
+                                </div>
+                                <div class="time-display">
+                                    <span id="current-time">00:00</span>
+                                    <span class="time-separator">/</span>
+                                    <span id="total-time">00:00</span>
+                                </div>
+                            </div>
+
+                            <!-- 控制按钮 -->
+                            <div class="control-buttons">
+                                <button class="btn btn-control" id="play-btn" title="播放" disabled>
+                                    <span class="control-icon">▶️</span>
+                                </button>
+                                <button class="btn btn-control" id="pause-btn" title="暂停" style="display: none;" disabled>
+                                    <span class="control-icon">⏸️</span>
+                                </button>
+                                <button class="btn btn-control" id="stop-btn" title="停止" disabled>
+                                    <span class="control-icon">⏹️</span>
+                                </button>
+
+                                <!-- 音量控制 -->
+                                <div class="volume-control">
+                                    <button class="btn btn-control btn-icon" id="volume-btn" title="音量">
+                                        <span class="control-icon">🔊</span>
+                                    </button>
+                                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100">
+                                </div>
+
+                                <!-- 播放状态 -->
+                                <div class="playback-status">
+                                    <span class="status-indicator" id="status-indicator"></span>
+                                    <span class="status-text" id="status-text">就绪</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 时间轴照片缩略图 -->
+                        <div class="timeline-photos" id="timeline-photos">
+                            <!-- 缩略图将通过JavaScript动态插入 -->
+                        </div>
+                    </div>
+
+                    <!-- 无项目提示 -->
+                    <div class="empty-state" id="player-empty">
+                        <span class="empty-icon">▶️</span>
+                        <p>请先加载或创建项目</p>
+                        <button class="btn btn-secondary" onclick="switchView('projects')">前往项目管理</button>
+                    </div>
+                </section>
+
+                <!-- 视频导出视图 -->
+                <section class="view" id="export-view">
+                    <div class="view-header">
+                        <h2>视频导出</h2>
+                        <p class="view-subtitle">将项目导出为视频文件</p>
+                    </div>
+
+                    <div class="export-container">
+                        <div class="coming-soon-message">
+                            <span class="coming-icon">🚧</span>
+                            <h3>功能开发中</h3>
+                            <p>视频导出功能即将推出...</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- 底部状态栏 -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <span class="footer-item">
+                        <span class="footer-icon">🟢</span>
+                        <span>服务器已连接</span>
+                    </span>
+                </div>
+                <div class="footer-right">
+                    <span class="footer-item">v2.2</span>
+                    <span class="footer-separator">|</span>
+                    <span class="footer-item">Lecture Video Composer</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 通知容器 -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- 加载指示器 -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">处理中...</p>
+    </div>
+
+    <!-- JavaScript -->
+    <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
