@@ -57,8 +57,38 @@ export class LecturePlayer extends EventBus {
     _initCanvas() {
         // 设置 Canvas 尺寸（16:9 比例）
         const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width;
-        this.canvas.height = rect.width * 9 / 16;
+        console.log('Canvas getBoundingClientRect:', rect);
+        
+        // 如果canvas还没有尺寸，使用父容器或默认尺寸
+        let width = rect.width;
+        let height = rect.height;
+        
+        if (width === 0 || height === 0) {
+            // 尝试从父容器获取尺寸
+            const parent = this.canvas.parentElement;
+            if (parent) {
+                const parentRect = parent.getBoundingClientRect();
+                width = parentRect.width || 1280;
+                height = parentRect.height || 720;
+                console.log('使用父容器尺寸:', parentRect);
+            } else {
+                // 使用默认尺寸
+                width = 1280;
+                height = 720;
+                console.log('使用默认尺寸');
+            }
+        }
+        
+        // 确保是16:9比例
+        height = width * 9 / 16;
+        
+        this.canvas.width = width;
+        this.canvas.height = height;
+        
+        console.log('Canvas最终尺寸:', {
+            width: this.canvas.width,
+            height: this.canvas.height
+        });
         
         // 绘制初始状态
         this._drawPlaceholder();
@@ -220,6 +250,13 @@ export class LecturePlayer extends EventBus {
             console.log('音频播放成功');
             this.state.isPlaying = true;
             this.state.isPaused = false;
+            
+            // 确保显示当前照片
+            if (this.currentPhoto) {
+                console.log('绘制当前照片:', this.currentPhoto.url);
+                this._drawPhoto(this.currentPhoto);
+            }
+            
             this._startAnimation();
             this.emit('play');
         } catch (error) {
@@ -388,7 +425,7 @@ export class LecturePlayer extends EventBus {
     _renderFrame(timestamp) {
         if (this.state.isTransitioning) {
             this._renderTransition(timestamp);
-        } else {
+        } else if (this.currentPhoto) {
             this._drawPhoto(this.currentPhoto);
         }
     }
@@ -519,17 +556,32 @@ export class LecturePlayer extends EventBus {
      */
     _drawPhoto(photo) {
         if (!photo || !photo.image) {
+            console.log('没有照片或图片对象，绘制占位符');
             this._drawPlaceholder();
             return;
         }
         
-        // 先清空画布
+        console.log('绘制照片:', {
+            url: photo.url,
+            imageWidth: photo.image.width,
+            imageHeight: photo.image.height,
+            canvasWidth: this.canvas.width,
+            canvasHeight: this.canvas.height,
+            complete: photo.image.complete
+        });
+        
+        // 先清空画布并填充黑色背景
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // 绘制图片
-        drawImageCentered(this.ctx, photo.image, 
-            this.canvas.width, this.canvas.height);
+        try {
+            drawImageCentered(this.ctx, photo.image, 
+                this.canvas.width, this.canvas.height);
+            console.log('图片绘制完成');
+        } catch (error) {
+            console.error('绘制图片时出错:', error);
+        }
     }
 
     /**
