@@ -25,114 +25,97 @@
 - 添加了 SpeedLock 类用于线程安全的速度访问
 - **注意**: 需要在 `_update_position_loop()` 中使用锁来读取速度
 
-## 待修复问题 ⚠️
-
-由于上下文窗口限制，以下问题需要在后续修复：
-
 ### 5. 过渡帧生成的内存问题
 **文件**: `src/core/player/photo_display.py:334-348` 
+**状态**: ✅ 已修复
 **问题**: 在循环内部重复调整图片大小
 **影响**: 高内存使用，性能下降
-**修复方案**:
-```python
-# 在循环外预处理图片
-old_resized = old_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
-new_resized = new_photo.image.resize(self.config.window_size, Image.Resampling.LANCZOS)
-
-# 转换为RGBA（一次性）
-if old_resized.mode != 'RGBA':
-    old_resized = old_resized.convert('RGBA')
-if new_resized.mode != 'RGBA':
-    new_resized = new_resized.convert('RGBA')
-
-# 然后在循环中只做混合
-for i in range(frame_count):
-    alpha = i / frame_count
-    blended = Image.blend(old_resized, new_resized, alpha)
-    frames.append(blended)
-```
+**修复方案**: 在循环外预处理图片，循环中只做混合操作
 
 ### 6. 线性搜索性能问题
 **文件**: `src/core/player/photo_display.py:119-137`
+**状态**: ✅ 已修复
 **问题**: O(n) 线性搜索，每秒调用20次
 **影响**: 大量照片时性能下降
-**修复方案**: 使用二分查找
-```python
-import bisect
-
-def get_photo_at_time(self, time_position: float) -> Optional[PhotoItem]:
-    """使用二分查找获取照片 O(log n)"""
-    if not self._photos:
-        return None
-    
-    # 二分查找插入点
-    idx = bisect.bisect_right(
-        [p.start_time for p in self._photos],
-        time_position
-    )
-    
-    if idx == 0:
-        return None
-    
-    photo = self._photos[idx - 1]
-    # 验证时间在照片的显示范围内
-    if time_position < photo.start_time + photo.duration:
-        return photo
-    
-    return None  # 超出范围
-```
+**修复方案**: 使用二分查找优化为 O(log n)
 
 ### 7. 路径遍历安全漏洞
 **文件**: `src/core/player/photo_display.py:89-113`
+**状态**: ✅ 已修复
 **问题**: 未验证照片路径，可能导致目录遍历攻击
 **影响**: 安全风险
-**修复方案**:
-```python
-def load_timeline(self, timeline_items: List[Dict[str, Any]], photos_dir: Path):
-    """加载时间轴照片列表（带路径验证）"""
-    self._photos.clear()
-    self._current_index = -1
-    self._current_photo = None
-    
-    # 规范化基础目录路径
-    photos_dir = photos_dir.resolve()
-    
-    current_time = 0.0
-    for item in timeline_items:
-        # 安全地构造照片路径
-        photo_filename = Path(item['photo']).name  # 只取文件名，忽略路径
-        photo_path = (photos_dir / photo_filename).resolve()
-        
-        # 验证路径在允许的目录内
-        try:
-            photo_path.relative_to(photos_dir)
-        except ValueError:
-            logger.error(f"Path traversal attempt blocked: {item['photo']}")
-            continue
-        
-        if not photo_path.exists():
-            logger.warning(f"Photo not found: {photo_path}")
-            continue
-        
-        duration = item['duration']
-        photo_item = PhotoItem(
-            path=photo_path,
-            start_time=current_time,
-            duration=duration
-        )
-        self._photos.append(photo_item)
-        current_time += duration
-    
-    logger.info(f"Loaded {len(self._photos)} photos into timeline")
-    self._start_preloading()
-```
+**修复方案**: 
+- 只取文件名，忽略路径
+- 规范化路径并验证在允许的目录内
+- 添加路径遍历检测
 
-## 建议的下一步行动
+## 修复详情
 
-1. **立即修复**: 问题5（内存）和问题7（安全）
-2. **性能优化**: 问题6（二分查找）
-3. **代码审查**: 完整审查所有多线程代码
-4. **测试**: 添加单元测试覆盖这些修复
+### Bug #4: Race Condition - 速度变更竞态条件
+**完整修复** ✅
+- 已在 `PlaybackController.__init__` 中初始化 `SpeedLock`
+- 已在 `set_speed()` 中使用锁设置速度
+- 已在 `get_speed()` 中使用锁读取速度
+- 已在 `_update_position_loop()` 中使用锁读取速度
+- 完全消除了竞态条件
+
+### Bug #5: 内存优化 - 过渡帧生成
+**已优化** ✅
+- 在 `generate_transition_frames()` 中将图片缩放和格式转换移到循环外
+- 减少内存分配次数：从 N×2 次减少到 2 次（N 为帧数）
+- 显著降低内存使用和 CPU 负载
+
+### Bug #6: 性能优化 - 照片查找
+**已优化** ✅
+- 在 `get_photo_at_time()` 中使用二分查找
+- 时间复杂度从 O(n) 优化到 O(log n)
+- 每秒调用 20 次，大量照片时性能提升显著
+- 100 张照片：从 100 次比较降至 7 次
+- 1000 张照片：从 1000 次比较降至 10 次
+
+### Bug #7: 安全加固 - 路径遍历防护
+**已修复** ✅
+- 在 `load_timeline()` 中添加路径验证
+- 只提取文件名，防止路径注入
+- 使用 `resolve()` 规范化路径
+- 使用 `relative_to()` 验证路径在允许的目录内
+- 记录并跳过可疑的路径遍历尝试
+
+## 代码质量改进
+
+### 线程安全性
+- ✅ 所有速度访问现在都是线程安全的
+- ✅ 位置更新使用锁保护
+- ✅ 消除了数据竞争条件
+
+### 性能优化
+- ✅ 减少内存分配
+- ✅ 优化算法复杂度
+- ✅ 提高大规模场景下的性能
+
+### 安全性
+- ✅ 防止路径遍历攻击
+- ✅ 输入验证和清理
+- ✅ 添加安全日志记录
+
+## 测试建议
+
+1. **线程安全测试**
+   - 并发修改播放速度
+   - 验证无竞态条件
+
+2. **性能测试**
+   - 测试大量照片（100+）的查找性能
+   - 测试过渡动画的内存使用
+
+3. **安全测试**
+   - 尝试路径遍历攻击（如 `../../etc/passwd`）
+   - 验证只能访问允许目录内的文件
+
+4. **集成测试**
+   - 端到端播放测试
+   - 速度切换测试
+   - 长时间运行稳定性测试
 
 ## 修复优先级
 
@@ -141,12 +124,15 @@ def load_timeline(self, timeline_items: List[Dict[str, Any]], photos_dir: Path):
 | 1. AttributeError | P0 | ✅ 已修复 | 运行时崩溃 |
 | 2. Seek逻辑错误 | P1 | ✅ 已修复 | 状态错误 |
 | 3. 误导性文档 | P0 | ✅ 已修复 | 用户期望 |
-| 4. Race Condition | P1 | ⚠️ 部分修复 | 数据竞争 |
-| 5. 内存问题 | P1 | ❌ 待修复 | 性能/内存 |
-| 6. 线性搜索 | P2 | ❌ 待修复 | 性能 |
-| 7. 安全漏洞 | P0 | ❌ 待修复 | 安全风险 |
+| 4. Race Condition | P1 | ✅ 已修复 | 数据竞争 |
+| 5. 内存问题 | P1 | ✅ 已修复 | 性能/内存 |
+| 6. 线性搜索 | P2 | ✅ 已修复 | 性能 |
+| 7. 安全漏洞 | P0 | ✅ 已修复 | 安全风险 |
+
+**所有关键问题已修复！** ✅
 
 ---
 
-**生成时间**: 2025-10-25
+**最后更新**: 2025-10-25 20:49
 **项目版本**: v2.2
+**修复批次**: 所有待修复问题已完成

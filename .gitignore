@@ -25,3 +25,11 @@ lecture-video-composer/src/services/image/__pycache__/image_service.cpython-313.
 lecture-video-composer/src/services/metadata/__pycache__/metadata_service.cpython-313.pyc
 lecture-video-composer/src/services/subtitle/__pycache__/subtitle_service.cpython-313.pyc
 lecture-video-composer/src/services/video/__pycache__/video_exporter.cpython-313.pyc
+lecture-video-composer/src/web/__pycache__/app.cpython-39.pyc
+lecture-video-composer/src/web/__pycache__/config.cpython-39.pyc
+lecture-video-composer/src/web/api/__pycache__/__init__.cpython-39.pyc
+lecture-video-composer/src/web/api/__pycache__/file_api.cpython-39.pyc
+lecture-video-composer/src/web/api/__pycache__/playback_api.cpython-39.pyc
+lecture-video-composer/src/web/api/__pycache__/project_api.cpython-39.pyc
+lecture-video-composer/src/web/services/__pycache__/__init__.cpython-39.pyc
+lecture-video-composer/src/web/services/__pycache__/session_manager.cpython-39.pyc

@@ -83,6 +83,7 @@ class PlaybackController:
         self._duration: float = 0.0
         self._position: float = 0.0
         self._position_lock = threading.Lock()
+        self._speed_lock = SpeedLock(self.config.speed)  # 线程安全的速度访问
         self._position_callbacks: List[Callable[[float], None]] = []
         self._state_callbacks: List[Callable[[PlaybackState], None]] = []
         self._update_thread: Optional[threading.Thread] = None
@@ -354,8 +355,9 @@ class PlaybackController:
             if not 0.5 <= speed <= 2.0:
                 raise ValueError(f"Invalid speed: {speed}. Must be between 0.5 and 2.0")
             
-            old_speed = self.config.speed
+            old_speed = self._speed_lock.get()
             self.config.speed = speed
+            self._speed_lock.set(speed)  # 线程安全地设置速度
             
             logger.info(f"Playback speed changed: {old_speed:.2f}x -> {speed:.2f}x")
             logger.warning(
@@ -377,7 +379,7 @@ class PlaybackController:
         Returns:
             当前播放速度
         """
-        return self.config.speed
+        return self._speed_lock.get()  # 线程安全地读取速度
     
     def cycle_speed(self, speeds: List[float] = None) -> float:
         """
@@ -508,8 +510,9 @@ class PlaybackController:
             
             # 更新位置（应用播放速度）
             with self._position_lock:
-                # 使用速度倍率调整位置增量
-                self._position += elapsed * self.config.speed
+                # 使用线程安全的速度访问，避免竞态条件
+                current_speed = self._speed_lock.get()
+                self._position += elapsed * current_speed
                 if self._position >= self._duration:
                     self._position = self._duration
                     self._stop_update = True
