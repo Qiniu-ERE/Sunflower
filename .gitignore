@@ -40,7 +40,7 @@ lecture-video-composer/data/uploads/*
 data/uploads/*
 data/projects/*
 data/temp/*
-
+lecture-video-composer/data/projects/*
 # 忽略所有 __pycache__ 目录
 __pycache__/
 

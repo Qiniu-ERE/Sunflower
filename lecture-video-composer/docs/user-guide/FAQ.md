@@ -22,20 +22,44 @@
 
 **A:** 按照以下步骤安装：
 
+**1. 安装 FFmpeg（视频导出必需）**
+
 ```bash
-# 1. 克隆项目
+# macOS
+brew install ffmpeg
+
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install ffmpeg
+
+# CentOS/RHEL
+sudo yum install ffmpeg
+
+# Windows
+# 下载：https://ffmpeg.org/download.html
+# 并将 ffmpeg.exe 添加到系统 PATH
+```
+
+**2. 安装 Python 依赖**
+
+```bash
+# 克隆项目
 git clone https://github.com/Qiniu-ERE/Sunflower.git
 cd Sunflower/lecture-video-composer
 
-# 2. 安装 Python 依赖
-pip install -r requirements.txt
+# 安装 Python 依赖（使用 Python 3.8+）
+pip3 install -r requirements.txt
+```
 
-# 3. 启动服务
-python run_web.py
+**3. 启动服务**
+
+```bash
+python3 run_web.py
 ```
 
 **系统要求**：
 - Python 3.8 或更高版本
+- FFmpeg（音视频处理）
 - 500MB 可用磁盘空间
 - 现代浏览器（Chrome/Firefox/Safari）
 
@@ -43,10 +67,24 @@ python run_web.py
 
 ### Q2: 启动失败，提示"端口已被占用"？
 
-**A:** 5000 端口被其他程序占用。
+**A:** 5000 端口被其他程序占用。常见原因是 macOS 的 AirPlay Receiver 服务。
 
 **解决方法**：
 
+**方案 1：关闭 AirPlay Receiver（macOS 推荐）**
+```
+系统设置 -> 通用 -> 隔空播放与接力 -> 关闭「隔空播放接收器」
+```
+
+**方案 2：使用不同端口**
+```bash
+# 使用 8000 端口
+python3 run_web.py --port 8000
+
+# 访问地址变为：http://127.0.0.1:8000
+```
+
+**方案 3：查找并停止占用进程**
 ```bash
 # macOS/Linux
 lsof -i :5000
@@ -55,9 +93,12 @@ kill -9 <PID>
 # Windows
 netstat -ano | findstr :5000
 taskkill /PID <PID> /F
+```
 
-# 或者修改端口
-python run_web.py --port 8080
+**快速测试**：
+```bash
+# 测试端口是否可用
+nc -zv 127.0.0.1 5000
 ```
 
 ---
@@ -263,7 +304,42 @@ console.log(player.getCurrentTime());
 
 ## 视频导出
 
-### Q15: 导出视频需要多长时间？
+### Q15: 导出视频失败，提示"FFmpeg not found"？
+
+**A:** 系统未安装 FFmpeg 或未添加到 PATH。
+
+**解决方法**：
+
+**macOS**：
+```bash
+brew install ffmpeg
+```
+
+**Ubuntu/Debian**：
+```bash
+sudo apt-get update
+sudo apt-get install ffmpeg
+```
+
+**CentOS/RHEL**：
+```bash
+sudo yum install ffmpeg
+```
+
+**Windows**：
+1. 从 https://ffmpeg.org/download.html 下载
+2. 解压到任意目录（如 `C:\ffmpeg`）
+3. 将 `C:\ffmpeg\bin` 添加到系统 PATH
+4. 重启终端/命令提示符
+
+**验证安装**：
+```bash
+ffmpeg -version
+```
+
+---
+
+### Q16: 导出视频需要多长时间？
 
 **A:** 取决于多个因素：
 
@@ -283,7 +359,7 @@ console.log(player.getCurrentTime());
 
 ---
 
-### Q16: 导出的视频画质模糊？
+### Q17: 导出的视频画质模糊？
 
 **A:** 调整导出设置：
 
@@ -304,7 +380,7 @@ console.log(player.getCurrentTime());
 
 ---
 
-### Q17: 导出失败，提示"磁盘空间不足"？
+### Q18: 导出失败，提示"磁盘空间不足"？
 
 **A:** 清理磁盘空间。
 
@@ -324,7 +400,7 @@ console.log(player.getCurrentTime());
 
 ---
 
-### Q18: 导出的视频没有字幕？
+### Q19: 导出的视频没有字幕？
 
 **A:** 需要手动启用字幕功能。
 
