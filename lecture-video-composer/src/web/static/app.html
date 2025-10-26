@@ -179,9 +179,6 @@
                                 <span class="placeholder-icon">🖼️</span>
                                 <p>等待加载照片...</p>
                             </div>
-                            <div class="photo-info" id="photo-info">
-                                <span class="photo-name" id="current-photo-name">--</span>
-                            </div>
                         </div>
 
                         <!-- 播放控制区域 -->
@@ -246,6 +243,14 @@
                     </div>
 
                     <div class="export-container">
+                        <!-- 导出历史 -->
+                        <div class="export-card" id="export-history-card">
+                            <h3>📋 导出历史</h3>
+                            <div id="export-history-list" class="export-history-list">
+                                <p class="empty-hint">暂无导出历史</p>
+                            </div>
+                        </div>
+
                         <!-- 项目选择 -->
                         <div class="export-card">
                             <h3>选择要导出的项目</h3>

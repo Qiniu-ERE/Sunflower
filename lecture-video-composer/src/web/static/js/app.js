@@ -989,10 +989,58 @@ class App {
         
         // 音量控制
         const volumeSlider = document.getElementById('volume-slider');
+        const volumeBtn = document.getElementById('volume-btn');
+        let previousVolume = 1.0; // 存储静音前的音量
+        
         if (volumeSlider) {
             volumeSlider.addEventListener('input', (e) => {
                 const volume = e.target.value / 100;
                 this.player.setVolume(volume);
+                
+                // 更新音量按钮图标
+                if (volumeBtn) {
+                    const icon = volumeBtn.querySelector('.control-icon');
+                    if (icon) {
+                        if (volume === 0) {
+                            icon.textContent = '🔇';
+                        } else if (volume < 0.5) {
+                            icon.textContent = '🔉';
+                        } else {
+                            icon.textContent = '🔊';
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 音量按钮点击切换静音
+        if (volumeBtn) {
+            volumeBtn.addEventListener('click', () => {
+                const currentVolume = this.player.state.volume;
+                
+                if (currentVolume > 0) {
+                    // 当前有音量，静音
+                    previousVolume = currentVolume;
+                    this.player.setVolume(0);
+                    if (volumeSlider) volumeSlider.value = 0;
+                    
+                    const icon = volumeBtn.querySelector('.control-icon');
+                    if (icon) icon.textContent = '🔇';
+                } else {
+                    // 当前静音，恢复音量
+                    const volumeToRestore = previousVolume > 0 ? previousVolume : 1.0;
+                    this.player.setVolume(volumeToRestore);
+                    if (volumeSlider) volumeSlider.value = volumeToRestore * 100;
+                    
+                    const icon = volumeBtn.querySelector('.control-icon');
+                    if (icon) {
+                        if (volumeToRestore < 0.5) {
+                            icon.textContent = '🔉';
+                        } else {
+                            icon.textContent = '🔊';
+                        }
+                    }
+                }
             });
         }
         
@@ -1125,9 +1173,11 @@ class App {
             targetView.classList.add('active');
         }
         
-        // 如果切换到导出视图，更新项目列表
+        // 如果切换到导出视图，更新项目列表并检查导出状态
         if (viewName === 'export') {
             this.updateExportProjectList();
+            this.loadExportHistory();
+            this.checkOngoingExport();
         }
     }
     
@@ -1151,8 +1201,8 @@ class App {
             projectSelect.appendChild(option);
         });
         
-        // 重置导出视图状态
-        this.resetExportView();
+        // 不要在这里调用 resetExportView()，因为可能有正在进行的导出
+        // resetExportView() 只应该在用户明确要重置时调用
     }
 
     /**
@@ -1310,6 +1360,9 @@ class App {
             const exportId = data.export_id;
             this.state.set('export.currentExportId', exportId);
             
+            // 刷新导出历史列表（显示新创建的导出任务）
+            this.loadExportHistory();
+            
             // 开始轮询导出状态
             this.pollExportStatus(exportId);
             
@@ -1340,6 +1393,9 @@ class App {
                 // 更新进度显示
                 this.updateExportProgress(progress, status);
                 
+                // 同步更新导出历史中的进度
+                this.updateHistoryProgress(exportId, progress);
+                
                 if (status === 'completed') {
                     // 导出完成
                     this.showExportComplete();
@@ -1358,6 +1414,20 @@ class App {
         };
         
         poll();
+    }
+    
+    /**
+     * 更新导出历史中某个项目的进度
+     */
+    updateHistoryProgress(exportId, progress) {
+        const historyItem = document.querySelector(`[data-export-id="${exportId}"]`);
+        if (historyItem) {
+            const progressElement = historyItem.querySelector('.history-progress');
+            if (progressElement) {
+                progressElement.textContent = `${progress}%`;
+                progressElement.setAttribute('data-progress', progress);
+            }
+        }
     }
     
     /**
@@ -1394,6 +1464,9 @@ class App {
         document.getElementById('export-progress').style.display = 'none';
         document.getElementById('export-complete').style.display = 'block';
         showNotification('视频导出完成！', 'success');
+        
+        // 刷新导出历史列表
+        this.loadExportHistory();
     }
     
     /**
@@ -1445,9 +1518,192 @@ class App {
     }
     
     /**
+     * 加载导出历史
+     */
+    async loadExportHistory() {
+        try {
+            const sessionId = this.state.get('session.sessionId');
+            const params = sessionId ? `?session_id=${sessionId}` : '';
+            const data = await this.api.get(`/export/list${params}`);
+            
+            const historyList = document.getElementById('export-history-list');
+            if (!historyList) return;
+            
+            if (!data.success || !data.exports || data.exports.length === 0) {
+                historyList.innerHTML = '<p class="empty-hint">暂无导出历史</p>';
+                return;
+            }
+            
+            // 找出最新完成的项目（completed_at最大的已完成项目）
+            const completedExports = data.exports.filter(exp => exp.status === 'completed' && exp.completed_at);
+            const latestCompleted = completedExports.length > 0 ? completedExports[0] : null;
+            
+            // 显示导出历史列表
+            historyList.innerHTML = data.exports.map(exp => {
+                const statusEmoji = {
+                    'pending': '⏳',
+                    'processing': '⚙️',
+                    'completed': '✅',
+                    'failed': '❌'
+                };
+                
+                const statusText = {
+                    'pending': '等待中',
+                    'processing': '处理中',
+                    'completed': '已完成',
+                    'failed': '失败'
+                };
+                
+                const projectTitle = exp.project_title || '未知项目';
+                const resolution = exp.resolution || '未知';
+                const fps = exp.fps || '未知';
+                const format = exp.format ? exp.format.toUpperCase() : '未知';
+                
+                // 判断是否为最新完成的项目
+                const isLatest = latestCompleted && exp.export_id === latestCompleted.export_id;
+                const latestMarker = isLatest ? ' ⭐' : '';
+                
+                // 格式化完成时间
+                let completedTime = '';
+                if (exp.completed_at) {
+                    completedTime = `<div class="history-time">完成时间: ${exp.completed_at}</div>`;
+                }
+                
+                return `
+                    <div class="export-history-item${isLatest ? ' latest-export' : ''}" data-export-id="${exp.export_id}">
+                        <div class="history-main">
+                            <span class="history-status">${statusEmoji[exp.status] || '❓'}${latestMarker}</span>
+                            <div class="history-details">
+                                <div class="history-project-name">${projectTitle}</div>
+                                <div class="history-config">
+                                    ${resolution} | ${fps}FPS | ${format}
+                                </div>
+                                ${completedTime}
+                            </div>
+                        </div>
+                        <div class="history-actions">
+                            <span class="history-progress" data-progress="${exp.progress}">${exp.progress}%</span>
+                            ${exp.status === 'completed' ? 
+                                `<button class="btn btn-small btn-primary" onclick="app.downloadExportById('${exp.export_id}')">下载</button>` : 
+                                ''}
+                            <button class="btn btn-small btn-danger" onclick="app.deleteExportById('${exp.export_id}')" title="删除">🗑️</button>
+                        </div>
+                        ${exp.error ? `<div class="history-error">错误: ${exp.error}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+        } catch (error) {
+            console.error('加载导出历史失败:', error);
+        }
+    }
+    
+    /**
+     * 根据ID下载导出
+     */
+    async downloadExportById(exportId) {
+        try {
+            const sessionId = this.state.get('session.sessionId');
+            const params = sessionId ? `?session_id=${sessionId}` : '';
+            
+            const downloadUrl = `/api/export/download/${exportId}${params}`;
+            
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = '';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('开始下载视频...', 'success');
+        } catch (error) {
+            console.error('下载失败:', error);
+            showNotification(`下载失败: ${error.message}`, 'error');
+        }
+    }
+    
+    /**
+     * 根据ID删除导出
+     */
+    async deleteExportById(exportId) {
+        confirm('确认删除该导出记录？', async () => {
+            try {
+                const sessionId = this.state.get('session.sessionId');
+                const params = sessionId ? `?session_id=${sessionId}` : '';
+                
+                await this.api.delete(`/export/delete/${exportId}${params}`);
+                
+                showNotification('导出记录已删除', 'success');
+                
+                // 刷新导出历史列表
+                await this.loadExportHistory();
+                
+            } catch (error) {
+                console.error('删除导出失败:', error);
+                showNotification(`删除失败: ${error.message}`, 'error');
+            }
+        });
+    }
+    
+    /**
+     * 检查是否有正在进行的导出任务
+     */
+    async checkOngoingExport() {
+        const exportId = this.state.get('export.currentExportId');
+        if (!exportId) {
+            return; // 没有正在进行的导出
+        }
+        
+        try {
+            const sessionId = this.state.get('session.sessionId');
+            const params = sessionId ? `?session_id=${sessionId}` : '';
+            const data = await this.api.get(`/export/status/${exportId}${params}`);
+            
+            if (!data.success) {
+                // 导出任务不存在或已失败，清除状态
+                this.state.set('export.currentExportId', null);
+                return;
+            }
+            
+            const { status, progress } = data;
+            
+            if (status === 'pending' || status === 'processing') {
+                // 有正在进行的导出，恢复显示进度
+                console.log('检测到正在进行的导出任务，恢复显示进度');
+                document.getElementById('export-settings').style.display = 'none';
+                document.getElementById('export-progress').style.display = 'block';
+                document.getElementById('export-complete').style.display = 'none';
+                document.getElementById('export-error').style.display = 'none';
+                
+                // 更新进度显示
+                this.updateExportProgress(progress, status);
+                
+                // 继续轮询状态
+                this.pollExportStatus(exportId);
+                
+            } else if (status === 'completed') {
+                // 导出已完成
+                this.showExportComplete();
+                
+            } else if (status === 'failed') {
+                // 导出失败
+                this.showExportError(data.error || '导出失败');
+            }
+            
+        } catch (error) {
+            console.error('检查导出状态失败:', error);
+            // 清除状态
+            this.state.set('export.currentExportId', null);
+        }
+    }
+    
+    /**
      * 重置导出视图
      */
     resetExportView() {
+        // 清除导出ID
+        this.state.set('export.currentExportId', null);
+        
         document.getElementById('export-settings').style.display = 'none';
         document.getElementById('export-progress').style.display = 'none';
         document.getElementById('export-complete').style.display = 'none';
