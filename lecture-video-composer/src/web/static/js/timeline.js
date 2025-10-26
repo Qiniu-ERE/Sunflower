@@ -27,7 +27,7 @@ export class Timeline {
         
         // 配置选项
         this.options = {
-            height: 60,
+            height: 6,
             markerSize: 12,
             markerColor: '#4CAF50',
             progressColor: '#2196F3',
