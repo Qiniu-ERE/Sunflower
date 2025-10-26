@@ -1,116 +1,48 @@
 # 🌻 Sunflower - 演讲视频合成系统
 
-> 七牛云第四届内部 Hackathon 参赛项目  
-> **让每一场演讲都值得被记录、被回放、被分享**
+> 智能的演讲内容记录与回放工具，将音频与照片通过时间轴同步，生成流畅的演讲视频
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-MVP%20Complete-success.svg)]()
-
----
-
-## 📖 项目背景
-
-在 AI 浪潮席卷全球的今天，我们正站在技术演进的关键节点。本项目响应七牛云第四届内部 Hackathon 的号召，用 AI 赋能的思维，重新定义演讲记录与回放体验。
-
-### 💡 核心理念
-
-**问题**：传统录屏方式占用空间大，纯音频记录缺乏视觉信息  
-**方案**：音频 + 照片的轻量级方式，合成具有视觉效果的演讲回放  
-**创新**：基于时间戳的智能同步，让每一帧画面与声音完美契合
-
----
-
-## 🎯 Hackathon 选题
-
-**演讲视频合成**
-
-- 用户在听演讲时录制声音，并不定期拍摄演讲内容（如PPT、板书）
-- 声音文件和照片以文件创建时间命名：`YYYY-MM-DD-hh:mm:ss.ext`
-- 根据时间戳智能合成演讲视频，或实现类似视频的播放效果
-- 存储优化：相比完整视频减少 70%+ 存储空间
+[![Version](https://img.shields.io/badge/version-2.2-blue.svg)](https://github.com/Qiniu-ERE/Sunflower)
+[![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-orange.svg)](./LICENSE)
 
 ---
 
 ## ✨ 核心特性
 
-### 🚀 已实现 (MVP v1.0)
-
-- ✅ **智能时间轴同步** - 基于文件名时间戳自动构建音频与照片映射
-- ✅ **音频处理引擎** - 支持 MP3/WAV/M4A 等格式，自动提取元数据
-- ✅ **图片处理服务** - 智能调整、裁剪、优化显示效果
-- ✅ **元数据管理** - JSON 格式存储项目配置，支持重新加载
-- ✅ **命令行工具** - 一键处理，简单易用
-- ✅ **完整文档** - PRD、技术文档、API 文档齐全
-
-### 🎨 技术亮点
-
-- **O(log n) 查询算法** - 二分查找实现高效时间轴定位
-- **双重容错机制** - ffprobe + mutagen 双保险音频解析
-- **模块化架构** - 清晰分层，易于扩展和维护
-- **类型安全** - 完整的 Python Type Hints
-- **日志追踪** - 详细的处理过程记录
+- 🎯 **轻量化存储** - 相比传统录屏节省 80%+ 存储空间
+- 🚀 **操作简便** - 只需录音+拍照，无需连续录像
+- ⚡ **实时播放** - 基于时间轴的音画自动同步
+- 🎬 **智能字幕** - AI 语音识别自动生成字幕
+- 📦 **视频导出** - 支持 720p/1080p MP4 输出
+- 🌐 **Web 界面** - 现代化的浏览器操作体验
 
 ---
 
-## 📁 项目结构
+## 🎬 效果展示
 
-```
-Sunflower/
-├── README.md                           # 项目总览（本文件）
-├── docs/
-│   └── PRD_演讲视频合成系统.md         # 产品需求文档
-│
-└── lecture-video-composer/             # 核心项目目录
-    ├── README.md                        # 项目使用指南
-    ├── requirements.txt                 # Python 依赖清单
-    │
-    ├── src/                             # 源代码目录
-    │   ├── core/                        # 核心功能模块
-    │   │   ├── lecture_composer.py      # 主控制器（整合所有功能）
-    │   │   ├── timeline/
-    │   │   │   └── timeline_sync.py     # 时间轴同步引擎
-    │   │   ├── player/                  # 播放器模块（规划中）
-    │   │   └── exporter/                # 视频导出模块（规划中）
-    │   │
-    │   ├── services/                    # 服务层
-    │   │   ├── audio/
-    │   │   │   └── audio_service.py     # 音频处理服务
-    │   │   ├── image/
-    │   │   │   └── image_service.py     # 图片处理服务
-    │   │   └── metadata/
-    │   │       └── metadata_service.py  # 元数据管理服务
-    │   │
-    │   ├── ui/                          # 用户界面（规划中）
-    │   └── utils/                       # 工具函数（规划中）
-    │
-    ├── docs/                            # 项目文档
-    │   ├── MVP_实现文档.md              # MVP 实现细节
-    │   ├── architecture/                # 架构设计文档
-    │   ├── api/                         # API 接口文档
-    │   ├── development/                 # 开发指南
-    │   └── user-guide/                  # 用户手册
-    │
-    ├── examples/                        # 示例和教程
-    │   ├── basic/
-    │   │   ├── test_mvp.py             # MVP 测试脚本
-    │   │   └── README.md               # 基础示例说明
-    │   ├── fixtures/                    # 测试数据
-    │   │   └── sample-photos/          # 示例照片
-    │   ├── tutorials/                   # 使用教程
-    │   └── advanced/                    # 高级用例
-    │
-    ├── tests/                           # 测试目录
-    │   ├── unit/                        # 单元测试
-    │   │   ├── core/                   # 核心模块测试
-    │   │   ├── services/               # 服务层测试
-    │   │   └── utils/                  # 工具函数测试
-    │   ├── integration/                 # 集成测试
-    │   ├── e2e/                        # 端到端测试
-    │   └── performance/                 # 性能测试
-    │
-    └── tools/                           # 开发工具
-```
+<!-- 演示视频 -->
+### 📹 演示视频
+
+> 待添加：系统操作演示视频
+
+![Demo Video Placeholder](./lecture-video-composer/docs/assets/demo-video-placeholder.png)
+
+<!-- 界面截图 -->
+### 🖼️ 界面预览
+
+<table>
+  <tr>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-upload.png" alt="文件上传界面" /><br/><center>文件上传</center></td>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-projects.png" alt="项目管理界面" /><br/><center>项目管理</center></td>
+  </tr>
+  <tr>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-player.png" alt="播放器界面" /><br/><center>实时播放</center></td>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-timeline.png" alt="时间轴界面" /><br/><center>时间轴控制</center></td>
+  </tr>
+</table>
+
+> 提示：截图将在完成 UI 调优后添加
 
 ---
 
@@ -119,88 +51,187 @@ Sunflower/
 ### 环境要求
 
 - Python 3.8+
-- FFmpeg (音频处理)
-- 操作系统：macOS / Linux / Windows
+- 现代浏览器（Chrome/Firefox/Safari）
 
-### 安装步骤
+### 安装运行
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/Qiniu-ERE/Sunflower.git
 cd Sunflower/lecture-video-composer
 
-# 2. 安装系统依赖
-# macOS
-brew install ffmpeg
-
-# Ubuntu/Debian
-sudo apt-get install ffmpeg
-
-# 3. 安装 Python 依赖
+# 2. 安装依赖
 pip install -r requirements.txt
+
+# 3. 启动 Web 服务
+python run_web.py
+
+# 4. 访问应用
+# 浏览器打开：http://127.0.0.1:5000
 ```
 
-### 使用示例
+### 基本使用
 
-#### 方式 1: 命令行工具
+1. **上传文件** - 拖拽音频（MP3/WAV）和照片（JPG/PNG）到上传区
+2. **创建项目** - 系统自动解析时间戳并生成时间轴
+3. **播放预览** - 实时同步播放音频和照片切换
+4. **导出视频** - 配置参数并导出 MP4 视频（开发中）
 
-```bash
-# 基础使用
-python src/core/lecture_composer.py \
-    /path/to/audio/2025-10-24-14:30:00.mp3 \
-    /path/to/photos/
+> **文件命名规范**：`YYYY-MM-DD-HH:MM:SS.扩展名`（如：`2025-10-24-15:30:45.jpg`）
 
-# 指定输出目录和项目标题
-python src/core/lecture_composer.py \
-    ./fixtures/2025-10-24-14:30:00.mp3 \
-    ./fixtures/photos/ \
-    --output ./output/my_lecture \
-    --title "高等数学第三章"
+---
+
+## 📦 项目结构
+
+```
+Sunflower/
+├── README.md                           # 项目总览（本文件）
+├── docs/
+│   ├── PRD_演讲视频合成系统.md         # 产品需求文档
+│   └── implementation_plan.md          # 实施计划文档
+│
+└── lecture-video-composer/             # 核心项目目录
+    ├── README.md                        # 项目使用指南 ✅
+    ├── requirements.txt                 # Python 依赖清单
+    ├── run_web.py                       # Web 服务启动脚本 ✅
+    │
+    ├── src/                             # 源代码目录
+    │   ├── core/                        # 核心引擎
+    │   │   ├── lecture_composer.py      # 主合成器 ✅
+    │   │   ├── player/                  # 播放器模块 ✅
+    │   │   └── timeline/                # 时间轴引擎 ✅
+    │   │
+    │   ├── web/                         # Web 应用 ✅
+    │   │   ├── app.py                   # Flask 主应用
+    │   │   ├── api/                     # REST API
+    │   │   ├── static/                  # 前端资源
+    │   │   └── services/                # 业务服务
+    │   │
+    │   └── services/                    # 功能服务
+    │       ├── audio/                   # 音频处理 ✅
+    │       ├── video/                   # 视频导出 ✅
+    │       ├── subtitle/                # 字幕生成 ✅
+    │       └── image/                   # 图片处理 ✅
+    │
+    ├── tests/                           # 单元测试 ✅
+    ├── docs/                            # 项目文档
+    │   ├── api/                         # API 文档
+    │   ├── architecture/                # 架构设计
+    │   ├── development/                 # 开发文档
+    │   ├── changelog/                   # 更新日志
+    │   └── bugfix/                      # Bug 修复记录
+    │
+    └── examples/                        # 使用示例
+        ├── basic/                       # 基础示例
+        ├── fixtures/                    # 测试数据
+        └── player/                      # 播放器示例
 ```
 
-#### 方式 2: Python API
+---
 
-```python
-from pathlib import Path
-from core.lecture_composer import LectureComposer
+## 📊 开发进度
 
-# 创建合成器
-composer = LectureComposer(
-    audio_file=Path("2025-10-24-14:30:00.mp3"),
-    photo_files=[
-        Path("2025-10-24-14:32:15.jpg"),
-        Path("2025-10-24-14:35:40.jpg"),
-    ],
-    output_dir=Path("output/my_project")
-)
+### v2.2 - Web 界面版本（当前版本）
 
-# 执行处理
-metadata = composer.process(title="我的演讲")
+**已完成功能** ✅
 
-# 查看摘要
-print(composer.get_summary())
-```
+- [x] **后端架构**（完成度 100%）
+  - Flask Web 服务器
+  - 文件上传/管理 API
+  - 项目管理 API
+  - 播放控制 API
+  - 会话管理系统
 
-#### 方式 3: 测试脚本
+- [x] **前端界面**（完成度 100%）
+  - 响应式 Web UI（4 个主视图）
+  - 文件拖拽上传（支持批量）
+  - 实时播放器（Canvas 渲染）
+  - 时间轴可视化组件
+  - 状态管理和持久化
 
-```bash
-# 运行交互式测试
-python examples/basic/test_mvp.py
-```
+- [x] **核心功能**
+  - 音频播放控制
+  - 照片自动切换（3 种过渡动画）
+  - 时间轴精确同步
+  - 键盘快捷键支持
+
+**开发中功能** 🚧
+
+- [ ] **视频导出** - 后台任务管理、进度追踪
+- [ ] **功能完善** - 用户文档、性能优化
+
+**测试覆盖** 📝
+
+- 后端单元测试：26/26 通过 ✅
+- 前端集成测试：核心流程验证完成 ✅
+- 已修复主要 Bug：5 个 ✅
+
+### 历史版本
+
+- **v2.1** - 播放器核心模块（2025-10）
+- **v2.0** - 智能字幕生成（2025-09）
+- **v1.0** - 基础 MVP 版本（2025-08）
+
+---
+
+## 📚 文档
+
+### 快速链接
+- **[项目使用指南](./lecture-video-composer/README.md)** - 详细使用说明
+- **[产品需求文档](./docs/PRD_演讲视频合成系统.md)** - 完整产品设计
+- **[实施计划](./docs/implementation_plan.md)** - 开发进度追踪
+
+### 详细文档
+
+**用户文档**
+- [快速开始指南](./lecture-video-composer/docs/快速开始.md)
+- [使用教程](./lecture-video-composer/docs/使用教程.md)
+- [常见问题](./lecture-video-composer/docs/FAQ.md)
+
+**开发文档**
+- [技术架构设计](./lecture-video-composer/docs/architecture/README.md)
+- [Web API 文档](./lecture-video-composer/docs/api/Web_API文档.md)
+- [MVP 实现文档](./lecture-video-composer/docs/architecture/MVP_实现文档.md)
+
+**功能模块**
+- [播放器模块](./lecture-video-composer/docs/development/播放器模块文档.md)
+- [视频导出模块](./lecture-video-composer/docs/development/视频导出模块文档.md)
+- [字幕功能](./lecture-video-composer/docs/development/字幕功能文档.md)
+
+**更新日志**
+- [v2.2 更新说明](./lecture-video-composer/docs/changelog/v2.2_项目状态与规划更新.md)
+- [v2.1 更新说明](./lecture-video-composer/docs/changelog/v2.1_更新说明.md)
+- [v2.0 更新说明](./lecture-video-composer/docs/changelog/v2.0_更新说明.md)
+
+---
+
+## 🛠️ 技术栈
+
+### 后端
+- **Python 3.8+** - 主要编程语言
+- **Flask** - Web 框架
+- **Pillow** - 图像处理
+- **MoviePy** - 视频合成
+- **Whisper** - 语音识别（字幕生成）
+- **FFmpeg** - 音频/视频处理
+
+### 前端
+- **原生 JavaScript（ES6+）** - 无框架依赖
+- **HTML5 Canvas** - 照片渲染
+- **Web Audio API** - 音频播放
+- **CSS3** - 响应式样式
+
+### 开发工具
+- **pytest** - 单元测试
+- **Git** - 版本控制
 
 ---
 
 ## 📝 文件命名规范
 
-### 重要提示
+所有输入文件必须遵循以下命名格式：
 
-所有输入文件必须严格遵循以下命名格式：
-
-**格式**: `YYYY-MM-DD-hh:mm:ss.ext`
-
-- 年月日用 `-` 分隔
-- 时分秒用 `:` 分隔  
-- 日期和时间之间用 `-` 分隔
+**格式**: `YYYY-MM-DD-HH:MM:SS.ext`
 
 **示例**:
 ```
@@ -210,153 +241,39 @@ python examples/basic/test_mvp.py
      2025-10-24-14:38:22.jpg
 ```
 
----
-
-## 📊 工作原理
-
-### 核心算法流程
-
-```
-┌─────────────────┐
-│  输入文件验证   │
-│  - 音频文件     │
-│  - 照片文件     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  时间戳解析     │
-│  YYYY-MM-DD-    │
-│  hh:mm:ss       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  构建时间轴     │
-│  offset = t照片  │
-│         - t音频  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  计算显示时长   │
-│  duration[i] =  │
-│  offset[i+1] -  │
-│  offset[i]      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  生成元数据     │
-│  JSON 格式      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  保存项目       │
-│  - 音频副本     │
-│  - 照片副本     │
-│  - metadata.json│
-└─────────────────┘
-```
-
-### 时间轴同步示例
-
-```
-音频: 2025-10-24-14:30:00.mp3 (600秒 = 10分钟)
-├─ 照片1: 2025-10-24-14:32:15.jpg (偏移 135秒)
-│  └─ 显示时长: 60秒
-├─ 照片2: 2025-10-24-14:33:15.jpg (偏移 195秒)
-│  └─ 显示时长: 60秒
-├─ 照片3: 2025-10-24-14:34:15.jpg (偏移 255秒)
-│  └─ 显示时长: 60秒
-...
-└─ 照片N: 2025-10-24-14:38:15.jpg
-   └─ 显示时长: 至音频结束
-```
+**规则**:
+- 年月日用 `-` 分隔
+- 时分秒用 `:` 分隔（注意：冒号会被保留）
+- 日期和时间之间用 `-` 分隔
 
 ---
 
-## 🎯 开发路线图
+## 🤝 贡献
 
-### ✅ 阶段 1: MVP (已完成)
-- [x] 时间轴同步引擎
-- [x] 音频/图片处理服务
-- [x] 元数据管理
-- [x] 命令行工具
-- [x] 基础文档
+我们欢迎各种形式的贡献！
 
-### 🚧 阶段 2: 基础完善版 (进行中)
-- [x] 视频导出功能 (FFmpeg)
-- [x] 项目加载功能
-- [x] 照片编辑 (裁剪/旋转)
-- [x] 单元测试覆盖
-- [x] 性能优化
-
-### 📋 阶段 3: 智能增强版
-- [x] 语音转文字 (字幕生成)
-- [ ] 关键帧智能识别
-- [x] 照片智能增强
-- [ ] 智能剪辑 (去除沉默)
-
-### 🌟 阶段 4: 协作与分享版
-- [x] Web 播放器
-- [ ] 云端存储
-- [ ] 分享功能
-- [ ] 团队协作
+- 🐛 [报告 Bug](https://github.com/Qiniu-ERE/Sunflower/issues)
+- 💡 [提出功能建议](https://github.com/Qiniu-ERE/Sunflower/issues)
+- 📝 改进文档
+- 🔧 提交代码
 
 ---
 
-## 📚 文档导航
+## 📄 许可证
 
-### 核心文档
-- [产品需求文档 (PRD)](docs/PRD_演讲视频合成系统.md) - 完整的产品设计
-- [MVP 实现文档](lecture-video-composer/docs/MVP_实现文档.md) - 技术实现细节
-- [项目使用指南](lecture-video-composer/README.md) - 详细使用说明
-
-### 开发文档
-- [架构设计](lecture-video-composer/docs/architecture/README.md) - 系统架构
-- [API 文档](lecture-video-composer/docs/api/) - 接口说明
-- [开发指南](lecture-video-composer/docs/development/) - 开发规范
-
-### 示例教程
-- [基础示例](lecture-video-composer/examples/basic/README.md) - 快速上手
-- [高级用例](lecture-video-composer/examples/advanced/) - 进阶功能
-- [测试脚本](lecture-video-composer/examples/basic/test_mvp.py) - 功能验证
+本项目采用 [MIT 许可证](./LICENSE)
 
 ---
 
-## 🛠️ 技术栈
+## 📧 联系方式
 
-### 核心技术
-- **Python 3.8+** - 主要开发语言
-- **Pillow (PIL)** - 图片处理
-- **FFmpeg** - 音频/视频处理
-- **Mutagen** - 音频元数据提取
-
-### 开发工具
-- **Git** - 版本控制
-- **pytest** - 单元测试
-- **Pylint** - 代码质量检查
-
-### 未来计划
-- **React/Vue** - Web UI
-- **TensorFlow.js** - AI 功能
-- **Web Audio API** - 浏览器播放
+- GitHub: [@Qiniu-ERE](https://github.com/Qiniu-ERE)
+- Issues: [提交问题](https://github.com/Qiniu-ERE/Sunflower/issues)
+- Email: Qiniu-ERE@gmail.com
 
 ---
 
-## 🤝 贡献指南
-
-欢迎七牛的伙伴们参与贡献！
-
-### 贡献方式
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
-
-### 代码规范
-- 遵循 PEP 8 Python 代码规范
-- 添加完整的类型提示
+<p align="center">
+  <b>Made with ❤️ by Sunflower Team</b><br>
+  <sub>基于 AI 辅助开发，快速迭代，持续改进</sub>
+</p>
