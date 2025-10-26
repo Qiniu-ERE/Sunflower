@@ -125,7 +125,13 @@ def start_export():
             'status': 'pending',
             'progress': 0,
             'output_path': str(output_path),
-            'error': None
+            'error': None,
+            'project_id': project_id,
+            'project_title': project_info.title,
+            'resolution': resolution,
+            'fps': fps,
+            'format': output_format,
+            'created_at': str(current_app.config.get('CURRENT_TIME', ''))
         }
         
         # 开始导出（在后台线程中）
@@ -193,9 +199,11 @@ def start_export():
                         )
                         
                         # 更新最终状态
+                        from datetime import datetime
                         sess.export_tasks[export_id]['status'] = 'completed'
                         sess.export_tasks[export_id]['progress'] = 100
                         sess.export_tasks[export_id]['output_path'] = str(result_path)
+                        sess.export_tasks[export_id]['completed_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         
                         app.logger.info(f"Video export completed: {result_path}")
                         
@@ -384,8 +392,18 @@ def list_exports():
                     'export_id': export_id,
                     'status': task['status'],
                     'progress': task['progress'],
-                    'error': task.get('error')
+                    'error': task.get('error'),
+                    'project_id': task.get('project_id'),
+                    'project_title': task.get('project_title'),
+                    'resolution': task.get('resolution'),
+                    'fps': task.get('fps'),
+                    'format': task.get('format'),
+                    'created_at': task.get('created_at'),
+                    'completed_at': task.get('completed_at')
                 })
+        
+        # 按完成时间排序，最新的在前
+        exports.sort(key=lambda x: x.get('completed_at') or '', reverse=True)
         
         return jsonify({
             'success': True,
@@ -394,6 +412,69 @@ def list_exports():
         
     except Exception as e:
         current_app.logger.error(f"List exports error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@export_bp.route('/delete/<export_id>', methods=['DELETE'])
+def delete_export(export_id):
+    """
+    删除导出任务
+    
+    Args:
+        export_id: 导出任务ID
+        
+    Returns:
+        success: 是否成功
+    """
+    try:
+        session_id = request.args.get('session_id')
+        if not session_id:
+            return jsonify({
+                'success': False,
+                'error': 'Missing session_id'
+            }), 400
+        
+        # 获取会话
+        session_manager = get_session_manager()
+        sess = session_manager.get_session(session_id)
+        if not sess:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid session'
+            }), 401
+        
+        # 检查导出任务是否存在
+        if not hasattr(sess, 'export_tasks') or export_id not in sess.export_tasks:
+            return jsonify({
+                'success': False,
+                'error': 'Export task not found'
+            }), 404
+        
+        task = sess.export_tasks[export_id]
+        
+        # 删除导出文件（如果存在）
+        if task.get('output_path'):
+            output_path = Path(task['output_path'])
+            if output_path.exists():
+                try:
+                    output_path.unlink()
+                    current_app.logger.info(f"Deleted export file: {output_path}")
+                except Exception as e:
+                    current_app.logger.error(f"Failed to delete export file: {e}")
+        
+        # 从任务列表中删除
+        del sess.export_tasks[export_id]
+        
+        return jsonify({
+            'success': True,
+            'message': 'Export deleted successfully'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Delete export error: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
