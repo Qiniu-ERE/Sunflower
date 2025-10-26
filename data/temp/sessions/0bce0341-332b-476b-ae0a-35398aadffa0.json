@@ -1,26 +1,17 @@
 {
   "session_id": "0bce0341-332b-476b-ae0a-35398aadffa0",
   "created_at": 1761405688.431513,
-  "last_accessed": 1761480125.308707,
-  "current_project_id": "5f4ff7d0-34dd-4258-a823-9d3648b2b929",
+  "last_accessed": 1761481842.900287,
+  "current_project_id": "05c2d116-9a5d-4cc4-b83e-ece11159b655",
   "projects": {
-    "5f4ff7d0-34dd-4258-a823-9d3648b2b929": {
-      "project_id": "5f4ff7d0-34dd-4258-a823-9d3648b2b929",
-      "title": "planA1",
-      "created_at": "2025-10-26T17:52:57.606146",
-      "audio_file": "audio/2025-10-24-15:15:15.mp3",
-      "photo_count": 10,
-      "duration": 597.386567,
-      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/5f4ff7d0-34dd-4258-a823-9d3648b2b929/metadata.json"
-    },
-    "c921b02e-b391-42e1-a25a-c7a664dfca11": {
-      "project_id": "c921b02e-b391-42e1-a25a-c7a664dfca11",
+    "05c2d116-9a5d-4cc4-b83e-ece11159b655": {
+      "project_id": "05c2d116-9a5d-4cc4-b83e-ece11159b655",
       "title": "planB",
-      "created_at": "2025-10-26T17:53:48.461180",
+      "created_at": "2025-10-26T20:15:54.706997",
       "audio_file": "audio/2025-10-25-20:00:00.mp3",
       "photo_count": 24,
       "duration": 594.768,
-      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/c921b02e-b391-42e1-a25a-c7a664dfca11/metadata.json"
+      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/05c2d116-9a5d-4cc4-b83e-ece11159b655/metadata.json"
     }
   },
   "data": {}
