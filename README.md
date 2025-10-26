@@ -71,7 +71,10 @@
   </tr>
   <tr>
     <td><img src="./lecture-video-composer/docs/assets/screenshot-progress.png" alt="导出进度界面" /><br/><center>导出进度追踪</center></td>
-    <td><img src="./lecture-video-composer/docs/assets/screenshot-download.png" alt="视频下载界面" /><br/><center>导出完成下载</center>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-download.png" alt="视频下载界面" /><br/><center>导出完成下载</center></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="./lecture-video-composer/docs/assets/screenshot-help.png" alt="帮助中心界面" /><br/><center>帮助中心</center></td>
   </tr>
 </table>
 
