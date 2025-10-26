@@ -106,6 +106,29 @@ def register_blueprints(app: Flask):
             app.logger.error(f"Error serving file {filepath}: {e}")
             return jsonify({'error': 'File access error'}), 500
     
+    @app.route('/projects/<path:filepath>')
+    def serve_project(filepath):
+        """提供项目文件访问"""
+        try:
+            projects_dir = Path(app.config['PROJECTS_FOLDER']).resolve()
+            file_path = (projects_dir / filepath).resolve()
+            
+            # 安全检查：确保文件在项目目录内
+            try:
+                file_path.relative_to(projects_dir)
+            except ValueError:
+                app.logger.warning(f"Attempted path traversal in projects: {filepath}")
+                return jsonify({'error': 'Invalid file path'}), 403
+            
+            if not file_path.exists():
+                app.logger.warning(f"Project file not found: {file_path}")
+                return jsonify({'error': 'File not found'}), 404
+            
+            return send_file(file_path)
+        except Exception as e:
+            app.logger.error(f"Error serving project file {filepath}: {e}")
+            return jsonify({'error': 'File access error'}), 500
+    
     @app.route('/docs/<path:filepath>')
     def serve_docs(filepath):
         """提供文档访问"""

@@ -1,35 +1,26 @@
 {
   "session_id": "0bce0341-332b-476b-ae0a-35398aadffa0",
   "created_at": 1761405688.431513,
-  "last_accessed": 1761471589.669015,
-  "current_project_id": "8877a076-afce-4d43-9749-3f83fac7e958",
+  "last_accessed": 1761480125.308707,
+  "current_project_id": "5f4ff7d0-34dd-4258-a823-9d3648b2b929",
   "projects": {
-    "21a14414-a24b-4b9b-8be2-36ad80b1c84a": {
-      "project_id": "21a14414-a24b-4b9b-8be2-36ad80b1c84a",
-      "title": "项目_2025-10-26_13-24",
-      "created_at": "2025-10-26T13:24:06.919328",
-      "audio_file": "audio/2025-10-25-20:00:00.mp3",
-      "photo_count": 24,
-      "duration": 594.768,
-      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/21a14414-a24b-4b9b-8be2-36ad80b1c84a/metadata.json"
+    "5f4ff7d0-34dd-4258-a823-9d3648b2b929": {
+      "project_id": "5f4ff7d0-34dd-4258-a823-9d3648b2b929",
+      "title": "planA1",
+      "created_at": "2025-10-26T17:52:57.606146",
+      "audio_file": "audio/2025-10-24-15:15:15.mp3",
+      "photo_count": 10,
+      "duration": 597.386567,
+      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/5f4ff7d0-34dd-4258-a823-9d3648b2b929/metadata.json"
     },
-    "385b7877-d8a9-4883-a899-c3dee6a48f85": {
-      "project_id": "385b7877-d8a9-4883-a899-c3dee6a48f85",
-      "title": "test1026",
-      "created_at": "2025-10-26T13:54:42.942921",
+    "c921b02e-b391-42e1-a25a-c7a664dfca11": {
+      "project_id": "c921b02e-b391-42e1-a25a-c7a664dfca11",
+      "title": "planB",
+      "created_at": "2025-10-26T17:53:48.461180",
       "audio_file": "audio/2025-10-25-20:00:00.mp3",
       "photo_count": 24,
       "duration": 594.768,
-      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/385b7877-d8a9-4883-a899-c3dee6a48f85/metadata.json"
-    },
-    "8877a076-afce-4d43-9749-3f83fac7e958": {
-      "project_id": "8877a076-afce-4d43-9749-3f83fac7e958",
-      "title": "abc",
-      "created_at": "2025-10-26T14:50:40.679368",
-      "audio_file": "audio/2025-10-25-20:00:00.mp3",
-      "photo_count": 24,
-      "duration": 594.768,
-      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/8877a076-afce-4d43-9749-3f83fac7e958/metadata.json"
+      "metadata_path": "/Users/daniel/git/hack/Sunflower/data/projects/0bce0341-332b-476b-ae0a-35398aadffa0/c921b02e-b391-42e1-a25a-c7a664dfca11/metadata.json"
     }
   },
   "data": {}

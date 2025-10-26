@@ -102,9 +102,35 @@ def create_project():
         project_dir = Path(current_app.config['PROJECTS_FOLDER']) / session_id / project_id
         project_dir.mkdir(parents=True, exist_ok=True)
         
+        # 创建项目内的audio和photos子目录
+        project_audio_dir = project_dir / 'audio'
+        project_photos_dir = project_dir / 'photos'
+        project_audio_dir.mkdir(exist_ok=True)
+        project_photos_dir.mkdir(exist_ok=True)
+        
         current_app.logger.info(f"Creating project: {project_id}")
         current_app.logger.info(f"Audio: {audio_file}")
         current_app.logger.info(f"Photos: {len(photo_files)} files")
+        
+        # 复制文件到项目目录（独立存储，避免被删除影响）
+        import shutil
+        
+        # 复制音频文件
+        project_audio_file = project_audio_dir / audio_file.name
+        shutil.copy2(audio_file, project_audio_file)
+        current_app.logger.info(f"Copied audio to: {project_audio_file}")
+        
+        # 复制照片文件
+        project_photo_files = []
+        for photo_file in photo_files:
+            project_photo_file = project_photos_dir / photo_file.name
+            shutil.copy2(photo_file, project_photo_file)
+            project_photo_files.append(project_photo_file)
+        current_app.logger.info(f"Copied {len(project_photo_files)} photos to project directory")
+        
+        # 使用项目目录中的文件进行处理
+        audio_file = project_audio_file
+        photo_files = project_photo_files
         
         # 使用LectureComposer处理
         try:
@@ -131,14 +157,14 @@ def create_project():
                         'duration': item.duration
                     })
             
-            # 增强元数据
+            # 增强元数据 - 使用项目内的相对路径
             enhanced_metadata = {
                 'project_id': project_id,
                 'title': project_title,
                 'created_at': datetime.now().isoformat(),
-                'audio_file': str(audio_file.relative_to(upload_dir)),
+                'audio_file': f'audio/{audio_file.name}',
                 'photo_count': len(photo_files),
-                'photo_files': [str(p.relative_to(upload_dir)) for p in photo_files],
+                'photo_files': [f'photos/{p.name}' for p in photo_files],
                 'duration': composer.audio_metadata.duration if composer.audio_metadata else 0,
                 'timeline': timeline_items,
                 'version': 'v2.2'
@@ -235,18 +261,19 @@ def load_project(project_id: str):
         session_manager.set_current_project(session_id, project_id)
         
         # 构建完整的项目数据，包含播放器需要的所有信息
-        upload_dir = Path(current_app.config['UPLOAD_FOLDER']) / session_id
+        # 使用项目目录而非上传目录
+        project_dir = metadata_path.parent
         
-        # 构建音频URL路径
-        audio_path = f'/uploads/{session_id}/{metadata["audio_file"]}'
+        # 构建音频URL路径 - 从项目目录
+        audio_path = f'/projects/{session_id}/{project_id}/{metadata["audio_file"]}'
         
-        # 构建照片URL路径
+        # 构建照片URL路径 - 从项目目录
         timeline_with_urls = []
         for item in metadata.get('timeline', []):
             timeline_item = item.copy()
             # 将相对路径转换为完整的URL
             photo_filename = item['photo']
-            timeline_item['photo'] = f'/uploads/{session_id}/photos/{photo_filename}'
+            timeline_item['photo'] = f'/projects/{session_id}/{project_id}/photos/{photo_filename}'
             timeline_with_urls.append(timeline_item)
         
         # 返回完整的元数据
