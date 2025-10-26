@@ -98,13 +98,13 @@ def start_export():
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / output_filename
         
-        # 准备音频和照片路径
-        upload_dir = Path(current_app.config['UPLOAD_FOLDER']) / session_id
-        audio_path = upload_dir / metadata['audio_file']
+        # 准备音频和照片路径 - 从项目目录读取
+        project_dir = metadata_path.parent
+        audio_path = project_dir / metadata['audio_file']
         
         # 准备时间轴数据用于视频导出
         timeline_items = metadata.get('timeline', [])
-        photos_dir = upload_dir / 'photos'
+        photos_dir = project_dir / 'photos'
         
         # 创建视频导出配置
         video_config = VideoExportConfig(

@@ -46,3 +46,4 @@ __pycache__/
 
 # 也可以忽略所有 .pyc, .pyo, .pyd 文件（可选）
 *.py[cod]
+lecture-video-composer/src/web/api/__pycache__/export_api.cpython-39.pyc
