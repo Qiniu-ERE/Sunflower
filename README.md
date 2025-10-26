@@ -1,10 +1,31 @@
-# 🌻 Sunflower - 演讲视频合成系统
+# 🌻 Sunflower队 - lecture-video-composer演讲视频合成系统
 
-> 智能的演讲内容记录与回放工具，将音频与照片通过时间轴同步，生成流畅的演讲视频
+> 七牛云第四届内部 Hackathon 参赛项目
+> **让每一场演讲都值得被记录、被回放、被分享**
 
 [![Version](https://img.shields.io/badge/version-2.2-blue.svg)](https://github.com/Qiniu-ERE/Sunflower)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](./LICENSE)
+---
+
+## 📖 项目背景
+
+在 AI 浪潮席卷全球的今天，我们正站在技术演进的关键节点。本项目响应七牛云第四届内部 Hackathon 的号召，用 AI 赋能的思维，重新定义演讲记录与回放体验。
+
+## 🎯 Hackathon 选题
+
+**演讲视频合成**
+
+- 用户在听演讲时录制声音，并不定期拍摄演讲内容（如PPT、板书）
+- 声音文件和照片以文件创建时间命名：`YYYY-MM-DD-hh:mm:ss.ext`
+- 根据时间戳智能合成演讲视频，或实现类似视频的播放效果
+- 存储优化：相比完整视频减少 70%+ 存储空间
+
+### 💡 核心理念
+
+**问题**：传统录屏方式占用空间大，纯音频记录缺乏视觉信息  
+**方案**：音频 + 照片的轻量级方式，合成具有视觉效果的演讲回放  
+**创新**：基于时间戳的智能同步，让每一帧画面与声音完美契合
 
 ---
 
