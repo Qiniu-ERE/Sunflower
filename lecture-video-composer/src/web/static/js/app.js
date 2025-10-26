@@ -370,7 +370,7 @@ class App {
         
         try {
             this.timeline = new Timeline(timelineContainer, {
-                height: 60,
+                height: 6,
                 markerColor: '#4CAF50',
                 progressColor: '#2196F3',
                 hoverColor: '#FFC107'

@@ -39,3 +39,4 @@ lecture-video-composer/data/temp/sessions/*.json
 lecture-video-composer/data/uploads/*
 data/uploads/*
 data/projects/*
+data/temp/*
