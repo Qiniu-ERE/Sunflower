@@ -21,12 +21,13 @@
 ## 🎬 效果展示
 
 <!-- 演示视频 -->
+
 ### 📹 演示视频
+> **演示视频预览**
+<td><img src="./docs/assets/demo-video-placeholder.png" alt="视频截图" /><br/><center>视频截图</center></td>
 
-https://github.com/user-attachments/assets/6ab6b1be-f2cf-477e-99e1-f4ff78ac36c3
+> **演示视频在线播放链接**：[点击此处观看演示视频](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
 
-> 💡 **说明**：GitHub 需要将视频上传到 Issue 或 PR 评论中才能获取可嵌入的链接。  
-> **临时方案**：[点击此处观看演示视频](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
 
 **视频内容：**
 - 文件上传与项目创建流程
