@@ -194,6 +194,13 @@ body {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
+    display: none; /* 默认隐藏 */
+}
+
+/* 仅在播放器视图激活时显示项目快速信息 */
+#player-view.active ~ .sidebar .project-quick-info,
+body:has(#player-view.active) .project-quick-info {
+    display: block;
 }
 
 .quick-info-header {
@@ -203,6 +210,28 @@ body {
     margin-bottom: var(--spacing-md);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+#quick-project-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-transform: none;
+    letter-spacing: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: block;
+}
+
+#quick-project-name:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-all;
 }
 
 .quick-info-item {
