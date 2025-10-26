@@ -40,3 +40,4 @@ lecture-video-composer/data/uploads/*
 data/uploads/*
 data/projects/*
 data/temp/*
+__pycache__
