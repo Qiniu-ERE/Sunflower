@@ -764,12 +764,12 @@ curl -X POST http://localhost:5000/api/export/start/proj_xxx \
 
 ## 参考文档
 
-- [实施计划](./implementation_plan.md)
-- [播放器模块文档](./播放器模块文档.md)
-- [PlaybackAPI测试问题修复总结](./test_playback_api_fixes.md)
+- [实施计划](../../../docs/implementation_plan.md)
+- [播放器模块文档](../development/播放器模块文档.md)
+- [PlaybackAPI测试问题修复总结](../bugfix/test_playback_api_fixes.md)
 
 ---
 
-**文档版本**: v2.2  
-**最后更新**: 2025-10-25  
+**文档版本**: v3.0.0  
+**最后更新**: 2025-10-26  
 **API状态**: 播放控制API已完成并通过测试
