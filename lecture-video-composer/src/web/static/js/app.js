@@ -229,20 +229,18 @@ class App {
             
             // 更新项目信息显示
             const projectName = this.state.get('session.projectName');
-            const currentProjectName = document.getElementById('current-project-name');
-            if (currentProjectName && projectName) {
-                currentProjectName.textContent = projectName;
-            }
             
-            // 更新快速信息面板
+            // 更新快速信息面板（保持可见状态）
             const quickInfo = document.getElementById('project-quick-info');
             if (quickInfo) {
-                quickInfo.style.display = 'block';
+                // 不修改display属性，保持始终可见
                 
+                const quickProjectName = document.getElementById('quick-project-name');
                 const quickDuration = document.getElementById('quick-duration');
                 const quickPhotos = document.getElementById('quick-photos');
                 const quickStatus = document.getElementById('quick-status');
                 
+                if (quickProjectName && projectName) quickProjectName.textContent = projectName;
                 if (quickDuration) quickDuration.textContent = formatTime(data.duration);
                 if (quickPhotos) quickPhotos.textContent = `${data.photoCount} 张`;
                 if (quickStatus) quickStatus.textContent = '就绪';
@@ -1179,6 +1177,16 @@ class App {
         const targetView = document.getElementById(`${viewName}-view`);
         if (targetView) {
             targetView.classList.add('active');
+        }
+        
+        // 控制项目快速信息的显示 - 仅在播放器视图显示
+        const quickInfo = document.getElementById('project-quick-info');
+        if (quickInfo) {
+            if (viewName === 'player') {
+                quickInfo.style.display = 'block';
+            } else {
+                quickInfo.style.display = 'none';
+            }
         }
         
         // 如果切换到导出视图，更新项目列表并检查导出状态

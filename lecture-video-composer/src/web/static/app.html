@@ -18,12 +18,10 @@
                     <span class="logo-text">演讲视频合成系统</span>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-icon" id="help-btn" title="帮助">
+                    <button class="btn btn-secondary" id="help-btn">
+                        <span>帮助</span>
                         <span>❓</span>
                     </button>
-                    <div class="project-info">
-                        <span class="project-name" id="current-project-name">未加载项目</span>
-                    </div>
                 </div>
             </div>
         </header>
@@ -53,18 +51,20 @@
 
                 <!-- 项目快速信息 -->
                 <div class="project-quick-info" id="project-quick-info" style="display: none;">
-                    <div class="quick-info-header">当前项目</div>
+                    <div class="quick-info-header">
+                        当前项目: <span id="quick-project-name">未加载</span>
+                    </div>
                     <div class="quick-info-item">
                         <span class="info-label">时长:</span>
                         <span class="info-value" id="quick-duration">--:--</span>
                     </div>
                     <div class="quick-info-item">
                         <span class="info-label">照片:</span>
-                        <span class="info-value" id="quick-photos">0</span>
+                        <span class="info-value" id="quick-photos">0 张</span>
                     </div>
                     <div class="quick-info-item">
                         <span class="info-label">状态:</span>
-                        <span class="info-value" id="quick-status">就绪</span>
+                        <span class="info-value" id="quick-status">未加载</span>
                     </div>
                 </div>
             </aside>
