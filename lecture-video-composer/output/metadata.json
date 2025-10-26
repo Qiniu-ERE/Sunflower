@@ -1,0 +1,163 @@
+{
+  "version": "1.0",
+  "title": "2025-10-25-20:00:00",
+  "created_at": "2025-10-26T15:59:25.834482",
+  "audio": {
+    "filename": "2025-10-25-20:00:00.mp3",
+    "duration": 594.768,
+    "format": "mp3",
+    "sample_rate": 44100
+  },
+  "timeline": [
+    {
+      "timestamp": "2025-10-25T20:00:00",
+      "offset": 0.0,
+      "photo": "2025-10-25-20:00:00.jpg",
+      "duration": 20.0
+    },
+    {
+      "timestamp": "2025-10-25T20:00:20",
+      "offset": 20.0,
+      "photo": "2025-10-25-20:00:20.jpg",
+      "duration": 5.0
+    },
+    {
+      "timestamp": "2025-10-25T20:00:25",
+      "offset": 25.0,
+      "photo": "2025-10-25-20:00:25.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:00:26",
+      "offset": 26.0,
+      "photo": "2025-10-25-20:00:26.jpg",
+      "duration": 20.0
+    },
+    {
+      "timestamp": "2025-10-25T20:00:46",
+      "offset": 46.0,
+      "photo": "2025-10-25-20:00:46.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:00:47",
+      "offset": 47.0,
+      "photo": "2025-10-25-20:00:47.jpg",
+      "duration": 100.0
+    },
+    {
+      "timestamp": "2025-10-25T20:02:27",
+      "offset": 147.0,
+      "photo": "2025-10-25-20:02:27.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:02:28",
+      "offset": 148.0,
+      "photo": "2025-10-25-20:02:28.jpg",
+      "duration": 77.0
+    },
+    {
+      "timestamp": "2025-10-25T20:03:45",
+      "offset": 225.0,
+      "photo": "2025-10-25-20:03:45.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:03:46",
+      "offset": 226.0,
+      "photo": "2025-10-25-20:03:46.jpg",
+      "duration": 122.0
+    },
+    {
+      "timestamp": "2025-10-25T20:05:48",
+      "offset": 348.0,
+      "photo": "2025-10-25-20:05:48.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:05:49",
+      "offset": 349.0,
+      "photo": "2025-10-25-20:05:49.jpg",
+      "duration": 49.0
+    },
+    {
+      "timestamp": "2025-10-25T20:06:38",
+      "offset": 398.0,
+      "photo": "2025-10-25-20:06:38.jpg",
+      "duration": 72.0
+    },
+    {
+      "timestamp": "2025-10-25T20:07:50",
+      "offset": 470.0,
+      "photo": "2025-10-25-20:07:50.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:07:51",
+      "offset": 471.0,
+      "photo": "2025-10-25-20:07:51.jpg",
+      "duration": 30.0
+    },
+    {
+      "timestamp": "2025-10-25T20:08:21",
+      "offset": 501.0,
+      "photo": "2025-10-25-20:08:21.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:08:22",
+      "offset": 502.0,
+      "photo": "2025-10-25-20:08:22.jpg",
+      "duration": 6.0
+    },
+    {
+      "timestamp": "2025-10-25T20:08:28",
+      "offset": 508.0,
+      "photo": "2025-10-25-20:08:28.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:08:29",
+      "offset": 509.0,
+      "photo": "2025-10-25-20:08:29.jpg",
+      "duration": 17.0
+    },
+    {
+      "timestamp": "2025-10-25T20:08:46",
+      "offset": 526.0,
+      "photo": "2025-10-25-20:08:46.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:08:47",
+      "offset": 527.0,
+      "photo": "2025-10-25-20:08:47.jpg",
+      "duration": 32.0
+    },
+    {
+      "timestamp": "2025-10-25T20:09:19",
+      "offset": 559.0,
+      "photo": "2025-10-25-20:09:19.jpg",
+      "duration": 1.0
+    },
+    {
+      "timestamp": "2025-10-25T20:09:20",
+      "offset": 560.0,
+      "photo": "2025-10-25-20:09:20.jpg",
+      "duration": 24.0
+    },
+    {
+      "timestamp": "2025-10-25T20:09:44",
+      "offset": 584.0,
+      "photo": "2025-10-25-20:09:44.jpg",
+      "duration": 10.768000000000029
+    }
+  ],
+  "settings": {
+    "transition_effect": "fade",
+    "transition_duration": 300,
+    "video_resolution": "1920x1080",
+    "fps": 30
+  }
+}

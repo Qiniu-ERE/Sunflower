@@ -78,6 +78,11 @@ def register_blueprints(app: Flask):
         """应用主界面"""
         return app.send_static_file('app.html')
     
+    @app.route('/help.html')
+    def help_page():
+        """帮助中心页面"""
+        return app.send_static_file('help.html')
+    
     @app.route('/uploads/<path:filepath>')
     def serve_upload(filepath):
         """提供上传文件访问"""
@@ -99,6 +104,35 @@ def register_blueprints(app: Flask):
             return send_file(file_path)
         except Exception as e:
             app.logger.error(f"Error serving file {filepath}: {e}")
+            return jsonify({'error': 'File access error'}), 500
+    
+    @app.route('/docs/<path:filepath>')
+    def serve_docs(filepath):
+        """提供文档访问"""
+        try:
+            # 获取项目根目录下的docs目录
+            docs_dir = Path(__file__).parent.parent.parent / 'docs'
+            docs_dir = docs_dir.resolve()
+            file_path = (docs_dir / filepath).resolve()
+            
+            # 安全检查：确保文件在docs目录内
+            try:
+                file_path.relative_to(docs_dir)
+            except ValueError:
+                app.logger.warning(f"Attempted path traversal in docs: {filepath}")
+                return jsonify({'error': 'Invalid file path'}), 403
+            
+            if not file_path.exists():
+                app.logger.warning(f"Doc file not found: {file_path}")
+                return jsonify({'error': 'File not found'}), 404
+            
+            # 对于Markdown文件，设置正确的Content-Type
+            if file_path.suffix.lower() == '.md':
+                return send_file(file_path, mimetype='text/markdown; charset=utf-8')
+            else:
+                return send_file(file_path)
+        except Exception as e:
+            app.logger.error(f"Error serving doc file {filepath}: {e}")
             return jsonify({'error': 'File access error'}), 500
     
     @app.route('/health')

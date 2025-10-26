@@ -404,6 +404,14 @@ class App {
      * 绑定事件
      */
     bindEvents() {
+        // 帮助按钮
+        const helpBtn = document.getElementById('help-btn');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                window.open('/help.html', '_blank');
+            });
+        }
+        
         // 侧边栏导航
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
