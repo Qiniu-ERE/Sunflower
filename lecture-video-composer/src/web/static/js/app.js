@@ -421,6 +421,9 @@ class App {
         // 项目管理
         this.initProjectManagement();
         
+        // 视频导出
+        this.initExport();
+        
         // 键盘快捷键
         this.initKeyboardShortcuts();
     }
@@ -1121,6 +1124,35 @@ class App {
         if (targetView) {
             targetView.classList.add('active');
         }
+        
+        // 如果切换到导出视图，更新项目列表
+        if (viewName === 'export') {
+            this.updateExportProjectList();
+        }
+    }
+    
+    /**
+     * 更新导出视图的项目列表
+     */
+    async updateExportProjectList() {
+        const projectSelect = document.getElementById('export-project-select');
+        if (!projectSelect) return;
+        
+        const projects = this.state.get('projects') || [];
+        
+        // 清空现有选项（保留默认选项）
+        projectSelect.innerHTML = '<option value="">-- 请选择项目 --</option>';
+        
+        // 添加项目选项
+        projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.project_id;
+            option.textContent = `${project.title} (${project.photo_count || 0}张照片)`;
+            projectSelect.appendChild(option);
+        });
+        
+        // 重置导出视图状态
+        this.resetExportView();
     }
 
     /**
@@ -1182,6 +1214,254 @@ class App {
             } catch (error) {
                 console.error('应用过渡效果设置失败:', error);
             }
+        }
+    }
+
+    /**
+     * 初始化视频导出
+     */
+    initExport() {
+        // 项目选择
+        const exportProjectSelect = document.getElementById('export-project-select');
+        if (exportProjectSelect) {
+            exportProjectSelect.addEventListener('change', (e) => {
+                const projectId = e.target.value;
+                const exportSettings = document.getElementById('export-settings');
+                if (projectId && exportSettings) {
+                    exportSettings.style.display = 'block';
+                } else if (exportSettings) {
+                    exportSettings.style.display = 'none';
+                }
+            });
+        }
+        
+        // 开始导出按钮
+        const startExportBtn = document.getElementById('start-export-btn');
+        if (startExportBtn) {
+            startExportBtn.addEventListener('click', () => {
+                this.startExport();
+            });
+        }
+        
+        // 下载按钮
+        const downloadBtn = document.getElementById('download-export-btn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                this.downloadExport();
+            });
+        }
+        
+        // 导出其他项目按钮
+        const exportAnotherBtn = document.getElementById('export-another-btn');
+        if (exportAnotherBtn) {
+            exportAnotherBtn.addEventListener('click', () => {
+                this.resetExportView();
+            });
+        }
+        
+        // 重试按钮
+        const retryBtn = document.getElementById('retry-export-btn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', () => {
+                this.startExport();
+            });
+        }
+    }
+    
+    /**
+     * 开始导出
+     */
+    async startExport() {
+        const projectSelect = document.getElementById('export-project-select');
+        const projectId = projectSelect?.value;
+        
+        if (!projectId) {
+            showNotification('请选择要导出的项目', 'warning');
+            return;
+        }
+        
+        // 获取导出设置
+        const resolution = document.getElementById('export-resolution')?.value || '1920x1080';
+        const fps = parseInt(document.getElementById('export-fps')?.value || '30');
+        const format = document.getElementById('export-format')?.value || 'mp4';
+        
+        // 隐藏设置，显示进度
+        document.getElementById('export-settings').style.display = 'none';
+        document.getElementById('export-progress').style.display = 'block';
+        document.getElementById('export-complete').style.display = 'none';
+        document.getElementById('export-error').style.display = 'none';
+        
+        try {
+            const sessionId = this.state.get('session.sessionId');
+            
+            // 开始导出
+            const data = await this.api.post('/export/start', {
+                project_id: projectId,
+                session_id: sessionId,
+                output_format: format,
+                resolution: resolution,
+                fps: fps
+            });
+            
+            if (!data.success) {
+                throw new Error(data.error || '导出失败');
+            }
+            
+            const exportId = data.export_id;
+            this.state.set('export.currentExportId', exportId);
+            
+            // 开始轮询导出状态
+            this.pollExportStatus(exportId);
+            
+        } catch (error) {
+            console.error('开始导出失败:', error);
+            this.showExportError(error.message);
+        }
+    }
+    
+    /**
+     * 轮询导出状态
+     */
+    async pollExportStatus(exportId) {
+        const pollInterval = 2000; // 2秒轮询一次
+        
+        const poll = async () => {
+            try {
+                const sessionId = this.state.get('session.sessionId');
+                const params = sessionId ? `?session_id=${sessionId}` : '';
+                const data = await this.api.get(`/export/status/${exportId}${params}`);
+                
+                if (!data.success) {
+                    throw new Error(data.error || '获取导出状态失败');
+                }
+                
+                const { status, progress, error } = data;
+                
+                // 更新进度显示
+                this.updateExportProgress(progress, status);
+                
+                if (status === 'completed') {
+                    // 导出完成
+                    this.showExportComplete();
+                } else if (status === 'failed') {
+                    // 导出失败
+                    this.showExportError(error || '导出过程中发生错误');
+                } else {
+                    // 继续轮询
+                    setTimeout(poll, pollInterval);
+                }
+                
+            } catch (error) {
+                console.error('轮询导出状态失败:', error);
+                this.showExportError(error.message);
+            }
+        };
+        
+        poll();
+    }
+    
+    /**
+     * 更新导出进度
+     */
+    updateExportProgress(progress, status) {
+        const progressFill = document.getElementById('export-progress-fill');
+        const progressText = document.getElementById('export-progress-text');
+        const exportStatus = document.getElementById('export-status');
+        
+        if (progressFill) {
+            progressFill.style.width = `${progress}%`;
+        }
+        
+        if (progressText) {
+            progressText.textContent = `正在导出... ${progress}%`;
+        }
+        
+        if (exportStatus) {
+            const statusTexts = {
+                'pending': '准备中...',
+                'processing': '正在处理视频...',
+                'completed': '导出完成',
+                'failed': '导出失败'
+            };
+            exportStatus.textContent = statusTexts[status] || status;
+        }
+    }
+    
+    /**
+     * 显示导出完成
+     */
+    showExportComplete() {
+        document.getElementById('export-progress').style.display = 'none';
+        document.getElementById('export-complete').style.display = 'block';
+        showNotification('视频导出完成！', 'success');
+    }
+    
+    /**
+     * 显示导出错误
+     */
+    showExportError(message) {
+        document.getElementById('export-progress').style.display = 'none';
+        document.getElementById('export-settings').style.display = 'none';
+        document.getElementById('export-error').style.display = 'block';
+        
+        const errorMessage = document.getElementById('export-error-message');
+        if (errorMessage) {
+            errorMessage.textContent = `错误: ${message}`;
+        }
+        
+        showNotification(`导出失败: ${message}`, 'error');
+    }
+    
+    /**
+     * 下载导出的视频
+     */
+    async downloadExport() {
+        try {
+            const exportId = this.state.get('export.currentExportId');
+            if (!exportId) {
+                throw new Error('未找到导出ID');
+            }
+            
+            const sessionId = this.state.get('session.sessionId');
+            const params = sessionId ? `?session_id=${sessionId}` : '';
+            
+            // 创建下载链接
+            const downloadUrl = `/api/export/download/${exportId}${params}`;
+            
+            // 创建隐藏的 <a> 标签触发下载
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = '';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('开始下载视频...', 'success');
+            
+        } catch (error) {
+            console.error('下载导出失败:', error);
+            showNotification(`下载失败: ${error.message}`, 'error');
+        }
+    }
+    
+    /**
+     * 重置导出视图
+     */
+    resetExportView() {
+        document.getElementById('export-settings').style.display = 'none';
+        document.getElementById('export-progress').style.display = 'none';
+        document.getElementById('export-complete').style.display = 'none';
+        document.getElementById('export-error').style.display = 'none';
+        
+        const projectSelect = document.getElementById('export-project-select');
+        if (projectSelect) {
+            projectSelect.value = '';
+        }
+        
+        // 重置进度
+        const progressFill = document.getElementById('export-progress-fill');
+        if (progressFill) {
+            progressFill.style.width = '0%';
         }
     }
 

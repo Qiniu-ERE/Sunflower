@@ -28,6 +28,7 @@ class Config:
     PROJECTS_DIR = DATA_DIR / 'projects'
     PROJECTS_FOLDER = DATA_DIR / 'projects'  # Flask使用的配置名（与PROJECTS_DIR相同）
     EXPORTS_DIR = DATA_DIR / 'exports'
+    EXPORT_FOLDER = DATA_DIR / 'exports'  # Flask使用的配置名
     TEMP_DIR = DATA_DIR / 'temp'
     
     # 会话配置
