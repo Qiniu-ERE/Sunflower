@@ -1350,6 +1350,7 @@ class App {
         const resolution = document.getElementById('export-resolution')?.value || '1920x1080';
         const fps = parseInt(document.getElementById('export-fps')?.value || '30');
         const format = document.getElementById('export-format')?.value || 'mp4';
+        const enableAiSubtitle = document.getElementById('export-ai-subtitle')?.checked || false;
         
         // 隐藏设置，显示进度
         document.getElementById('export-settings').style.display = 'none';
@@ -1366,7 +1367,8 @@ class App {
                 session_id: sessionId,
                 output_format: format,
                 resolution: resolution,
-                fps: fps
+                fps: fps,
+                enable_ai_subtitle: enableAiSubtitle
             });
             
             if (!data.success) {
@@ -1592,7 +1594,7 @@ class App {
                             <div class="history-details">
                                 <div class="history-project-name">${projectTitle}</div>
                                 <div class="history-config">
-                                    ${resolution} | ${fps}FPS | ${format}
+                                    ${resolution} | ${fps}FPS | ${format}${exp.ai_subtitle ? ' | 🎤 AI字幕' : ''}
                                 </div>
                                 ${completedTime}
                             </div>

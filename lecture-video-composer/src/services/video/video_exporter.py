@@ -39,6 +39,7 @@ class VideoExportConfig:
     crf: int = 23  # 恒定质量因子 (0-51, 越小质量越好，23是默认值)
     enable_subtitles: bool = True  # 是否启用字幕
     subtitle_style: str = "default"  # 字幕样式 (default, minimal, bold)
+    subtitle_config: Optional['SubtitleConfig'] = None  # 字幕配置（如果需要自定义）
     
     def __post_init__(self):
         """验证配置参数"""
@@ -96,7 +97,8 @@ class VideoExporter:
                     timeline_items: List[Dict[str, Any]],
                     photos_dir: Path,
                     output_file: Path,
-                    audio_duration: float) -> Path:
+                    audio_duration: float,
+                    subtitle_callback: Optional[callable] = None) -> Path:
         """
         导出视频文件
         
@@ -106,6 +108,7 @@ class VideoExporter:
             photos_dir: 照片目录
             output_file: 输出视频文件路径
             audio_duration: 音频总时长
+            subtitle_callback: 字幕生成完成后的回调函数，接收(video_file, subtitle_file)参数
             
         Returns:
             生成的视频文件路径
@@ -121,7 +124,32 @@ class VideoExporter:
         temp_dir.mkdir(exist_ok=True)
         
         try:
-            # Step 1: 为每张照片创建视频片段
+            # 如果启用字幕，立即开始异步生成（与视频处理并行）
+            subtitle_future = None
+            if self.config.enable_subtitles and SUBTITLE_SUPPORT:
+                logger.info("Starting parallel subtitle generation...")
+                import threading
+                from queue import Queue
+                
+                subtitle_queue = Queue()
+                
+                def parallel_subtitle_task():
+                    try:
+                        logger.info("Generating subtitles in parallel with video...")
+                        subtitle_file = self._generate_subtitles(audio_file, temp_dir)
+                        subtitle_queue.put(('success', subtitle_file))
+                    except Exception as e:
+                        logger.error(f"Error in parallel subtitle generation: {e}")
+                        import traceback
+                        logger.error(traceback.format_exc())
+                        subtitle_queue.put(('error', None))
+                
+                # 启动并行线程
+                subtitle_thread = threading.Thread(target=parallel_subtitle_task, daemon=False)
+                subtitle_thread.start()
+                logger.info("Subtitle generation started in parallel")
+            
+            # Step 1: 为每张照片创建视频片段（与字幕生成并行）
             logger.info("Step 1: Creating video segments for each photo...")
             segment_files = self._create_photo_segments(
                 timeline_items, photos_dir, temp_dir
@@ -132,26 +160,60 @@ class VideoExporter:
             video_only_file = temp_dir / "video_only.mp4"
             self._concatenate_segments(segment_files, video_only_file)
             
-            # Step 3: 生成字幕（如果启用）
-            subtitle_file = None
-            if self.config.enable_subtitles and SUBTITLE_SUPPORT:
-                logger.info("Step 3: Generating subtitles...")
-                subtitle_file = self._generate_subtitles(audio_file, temp_dir)
-            
-            # Step 4: 添加音频轨道
-            logger.info(f"Step {4 if subtitle_file else 3}: Adding audio track...")
+            # Step 3: 添加音频轨道
+            logger.info("Step 3: Adding audio track...")
             video_with_audio = temp_dir / "video_with_audio.mp4"
             self._add_audio_track(video_only_file, audio_file, video_with_audio, audio_duration)
             
-            # Step 5: 嵌入字幕（如果有）
-            if subtitle_file:
-                logger.info("Step 5: Embedding subtitles...")
-                self._embed_subtitles(video_with_audio, subtitle_file, output_file)
-            else:
-                # 没有字幕，直接使用带音频的视频
-                shutil.move(str(video_with_audio), str(output_file))
+            # Step 4: 检查字幕是否已生成完成
+            subtitle_file = None
+            if self.config.enable_subtitles and SUBTITLE_SUPPORT:
+                logger.info("Step 4: Waiting for subtitle generation to complete...")
+                subtitle_thread.join(timeout=300)  # 最多等待5分钟
+                
+                if not subtitle_queue.empty():
+                    status, subtitle_file = subtitle_queue.get()
+                    if status == 'success' and subtitle_file:
+                        logger.info(f"Subtitles ready: {subtitle_file}")
+                    else:
+                        logger.warning("Subtitle generation completed with errors")
+                else:
+                    logger.warning("Subtitle generation timeout, will embed later")
             
-            logger.info(f"Video exported successfully: {output_file}")
+            # Step 5: 嵌入字幕（如果已生成）
+            if subtitle_file and subtitle_file.exists():
+                logger.info("Step 5: Embedding subtitles into video...")
+                self._embed_subtitles(video_with_audio, subtitle_file, output_file)
+                logger.info(f"Video exported with subtitles: {output_file}")
+            else:
+                # 没有字幕或字幕未完成，先输出视频
+                shutil.move(str(video_with_audio), str(output_file))
+                logger.info(f"Video exported (subtitles may be added later): {output_file}")
+                
+                # 如果字幕线程还在运行，继续在后台嵌入
+                if self.config.enable_subtitles and SUBTITLE_SUPPORT and subtitle_thread.is_alive():
+                    logger.info("Subtitles still generating, will embed when ready...")
+                    
+                    def late_subtitle_task():
+                        try:
+                            subtitle_thread.join()  # 等待字幕完成
+                            if not subtitle_queue.empty():
+                                status, late_subtitle = subtitle_queue.get()
+                                if status == 'success' and late_subtitle and late_subtitle.exists():
+                                    logger.info("Late subtitle ready, embedding into video...")
+                                    output_with_subs = output_file.parent / f"{output_file.stem}_with_subs{output_file.suffix}"
+                                    self._embed_subtitles(output_file, late_subtitle, output_with_subs)
+                                    shutil.move(str(output_with_subs), str(output_file))
+                                    logger.info(f"Subtitles embedded successfully: {output_file}")
+                                    
+                                    if subtitle_callback:
+                                        subtitle_callback(output_file, late_subtitle)
+                        except Exception as e:
+                            logger.error(f"Error in late subtitle embedding: {e}")
+                    
+                    late_thread = threading.Thread(target=late_subtitle_task, daemon=True)
+                    late_thread.start()
+            
             return output_file
             
         finally:
@@ -171,13 +233,17 @@ class VideoExporter:
             生成的字幕文件路径，如果失败则返回None
         """
         try:
-            subtitle_config = SubtitleConfig(
-                model="base",
-                language="zh",
-                font_size=24,
-                font_color="white",
-                outline_color="black"
-            )
+            # 使用配置中的字幕设置，如果没有则使用默认配置
+            if self.config.subtitle_config:
+                subtitle_config = self.config.subtitle_config
+            else:
+                subtitle_config = SubtitleConfig(
+                    model="base",
+                    language="zh",
+                    font_size=24,
+                    font_color="white",
+                    outline_color="black"
+                )
             subtitle_service = SubtitleService(subtitle_config)
             return subtitle_service.generate_subtitles(audio_file, output_dir)
         except Exception as e:

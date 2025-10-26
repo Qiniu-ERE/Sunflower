@@ -42,6 +42,7 @@ def start_export():
         output_format = data.get('output_format', 'mp4')
         resolution = data.get('resolution', '1280x720')
         fps = data.get('fps', 30)
+        enable_ai_subtitle = data.get('enable_ai_subtitle', False)
         
         if not project_id:
             return jsonify({
@@ -111,8 +112,24 @@ def start_export():
             fps=fps,
             video_codec='libx264',
             preset='medium',
-            enable_subtitles=False  # 暂时禁用字幕以加快导出速度
+            enable_subtitles=enable_ai_subtitle
         )
+        
+        # 如果启用AI字幕，使用高质量的medium模型
+        if enable_ai_subtitle:
+            try:
+                from src.services.subtitle.subtitle_service import SubtitleConfig
+                video_config.subtitle_config = SubtitleConfig(
+                    model='medium',  # 使用高质量模型
+                    language='zh'
+                )
+                current_app.logger.info(f"AI subtitle enabled with medium model for project {project_id}")
+            except ImportError as e:
+                current_app.logger.warning(f"Subtitle service not available: {e}, subtitles will be disabled")
+                video_config.enable_subtitles = False
+            except Exception as e:
+                current_app.logger.error(f"Error configuring subtitles: {e}")
+                video_config.enable_subtitles = False
         
         # 创建VideoExporter实例
         exporter = VideoExporter(video_config)
@@ -131,6 +148,7 @@ def start_export():
             'resolution': resolution,
             'fps': fps,
             'format': output_format,
+            'ai_subtitle': enable_ai_subtitle,
             'created_at': str(current_app.config.get('CURRENT_TIME', ''))
         }
         
@@ -398,6 +416,7 @@ def list_exports():
                     'resolution': task.get('resolution'),
                     'fps': task.get('fps'),
                     'format': task.get('format'),
+                    'ai_subtitle': task.get('ai_subtitle', False),
                     'created_at': task.get('created_at'),
                     'completed_at': task.get('completed_at')
                 })
