@@ -163,7 +163,7 @@ def register_blueprints(app: Flask):
         """健康检查"""
         return jsonify({
             'status': 'healthy',
-            'version': 'v2.2',
+            'version': 'v3.0.0',
             'sessions': session_manager.get_session_count()
         })
     

@@ -436,7 +436,7 @@ try {
 ## 📚 相关文档
 
 - [核心模块文档](../core/README.md)
-- [API文档](../../docs/api/README.md)
+- [Web API文档](../../docs/api/Web_API文档.md)
 - [技术架构](../../docs/architecture/README.md)
 
 ---

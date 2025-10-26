@@ -312,7 +312,21 @@ console.log(player.getCurrentTime());
 
 **macOS**：
 ```bash
+# 方法1：使用 Homebrew（推荐）
 brew install ffmpeg
+
+# 如果遇到 Homebrew 权限问题，先修复：
+sudo chown -R $(whoami) /usr/local/lib /usr/local/lib/pkgconfig
+chmod u+w /usr/local/lib /usr/local/lib/pkgconfig
+
+# 如果是 shallow clone 问题，先更新 Homebrew：
+git -C /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core fetch --unshallow
+git -C /usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask fetch --unshallow
+brew update
+
+# 方法2：使用预编译包
+# 下载：https://evermeet.cx/ffmpeg/
+# 解压并移动到：/usr/local/bin/
 ```
 
 **Ubuntu/Debian**：
@@ -336,6 +350,11 @@ sudo yum install ffmpeg
 ```bash
 ffmpeg -version
 ```
+
+**常见问题**：
+- macOS Homebrew 权限错误：运行 `sudo chown` 命令修复
+- Windows PATH 未生效：重启系统或重新打开终端
+- Linux 找不到包：尝试启用额外的软件源
 
 ---
 

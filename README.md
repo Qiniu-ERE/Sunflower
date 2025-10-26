@@ -102,6 +102,9 @@ sudo apt-get install ffmpeg
 # CentOS/RHEL
 sudo yum install ffmpeg
 
+# openEuler 20.03/22.03 LTS
+sudo dnf install ffmpeg
+
 # Windows
 # 下载安装包: https://ffmpeg.org/download.html
 # 并将 ffmpeg.exe 添加到系统 PATH

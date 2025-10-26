@@ -34,20 +34,15 @@ src/
 
 [详细文档](./core/README.md)
 
-### ui/ - 用户界面
-包含所有UI组件和视图，负责用户交互和界面渲染。
+### web/ - Web界面
+提供Web用户界面，基于Flask框架实现，包含静态资源和API接口。
 
-[详细文档](./ui/README.md)
+[详细文档](./web/static/)
 
 ### services/ - 业务服务
 提供音频、图片和元数据等数据服务，封装数据访问逻辑。
 
 [详细文档](./services/README.md)
-
-### utils/ - 工具函数
-通用的工具函数和辅助方法，可复用的功能模块。
-
-[详细文档](./utils/README.md)
 
 ## 📝 编码规范
 
@@ -138,8 +133,9 @@ npm install -D package-name       # 开发依赖
 ## 📚 相关文档
 
 - [技术架构文档](../docs/architecture/README.md)
-- [API文档](../docs/api/README.md)
-- [开发指南](../docs/development/README.md)
+- [Web API文档](../docs/api/Web_API文档.md)
+- [播放器模块文档](../docs/development/播放器模块文档.md)
+- [视频导出模块文档](../docs/development/视频导出模块文档.md)
 
 ---
 

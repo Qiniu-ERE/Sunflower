@@ -183,8 +183,8 @@ python3 -m pytest tests/web/ -v --cov=src/web --cov-report=html
 - 定期审查和重构测试代码
 
 ## 相关文档
-- [Web API文档](./Web_API文档.md)
-- [快速测试指南](./快速测试指南.md)
+- [Web API文档](../api/Web_API文档.md)
+- [快速测试指南](../testing/快速测试指南.md)
 - [test_playback_api修复文档](./test_playback_api_fixes.md)
 
 ## 总结
