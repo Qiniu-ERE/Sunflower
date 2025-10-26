@@ -57,24 +57,51 @@
 ### 环境要求
 
 - Python 3.8+
+- FFmpeg（视频导出必需）
 - 现代浏览器（Chrome/Firefox/Safari）
 
 ### 安装运行
 
+**1. 安装 FFmpeg**
+
 ```bash
-# 1. 克隆项目
+# macOS
+brew install ffmpeg
+
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install ffmpeg
+
+# CentOS/RHEL
+sudo yum install ffmpeg
+
+# Windows
+# 下载安装包: https://ffmpeg.org/download.html
+# 并将 ffmpeg.exe 添加到系统 PATH
+```
+
+**2. 安装 Python 依赖**
+
+```bash
+# 克隆项目
 git clone https://github.com/Qiniu-ERE/Sunflower.git
 cd Sunflower/lecture-video-composer
 
-# 2. 安装依赖
-pip install -r requirements.txt
+# 安装 Python 依赖（请使用 Python 3.8+）
+pip3 install -r requirements.txt
+# 或者使用：python3 -m pip install -r requirements.txt
+```
 
-# 3. 启动 Web 服务
-python run_web.py
+**3. 启动服务**
 
-# 4. 访问应用
+```bash
+# 启动 Web 服务
+python3 run_web.py
+
 # 浏览器打开：http://127.0.0.1:5000
 ```
+
+> **注意**：本项目需要 Python 3.8 或更高版本。如果系统中 `python` 命令指向 Python 2.x，请确保使用 `python3` 和 `pip3` 命令。
 
 ### 基本使用
 

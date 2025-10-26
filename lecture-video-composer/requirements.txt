@@ -2,7 +2,8 @@
 # MVP Core Requirements
 
 # Image processing
-Pillow>=10.0.0
+# Note: Pillow 12.x requires Python 3.9+, using 10.x for Python 3.8 compatibility
+Pillow>=10.0.0,<11.0.0
 
 # Audio metadata extraction (optional, fallback if ffprobe not available)
 mutagen>=1.47.0
