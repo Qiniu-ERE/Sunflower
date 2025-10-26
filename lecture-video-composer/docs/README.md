@@ -217,8 +217,8 @@ docs/
 
 如果您发现文档中的错误或不足：
 
-- 📝 [提交 Issue](https://github.com/sunyifei83/Sunflower/issues)
-- 📧 发送邮件至 sunyifei83@gmail.com
+- 📝 [提交 Issue](https://github.com/Qiniu-ERE/Sunflower/issues)
+- 📧 发送邮件至 Qiniu-ERE@gmail.com
 
 ### 贡献文档
 
