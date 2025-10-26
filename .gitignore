@@ -38,3 +38,4 @@ lecture-video-composer/src/web/services/__pycache__/session_manager.cpython-39.p
 lecture-video-composer/data/temp/sessions/*.json
 lecture-video-composer/data/uploads/*
 data/uploads/*
+data/projects/*

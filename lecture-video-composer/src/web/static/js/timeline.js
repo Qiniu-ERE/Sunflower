@@ -111,15 +111,24 @@ export class Timeline {
      * 绑定事件
      */
     bindEvents() {
+        console.log('Timeline: 绑定事件到track:', this.track);
+        
         // 点击跳转
         this.track.addEventListener('click', (e) => {
-            if (!this.isDragging) {
+            console.log('Timeline: 点击事件', { isDragging: this.isDragging, duration: this.duration });
+            if (!this.isDragging && this.duration > 0) {
                 this.handleSeek(e);
             }
         });
         
         // 拖拽进度
         this.track.addEventListener('mousedown', (e) => {
+            console.log('Timeline: 鼠标按下，开始拖动');
+            if (this.duration <= 0) {
+                console.warn('Timeline: duration为0，无法拖动');
+                return;
+            }
+            
             this.isDragging = true;
             this.handleSeek(e);
             
@@ -130,6 +139,7 @@ export class Timeline {
             }, 16); // ~60fps
             
             const onMouseUp = () => {
+                console.log('Timeline: 鼠标释放，停止拖动');
                 this.isDragging = false;
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
@@ -155,9 +165,23 @@ export class Timeline {
      * 处理跳转
      */
     handleSeek(e) {
+        if (this.duration <= 0) {
+            console.warn('Timeline: duration为0，无法跳转');
+            return;
+        }
+        
         const rect = this.track.getBoundingClientRect();
         const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
         const time = percent * this.duration;
+        
+        console.log('Timeline: handleSeek', { 
+            percent: percent.toFixed(3), 
+            time: time.toFixed(2),
+            duration: this.duration,
+            clientX: e.clientX,
+            rectLeft: rect.left,
+            rectWidth: rect.width
+        });
         
         this.emit('seek', { time, percent });
     }
@@ -238,9 +262,24 @@ export class Timeline {
      * @param {number} duration - 总时长（秒）
      */
     loadData(photos, duration) {
+        console.log('Timeline: loadData被调用', { 
+            photoCount: photos.length, 
+            duration: duration,
+            durationType: typeof duration,
+            isNaN: isNaN(duration),
+            isValid: duration > 0
+        });
+        
+        if (!duration || duration <= 0 || isNaN(duration)) {
+            console.error('Timeline: loadData收到无效的duration', duration);
+            return;
+        }
+        
         this.photos = photos.sort((a, b) => a.timestamp - b.timestamp);
         this.duration = duration;
         this.currentTime = 0;
+        
+        console.log('Timeline: duration已设置为', this.duration);
         
         // 更新标签
         this.labelStart.textContent = formatTime(0);
@@ -251,6 +290,8 @@ export class Timeline {
         
         // 重置进度
         this.updateProgress(0);
+        
+        console.log('Timeline: loadData完成，this.duration =', this.duration);
     }
 
     /**
@@ -292,11 +333,46 @@ export class Timeline {
      * @param {number} currentTime - 当前时间（秒）
      */
     updateProgress(currentTime) {
-        this.currentTime = currentTime;
-        const percent = Math.max(0, Math.min(100, (currentTime / this.duration) * 100));
+        // 验证duration
+        if (!this.duration || this.duration <= 0 || isNaN(this.duration)) {
+            console.warn('Timeline: updateProgress - duration无效', this.duration);
+            return;
+        }
         
-        this.progress.style.width = `${percent}%`;
-        this.cursor.style.left = `${percent}%`;
+        this.currentTime = currentTime;
+        
+        // 计算百分比，确保在0-100范围内
+        let percent = (currentTime / this.duration) * 100;
+        percent = Math.max(0, Math.min(100, percent));
+        
+        // 检查计算结果是否有效
+        if (isNaN(percent) || !isFinite(percent)) {
+            console.warn('Timeline: 计算出的percent无效', { currentTime, duration: this.duration, percent });
+            percent = 0;
+        }
+        
+        console.log('Timeline: updateProgress', {
+            currentTime: currentTime.toFixed(2),
+            duration: this.duration.toFixed(2),
+            percent: percent.toFixed(2) + '%',
+            progressElement: !!this.progress,
+            cursorElement: !!this.cursor
+        });
+        
+        if (!this.progress || !this.cursor) {
+            console.error('Timeline: progress或cursor元素不存在！');
+            return;
+        }
+        
+        // 设置样式
+        const percentStr = `${percent}%`;
+        this.progress.style.width = percentStr;
+        this.cursor.style.left = percentStr;
+        
+        console.log('Timeline: 已设置样式', {
+            progressWidth: this.progress.style.width,
+            cursorLeft: this.cursor.style.left
+        });
     }
 
     /**

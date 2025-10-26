@@ -166,19 +166,15 @@
 
                         <!-- 播放控制区域 -->
                         <div class="player-controls">
-                            <!-- 时间轴 -->
-                            <div class="timeline-container">
-                                <div class="timeline" id="timeline">
-                                    <div class="timeline-progress" id="timeline-progress"></div>
-                                    <div class="timeline-markers" id="timeline-markers"></div>
-                                    <div class="timeline-handle" id="timeline-handle"></div>
-                                </div>
-                                <div class="time-display">
-                                    <span id="current-time">00:00</span>
-                                    <span class="time-separator">/</span>
-                                    <span id="total-time">00:00</span>
-                                </div>
+                            <!-- 时间显示 -->
+                            <div class="time-display">
+                                <span id="current-time">00:00</span>
+                                <span class="time-separator">/</span>
+                                <span id="total-time">00:00</span>
                             </div>
+                            
+                            <!-- 时间轴 - Timeline组件会动态创建内容 -->
+                            <div class="timeline-container"></div>
 
                             <!-- 控制按钮 -->
                             <div class="control-buttons">
