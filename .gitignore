@@ -40,3 +40,9 @@ lecture-video-composer/data/uploads/*
 data/uploads/*
 data/projects/*
 data/temp/*
+
+# 忽略所有 __pycache__ 目录
+__pycache__/
+
+# 也可以忽略所有 .pyc, .pyo, .pyd 文件（可选）
+*.py[cod]
