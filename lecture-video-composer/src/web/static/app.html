@@ -94,6 +94,16 @@
                                 </div>
                                 <input type="file" id="audio-input" accept=".mp3,.wav,.m4a,.aac,.ogg" hidden>
                             </div>
+                            <div class="file-list-controls" id="audio-controls" style="display: none;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="audio-select-all" class="select-all-checkbox">
+                                    <span>全选</span>
+                                </label>
+                                <button class="btn btn-danger btn-small" id="audio-delete-selected" disabled>
+                                    <span>🗑️</span>
+                                    <span>删除选中</span>
+                                </button>
+                            </div>
                             <div class="file-list" id="audio-file-list"></div>
                         </div>
 
@@ -111,6 +121,16 @@
                                     <p class="drop-format">支持: JPG, JPEG, PNG</p>
                                 </div>
                                 <input type="file" id="photos-input" accept=".jpg,.jpeg,.png" multiple hidden>
+                            </div>
+                            <div class="file-list-controls" id="photos-controls" style="display: none;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="photos-select-all" class="select-all-checkbox">
+                                    <span>全选</span>
+                                </label>
+                                <button class="btn btn-danger btn-small" id="photos-delete-selected" disabled>
+                                    <span>🗑️</span>
+                                    <span>删除选中</span>
+                                </button>
                             </div>
                             <div class="file-list" id="photos-file-list"></div>
                         </div>

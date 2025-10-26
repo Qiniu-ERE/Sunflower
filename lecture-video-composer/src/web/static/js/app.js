@@ -486,12 +486,16 @@ class App {
             
             // 更新音频列表
             const audioList = document.getElementById('audio-file-list');
+            const audioControls = document.getElementById('audio-controls');
             if (audioList) {
-                if (audioFiles.length > 0) {
-                    audioList.innerHTML = audioFiles
-                        .filter(file => file.filename !== '.DS_Store') // 过滤掉系统文件
+                const validAudioFiles = audioFiles.filter(file => file.filename !== '.DS_Store');
+                if (validAudioFiles.length > 0) {
+                    audioList.innerHTML = validAudioFiles
                         .map(file => `
                             <div class="file-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="file-checkbox audio-checkbox" data-path="${file.path}">
+                                </label>
                                 <span class="file-icon">🎵</span>
                                 <span class="file-name">${file.filename}</span>
                                 <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'audio')">
@@ -499,19 +503,25 @@ class App {
                                 </button>
                             </div>
                         `).join('');
+                    if (audioControls) audioControls.style.display = 'flex';
                 } else {
                     audioList.innerHTML = '';
+                    if (audioControls) audioControls.style.display = 'none';
                 }
             }
             
             // 更新照片列表
             const photoList = document.getElementById('photos-file-list');
+            const photosControls = document.getElementById('photos-controls');
             if (photoList) {
-                if (photoFiles.length > 0) {
-                    photoList.innerHTML = photoFiles
-                        .filter(file => file.filename !== '.DS_Store') // 过滤掉系统文件
+                const validPhotoFiles = photoFiles.filter(file => file.filename !== '.DS_Store');
+                if (validPhotoFiles.length > 0) {
+                    photoList.innerHTML = validPhotoFiles
                         .map(file => `
                             <div class="file-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="file-checkbox photo-checkbox" data-path="${file.path}">
+                                </label>
                                 <span class="file-icon">📸</span>
                                 <span class="file-name">${file.filename}</span>
                                 <button class="btn-icon" onclick="app.deleteFile('${file.path}', 'photo')">
@@ -519,10 +529,15 @@ class App {
                                 </button>
                             </div>
                         `).join('');
+                    if (photosControls) photosControls.style.display = 'flex';
                 } else {
                     photoList.innerHTML = '';
+                    if (photosControls) photosControls.style.display = 'none';
                 }
             }
+            
+            // 重新绑定复选框事件
+            this.bindFileCheckboxEvents();
             
             // 更新创建项目按钮状态
             this.updateCreateButtonState(audioFiles, photoFiles);
@@ -552,6 +567,147 @@ class App {
     }
 
     /**
+     * 绑定文件复选框事件
+     */
+    bindFileCheckboxEvents() {
+        // 音频全选复选框
+        const audioSelectAll = document.getElementById('audio-select-all');
+        if (audioSelectAll) {
+            audioSelectAll.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.audio-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+                this.updateDeleteButtonState('audio');
+            });
+        }
+        
+        // 照片全选复选框
+        const photosSelectAll = document.getElementById('photos-select-all');
+        if (photosSelectAll) {
+            photosSelectAll.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.photo-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+                this.updateDeleteButtonState('photos');
+            });
+        }
+        
+        // 音频复选框变化事件
+        document.querySelectorAll('.audio-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.updateDeleteButtonState('audio');
+                this.updateSelectAllState('audio');
+            });
+        });
+        
+        // 照片复选框变化事件
+        document.querySelectorAll('.photo-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.updateDeleteButtonState('photos');
+                this.updateSelectAllState('photos');
+            });
+        });
+        
+        // 音频删除选中按钮
+        const audioDeleteBtn = document.getElementById('audio-delete-selected');
+        if (audioDeleteBtn) {
+            audioDeleteBtn.replaceWith(audioDeleteBtn.cloneNode(true));
+            const newAudioDeleteBtn = document.getElementById('audio-delete-selected');
+            newAudioDeleteBtn.addEventListener('click', () => {
+                this.deleteSelectedFiles('audio');
+            });
+        }
+        
+        // 照片删除选中按钮
+        const photosDeleteBtn = document.getElementById('photos-delete-selected');
+        if (photosDeleteBtn) {
+            photosDeleteBtn.replaceWith(photosDeleteBtn.cloneNode(true));
+            const newPhotosDeleteBtn = document.getElementById('photos-delete-selected');
+            newPhotosDeleteBtn.addEventListener('click', () => {
+                this.deleteSelectedFiles('photos');
+            });
+        }
+    }
+    
+    /**
+     * 更新删除按钮状态
+     */
+    updateDeleteButtonState(type) {
+        const deleteBtn = document.getElementById(`${type === 'audio' ? 'audio' : 'photos'}-delete-selected`);
+        if (!deleteBtn) return;
+        
+        const checkboxes = document.querySelectorAll(`.${type === 'audio' ? 'audio' : 'photo'}-checkbox`);
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        
+        deleteBtn.disabled = checkedCount === 0;
+    }
+    
+    /**
+     * 更新全选复选框状态
+     */
+    updateSelectAllState(type) {
+        const selectAll = document.getElementById(`${type === 'audio' ? 'audio' : 'photos'}-select-all`);
+        if (!selectAll) return;
+        
+        const checkboxes = document.querySelectorAll(`.${type === 'audio' ? 'audio' : 'photo'}-checkbox`);
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const totalCount = checkboxes.length;
+        
+        selectAll.checked = totalCount > 0 && checkedCount === totalCount;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < totalCount;
+    }
+    
+    /**
+     * 删除选中的文件
+     */
+    async deleteSelectedFiles(type) {
+        const checkboxes = document.querySelectorAll(`.${type === 'audio' ? 'audio' : 'photo'}-checkbox:checked`);
+        const paths = Array.from(checkboxes).map(cb => cb.dataset.path);
+        
+        if (paths.length === 0) {
+            showNotification('请先选择要删除的文件', 'warning');
+            return;
+        }
+        
+        confirm(`确认删除选中的 ${paths.length} 个文件？`, async () => {
+            const loader = showLoading('删除文件中...');
+            
+            try {
+                const sessionId = this.state.get('session.sessionId');
+                let successCount = 0;
+                let failCount = 0;
+                
+                // 批量删除文件
+                for (const path of paths) {
+                    try {
+                        await this.api.post('/file/delete', { 
+                            filepath: path,
+                            session_id: sessionId
+                        });
+                        successCount++;
+                    } catch (error) {
+                        console.error('删除文件失败:', path, error);
+                        failCount++;
+                    }
+                }
+                
+                // 显示结果
+                if (failCount === 0) {
+                    showNotification(`成功删除 ${successCount} 个文件`, 'success');
+                } else {
+                    showNotification(`删除完成: 成功 ${successCount} 个，失败 ${failCount} 个`, 'warning');
+                }
+                
+                // 刷新文件列表
+                await this.updateFileList();
+                
+            } catch (error) {
+                showNotification('删除失败: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+    }
+
+    /**
      * 删除文件
      */
     async deleteFile(path, type) {
@@ -574,8 +730,15 @@ class App {
      * 创建项目
      */
     async createProject() {
-        const projectName = prompt('请输入项目名称:');
-        if (!projectName) return;
+        // 从输入框获取项目名称
+        const projectTitleInput = document.getElementById('project-title');
+        const projectName = projectTitleInput?.value.trim() || `项目_${new Date().toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).replace(/\//g, '-').replace(/:/g, '-').replace(/ /g, '_')}`;
         
         // 获取已上传的文件
         const uploads = this.state.get('uploads');
@@ -624,6 +787,12 @@ class App {
             });
             
             showNotification('项目创建成功', 'success');
+            
+            // 清空输入框
+            if (projectTitleInput) {
+                projectTitleInput.value = '';
+            }
+            
             await this.loadProjects();
             
             // 切换到项目视图
