@@ -49,7 +49,7 @@
 <!-- 演示视频 -->
 ### 📹 演示视频
 
-> 待添加：系统操作演示视频
+> 🚧待添加：系统操作演示视频
 
 ![Demo Video Placeholder](./lecture-video-composer/docs/assets/demo-video-placeholder.png)
 
@@ -58,16 +58,24 @@
 
 <table>
   <tr>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-home.png" alt="产品主页" /><br/><center>产品主页入口</center></td>
     <td><img src="./lecture-video-composer/docs/assets/screenshot-upload.png" alt="文件上传界面" /><br/><center>文件上传</center></td>
-    <td><img src="./lecture-video-composer/docs/assets/screenshot-projects.png" alt="项目管理界面" /><br/><center>项目管理</center></td>
   </tr>
   <tr>
-    <td><img src="./lecture-video-composer/docs/assets/screenshot-player.png" alt="播放器界面" /><br/><center>实时播放</center></td>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-projects.png" alt="项目管理界面" /><br/><center>项目管理</center></td>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-player.png" alt="播放器界面" /><br/><center>实时播放</center></td>    
+  </tr>
+  <tr>
     <td><img src="./lecture-video-composer/docs/assets/screenshot-timeline.png" alt="时间轴界面" /><br/><center>时间轴控制</center></td>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-export.png" alt="视频导出界面" /><br/><center>视频导出配置</center></td>
+  </tr>
+  <tr>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-progress.png" alt="导出进度界面" /><br/><center>导出进度追踪</center></td>
+    <td><img src="./lecture-video-composer/docs/assets/screenshot-download.png" alt="视频下载界面" /><br/><center>导出完成下载</center>
   </tr>
 </table>
 
-> 提示：截图将在完成 UI 调优后添加
+
 
 ---
 
@@ -483,6 +491,24 @@ Sunflower/
 ## 📄 许可证
 
 本项目采用 [MIT 许可证](./LICENSE)
+
+---
+
+## 👥 团队成员
+
+**Sunflower 团队**采用 AI 辅助开发模式，实现快速迭代：
+
+| 成员 | 角色 | 职责 |
+|------|------|------|
+| **@孙毅飞** | 产品经理 + 前端UXD | AI Coding 主理人，负责产品规划、用户体验设计、前端架构与开发 |
+| **@刁旭峰** | 架构师 + 后端 | AI Coding 主理人，负责系统架构设计、后端服务开发、核心算法实现 |
+| **@符乾** | 运维 + 测试 | AI Coding 主理人，负责系统部署、测试体系建设、质量保证 |
+
+**开发模式**：
+- 🤖 **AI 辅助开发**：充分利用 AI 工具加速代码编写、测试和文档生成
+- 🔄 **敏捷迭代**：快速原型、持续集成、频繁发布
+- 📚 **文档优先**：完善的文档体系，100%文档覆盖率
+- ✅ **测试驱动**：87%测试覆盖率，保证代码质量
 
 ---
 
