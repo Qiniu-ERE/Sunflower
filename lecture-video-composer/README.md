@@ -22,10 +22,16 @@
 <!-- 演示视频 -->
 ### 📹 演示视频
 
-<video width="100%" controls>
-  <source src="http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov" type="video/mp4">
-  您的浏览器不支持 video 标签。请<a href="http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov">点击这里下载视频</a>。
-</video>
+https://github.com/Qiniu-ERE/Sunflower/blob/main/lecture-video-composer/docs/assets/demo-video.mov
+
+> 💡 **说明**：如果视频未显示，请上传 `demo-video.mp4` 到 `lecture-video-composer/docs/assets/` 目录，或使用下方链接观看  
+> [备用链接：在线观看演示视频](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
+
+**视频内容：**
+- 文件上传与项目创建流程
+- 实时播放器操作演示
+- 时间轴精确控制
+- 视频导出功能展示
 
 <!-- 界面截图 -->
 ### 🖼️ 界面预览
