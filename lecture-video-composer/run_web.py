@@ -25,8 +25,8 @@ def parse_args():
     
     parser.add_argument(
         '--host',
-        default='127.0.0.1',
-        help='服务器监听地址 (默认: 127.0.0.1)'
+        default='0.0.0.0',
+        help='服务器监听地址 (默认: 0.0.0.0, 允许外部访问)'
     )
     
     parser.add_argument(
