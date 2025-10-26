@@ -130,7 +130,9 @@ export class LecturePlayer extends EventBus {
             
             this.emit('loaded', {
                 duration: this.state.duration,
-                photoCount: this.photos.length
+                photoCount: this.photos.length,
+                photos: this.photos,
+                timestamps: photoTimestamps
             });
             
             // 自动播放

@@ -249,18 +249,39 @@ class App {
             }
             
             // 加载时间轴数据
-            if (this.timeline && data.photos) {
-                const photos = data.photos.map((url, index) => ({
-                    url,
+            if (this.timeline && data.photos && data.timestamps) {
+                console.log('App: 准备加载时间轴数据', {
+                    photoCount: data.photos.length,
+                    timestampCount: data.timestamps.length,
+                    duration: data.duration
+                });
+                
+                const photos = data.photos.map((photo, index) => ({
+                    url: photo.url,
                     timestamp: data.timestamps[index]
                 }));
+                
+                console.log('App: 调用timeline.loadData', {
+                    photos: photos.length,
+                    duration: data.duration
+                });
+                
                 this.timeline.loadData(photos, data.duration);
+            } else {
+                console.warn('App: 无法加载时间轴数据', {
+                    hasTimeline: !!this.timeline,
+                    hasPhotos: !!data.photos,
+                    hasTimestamps: !!data.timestamps
+                });
             }
         });
         
         this.player.on('play', () => {
             const playBtn = document.getElementById('play-btn');
-            if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            if (playBtn) {
+                const icon = playBtn.querySelector('.control-icon');
+                if (icon) icon.textContent = '⏸️';
+            }
             
             const playStatus = document.querySelector('.play-status');
             if (playStatus) playStatus.classList.add('playing');
@@ -270,7 +291,10 @@ class App {
         
         this.player.on('pause', () => {
             const playBtn = document.getElementById('play-btn');
-            if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            if (playBtn) {
+                const icon = playBtn.querySelector('.control-icon');
+                if (icon) icon.textContent = '▶️';
+            }
             
             const playStatus = document.querySelector('.play-status');
             if (playStatus) playStatus.classList.remove('playing');
@@ -280,7 +304,10 @@ class App {
         
         this.player.on('stop', () => {
             const playBtn = document.getElementById('play-btn');
-            if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            if (playBtn) {
+                const icon = playBtn.querySelector('.control-icon');
+                if (icon) icon.textContent = '▶️';
+            }
             
             const playStatus = document.querySelector('.play-status');
             if (playStatus) playStatus.classList.remove('playing');
@@ -290,12 +317,21 @@ class App {
         });
         
         this.player.on('timeupdate', (data) => {
+            console.log('App: timeupdate事件', { 
+                currentTime: data.currentTime.toFixed(2), 
+                duration: data.duration.toFixed(2),
+                hasTimeline: !!this.timeline 
+            });
+            
             this.updateTimeDisplay(data.currentTime, data.duration);
             
             // 更新时间轴
             if (this.timeline) {
+                console.log('App: 调用timeline.updateProgress', data.currentTime);
                 this.timeline.updateProgress(data.currentTime);
                 this.timeline.highlightCurrentMarker();
+            } else {
+                console.warn('App: timeline未初始化，无法更新进度');
             }
             
             this.state.update('session', { 

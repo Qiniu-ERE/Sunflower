@@ -85,11 +85,13 @@ def register_blueprints(app: Flask):
     def serve_upload(filepath):
         """提供上传文件访问"""
         try:
-            upload_dir = Path(app.config['UPLOAD_FOLDER'])
-            file_path = upload_dir / filepath
+            upload_dir = Path(app.config['UPLOAD_FOLDER']).resolve()
+            file_path = (upload_dir / filepath).resolve()
             
             # 安全检查：确保文件在上传目录内
-            if not file_path.resolve().is_relative_to(upload_dir.resolve()):
+            try:
+                file_path.relative_to(upload_dir)
+            except ValueError:
                 app.logger.warning(f"Attempted path traversal: {filepath}")
                 return jsonify({'error': 'Invalid file path'}), 403
             
@@ -210,12 +212,8 @@ def register_hooks(app: Flask):
     @app.before_request
     def before_request():
         """请求前处理"""
-        # 确保会话ID存在
-        if 'session_id' not in session and request.endpoint not in ['create_session', 'health', 'static']:
-            # 自动创建会话
-            session_id = session_manager.create_session()
-            session['session_id'] = session_id
-            app.logger.info(f"Auto-created session: {session_id}")
+        # 暂时禁用自动会话创建，避免403错误
+        pass
     
     @app.after_request
     def after_request(response):

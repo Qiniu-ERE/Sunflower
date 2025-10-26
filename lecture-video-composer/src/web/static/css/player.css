@@ -97,38 +97,46 @@
 
 /* ========== 时间轴 ========== */
 .timeline-container {
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-md);
     position: relative;
     z-index: auto;
     isolation: isolate;
 }
 
-.timeline {
-    position: relative;
-    height: 8px;
-    background: var(--border-color);
-    border-radius: 999px;
-    cursor: pointer;
-    margin-bottom: var(--spacing-md);
-    overflow: hidden;
-    isolation: isolate;
+/* Timeline组件样式 */
+.timeline-component {
+    width: 100%;
 }
 
-.timeline:hover {
-    height: 12px;
+.timeline-track {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    margin-bottom: var(--spacing-sm);
+    overflow: visible;
+    z-index: 1;
+}
+
+.timeline-background {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+    z-index: 1;
+    pointer-events: none;
 }
 
 .timeline-progress {
     position: absolute;
     left: 0;
     top: 0;
-    bottom: 0;
-    background: var(--primary-color);
-    border-radius: 999px;
-    width: 0%;
+    height: 100%;
+    border-radius: var(--radius-md);
     transition: width 100ms linear;
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
+    width: 0%; /* 确保初始值为0 */
 }
 
 .timeline-markers {
@@ -137,7 +145,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    z-index: 2;
+    z-index: 4;
     pointer-events: none;
 }
 
@@ -145,13 +153,12 @@
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 12px;
-    height: 12px;
     background: white;
     border: 2px solid var(--primary-color);
     border-radius: 50%;
     cursor: pointer;
     transition: all var(--transition-fast);
+    pointer-events: auto;
 }
 
 .timeline-marker:hover {
@@ -161,27 +168,56 @@
 
 .timeline-marker.active {
     background: var(--primary-color);
+    box-shadow: 0 0 0 4px var(--primary-light);
 }
 
-.timeline-handle {
+.timeline-cursor {
     position: absolute;
     top: 50%;
-    left: 0%;
     transform: translate(-50%, -50%);
     width: 16px;
     height: 16px;
     background: white;
     border: 3px solid var(--primary-color);
     border-radius: 50%;
-    cursor: grab;
     box-shadow: var(--shadow-md);
-    transition: transform var(--transition-fast);
+    transition: left 100ms linear;
     z-index: 3;
+    pointer-events: none;
+    left: 0%; /* 确保初始值为0 */
 }
 
-.timeline-handle:active {
-    cursor: grabbing;
-    transform: translate(-50%, -50%) scale(1.2);
+.timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+    font-variant-numeric: tabular-nums;
+}
+
+.timeline-tooltip {
+    position: fixed;
+    transform: translate(-50%, -120%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 1000;
+    white-space: nowrap;
+}
+
+.timeline-tooltip-time {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.timeline-tooltip-photo {
+    margin-top: var(--spacing-xs);
+    font-size: 0.7rem;
+    opacity: 0.8;
 }
 
 .time-display {
