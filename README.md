@@ -197,32 +197,63 @@ Sunflower/
 
 ## 📚 文档
 
-### 快速链接
+### 🎯 快速导航
+
+**项目文档**
 - **[项目使用指南](./lecture-video-composer/README.md)** - 详细使用说明
+- **[文档中心](./lecture-video-composer/docs/README.md)** - 完整文档导航 🆕
 - **[产品需求文档](./docs/PRD_演讲视频合成系统.md)** - 完整产品设计
 - **[实施计划](./docs/implementation_plan.md)** - 开发进度追踪
 
-### 详细文档
+**核心文档**
+- [Web API 文档](./lecture-video-composer/docs/api/Web_API文档.md) - REST API 接口定义 ✅
+- [技术架构](./lecture-video-composer/docs/architecture/README.md) - 系统架构设计 ✅
+- [MVP 实现文档](./lecture-video-composer/docs/architecture/MVP_实现文档.md) - MVP 技术实现 ✅
 
-**用户文档**
-- [快速开始指南](./lecture-video-composer/docs/快速开始.md)
-- [使用教程](./lecture-video-composer/docs/使用教程.md)
-- [常见问题](./lecture-video-composer/docs/FAQ.md)
-
-**开发文档**
-- [技术架构设计](./lecture-video-composer/docs/architecture/README.md)
-- [Web API 文档](./lecture-video-composer/docs/api/Web_API文档.md)
-- [MVP 实现文档](./lecture-video-composer/docs/architecture/MVP_实现文档.md)
-
-**功能模块**
-- [播放器模块](./lecture-video-composer/docs/development/播放器模块文档.md)
-- [视频导出模块](./lecture-video-composer/docs/development/视频导出模块文档.md)
-- [字幕功能](./lecture-video-composer/docs/development/字幕功能文档.md)
+**功能模块文档**
+- [播放器模块](./lecture-video-composer/docs/development/播放器模块文档.md) - 实时播放器 ✅
+- [视频导出模块](./lecture-video-composer/docs/development/视频导出模块文档.md) - 视频合成功能 ✅
+- [字幕功能](./lecture-video-composer/docs/development/字幕功能文档.md) - AI 字幕生成 ✅
 
 **更新日志**
-- [v2.2 更新说明](./lecture-video-composer/docs/changelog/v2.2_项目状态与规划更新.md)
-- [v2.1 更新说明](./lecture-video-composer/docs/changelog/v2.1_更新说明.md)
-- [v2.0 更新说明](./lecture-video-composer/docs/changelog/v2.0_更新说明.md)
+- [v2.2 更新说明](./lecture-video-composer/docs/changelog/v2.2_项目状态与规划更新.md) - Web 界面版本 🆕
+- [v2.1 更新说明](./lecture-video-composer/docs/changelog/v2.1_更新说明.md) - 播放器核心
+- [v2.0 更新说明](./lecture-video-composer/docs/changelog/v2.0_更新说明.md) - 智能字幕
+
+### 📖 文档阅读路径
+
+#### 🎓 新手入门
+
+**推荐阅读顺序：**
+
+1. **[项目 README](./README.md)** - 项目概览和快速开始
+2. **[技术架构](./lecture-video-composer/docs/architecture/README.md)** - 理解系统设计
+3. **[MVP 实现文档](./lecture-video-composer/docs/architecture/MVP_实现文档.md)** - 核心功能实现
+4. **[快速测试指南](./lecture-video-composer/docs/testing/快速测试指南.md)** - 动手验证
+
+#### 👨‍💻 开发者路径
+
+**功能开发：**
+
+1. **[Web API 文档](./lecture-video-composer/docs/api/Web_API文档.md)** - 后端接口
+2. **功能模块文档** - 具体模块实现
+   - [播放器模块](./lecture-video-composer/docs/development/播放器模块文档.md)
+   - [视频导出模块](./lecture-video-composer/docs/development/视频导出模块文档.md)
+   - [字幕功能](./lecture-video-composer/docs/development/字幕功能文档.md)
+3. **[Bug 修复记录](./lecture-video-composer/docs/bugfix/)** - 常见问题解决方案
+
+### 📊 文档完成度
+
+| 类别 | 完成度 | 状态 |
+|------|--------|------|
+| **API 文档** | 100% | ✅ 完成 |
+| **架构设计** | 100% | ✅ 完成 |
+| **功能模块** | 100% | ✅ 完成 |
+| **更新日志** | 100% | ✅ 完成 |
+| **Bug 修复** | 100% | ✅ 完成 |
+| **测试文档** | 80% | 🚧 进行中 |
+| **用户文档** | 20% | 📝 待完善 |
+| **部署文档** | 0% | ⏳ 计划中 |
 
 ---
 

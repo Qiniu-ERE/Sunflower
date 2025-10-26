@@ -160,27 +160,78 @@ lecture-video-composer/
 
 ## 📚 文档
 
-### 用户文档
-- [快速开始指南](./docs/快速开始.md)
-- [使用教程](./docs/使用教程.md)
-- [常见问题](./docs/FAQ.md)
+### 🎯 快速导航
 
-### 开发文档
-- [产品需求文档（PRD）](../docs/PRD_演讲视频合成系统.md)
-- [技术架构设计](./docs/architecture/README.md)
-- [实施计划](../docs/implementation_plan.md)
-- [Web API 文档](./docs/api/Web_API文档.md)
+**核心文档**
+- **[文档中心](./docs/README.md)** - 完整文档导航 🆕
+- **[产品需求文档（PRD）](../docs/PRD_演讲视频合成系统.md)** - 完整产品设计
+- **[实施计划](../docs/implementation_plan.md)** - 开发进度追踪
+- [Web API 文档](./docs/api/Web_API文档.md) - REST API 接口定义 ✅
+- [技术架构](./docs/architecture/README.md) - 系统架构设计 ✅
+- [MVP 实现文档](./docs/architecture/MVP_实现文档.md) - MVP 技术实现 ✅
 
-### 功能模块文档
-- [播放器模块](./docs/development/播放器模块文档.md)
-- [视频导出模块](./docs/development/视频导出模块文档.md)
-- [字幕功能](./docs/development/字幕功能文档.md)
-- [时间轴同步](./docs/development/时间轴同步文档.md)
+**功能模块文档**
+- [播放器模块](./docs/development/播放器模块文档.md) - 实时播放器 (v2.1) ✅
+- [视频导出模块](./docs/development/视频导出模块文档.md) - 视频合成功能 ✅
+- [字幕功能](./docs/development/字幕功能文档.md) - AI 字幕生成 (v2.0) ✅
 
-### 更新日志
-- [v2.2 更新说明](./docs/changelog/v2.2_项目状态与规划更新.md)
-- [v2.1 更新说明](./docs/changelog/v2.1_更新说明.md)
-- [v2.0 更新说明](./docs/changelog/v2.0_更新说明.md)
+**更新日志**
+- [v2.2 更新说明](./docs/changelog/v2.2_项目状态与规划更新.md) - Web 界面版本 🆕
+- [v2.1 更新说明](./docs/changelog/v2.1_更新说明.md) - 播放器核心
+- [v2.0 更新说明](./docs/changelog/v2.0_更新说明.md) - 智能字幕
+
+**Bug 修复记录**
+- [播放器视图交互问题](./docs/bugfix/BUG_FIX_播放器视图交互问题.md) ✅
+- [文件上传显示问题](./docs/bugfix/文件上传显示问题修复.md) ✅
+- [播放器图片渲染问题](./docs/bugfix/播放器图片渲染和按钮问题修复.md) ✅
+- [Session 管理问题](./docs/bugfix/SESSION_ID_修复总结.md) ✅
+
+**测试文档**
+- [快速测试指南](./docs/testing/快速测试指南.md) - 功能验证 ✅
+- [字幕问题排查](./docs/testing/字幕问题排查指南.md) - 调试指南 ✅
+
+### 📖 文档阅读路径
+
+#### 🎓 新手入门
+
+**推荐阅读顺序：**
+
+1. **[项目 README](./README.md)** - 项目概览和快速开始
+2. **[技术架构](./docs/architecture/README.md)** - 理解系统设计
+3. **[MVP 实现文档](./docs/architecture/MVP_实现文档.md)** - 核心功能实现
+4. **[快速测试指南](./docs/testing/快速测试指南.md)** - 动手验证
+
+#### 👨‍💻 开发者路径
+
+**功能开发：**
+
+1. **[Web API 文档](./docs/api/Web_API文档.md)** - 后端接口
+2. **功能模块文档** - 具体模块实现
+   - [播放器模块](./docs/development/播放器模块文档.md)
+   - [视频导出模块](./docs/development/视频导出模块文档.md)
+   - [字幕功能](./docs/development/字幕功能文档.md)
+3. **[Bug 修复记录](./docs/bugfix/)** - 常见问题解决方案
+
+#### 👤 最终用户
+
+**使用指南：**（待完善）
+
+1. 快速开始指南
+2. 使用教程
+3. 常见问题 FAQ
+
+### 📊 文档完成度
+
+| 类别 | 完成度 | 状态 |
+|------|--------|------|
+| **API 文档** | 100% | ✅ 完成 |
+| **架构设计** | 100% | ✅ 完成 |
+| **功能模块** | 100% | ✅ 完成 |
+| **更新日志** | 100% | ✅ 完成 |
+| **Bug 修复** | 100% | ✅ 完成 |
+| **测试文档** | 80% | 🚧 进行中 |
+| **用户文档** | 20% | 📝 待完善 |
+| **部署文档** | 0% | ⏳ 计划中 |
 
 ---
 
