@@ -9,10 +9,14 @@
 - `demo-video.mp4` - 完整功能演示视频
 
 ### 界面截图
+- `screenshot-home.png` - 产品主页入口截图
 - `screenshot-upload.png` - 文件上传界面截图
 - `screenshot-projects.png` - 项目管理界面截图
 - `screenshot-player.png` - 播放器界面截图
 - `screenshot-timeline.png` - 时间轴控制界面截图
+- `screenshot-export.png` - 视频导出配置界面截图
+- `screenshot-progress.png` - 导出进度追踪界面截图
+- `screenshot-download.png` - 导出完成下载界面截图
 
 ## 截图要求
 
