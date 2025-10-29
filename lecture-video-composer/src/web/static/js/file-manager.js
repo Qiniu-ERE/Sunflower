@@ -182,17 +182,8 @@ export class FileManager {
             };
         }
         
-        // 检查文件名
-        if (fileType === 'image') {
-            // 照片文件名应包含时间戳格式：YYYY-MM-DD-HH:MM:SS
-            const hasTimestamp = /\d{4}-\d{2}-\d{2}-\d{2}:\d{2}:\d{2}/.test(file.name);
-            if (!hasTimestamp) {
-                return {
-                    valid: false,
-                    error: '照片文件名必须包含时间戳格式 (YYYY-MM-DD-HH:MM:SS)'
-                };
-            }
-        }
+        // 文件名验证已移除 - 后端会自动根据文件创建时间重命名
+        // 用户可以上传任意文件名的文件
         
         return { valid: true };
     }
