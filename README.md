@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/bdbe6ed6-7458-4afe-a2a0-426c59d901b1
 
 
 
-> **演示视频备用链接**：[点击此处观看演示视频](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
+> **高清演示视频链接**：[点击此处观看](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
 
 
 **视频内容：**
