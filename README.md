@@ -369,10 +369,10 @@ Sunflower/
   - 项目管理系统
 
 - ✅ **质量保障**
-  - 后端单元测试：26/26 通过
-  - 前端集成测试：核心流程验证完成
+  - 单元测试：104个测试用例全部通过 ✅
+  - 测试覆盖率：44% (持续提升中)
+  - 核心模块覆盖率：75%+ (lecture_composer, timeline_sync)
   - 文档与代码 100% 一致
-  - 87% 测试覆盖率
 
 **版本信息**
 
@@ -411,7 +411,9 @@ Sunflower/
 - [字幕功能](./lecture-video-composer/docs/development/字幕功能文档.md) - AI 字幕生成 ✅
 
 **测试文档**
-- [集成测试指南](./lecture-video-composer/docs/testing/集成测试指南.md) - 端到端测试，87% 覆盖率 ✅
+- [测试覆盖率分析报告](./lecture-video-composer/docs/testing/测试覆盖率分析报告.md) - 当前44%覆盖率详细分析 🆕
+- [测试覆盖率提升报告](./lecture-video-composer/docs/testing/测试覆盖率提升报告.md) - 改进成果和经验总结 🆕
+- [集成测试指南](./lecture-video-composer/docs/testing/集成测试指南.md) - 端到端测试流程 ✅
 - [快速测试指南](./lecture-video-composer/docs/testing/快速测试指南.md) - 功能验证 ✅
 - [字幕问题排查](./lecture-video-composer/docs/testing/字幕问题排查指南.md) - 调试指南 ✅
 
@@ -461,7 +463,7 @@ Sunflower/
 | **功能模块** | 100% | ✅ 完成 | 播放器、导出、字幕模块 |
 | **更新日志** | 100% | ✅ 完成 | v2.0 ~ v2.2 版本记录 |
 | **Bug 修复** | 100% | ✅ 完成 | 关键问题修复记录 |
-| **测试文档** | 100% | ✅ 完成 | 集成测试 + 快速测试指南 |
+| **测试文档** | 100% | ✅ 完成 | 覆盖率分析 + 集成测试 + 快速测试 |
 | **用户文档** | 100% | ✅ 完成 | 快速上手 + FAQ + 使用技巧 |
 | **部署文档** | 100% | ✅ 完成 | 通用部署 + 多平台部署 |
 
