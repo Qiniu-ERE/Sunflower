@@ -48,8 +48,13 @@
 
 <!-- 演示视频 -->
 ### 📹 演示视频
-> **演示视频预览**
-<td><img src="./lecture-video-composer/docs/assets/demo-video-placeholder.png" alt="视频截图" /><br/><center>视频截图</center></td>
+
+<!-- 演示：在网页中嵌入视频 -->
+<video controls width="640">
+  <source src="https://raw.githubusercontent.com/Qiniu-ERE/Sunflower/4d9007cd6f53c99add89eaa361c5fb54270959c3/lecture-video-composer/docs/assets/demo-video.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 
 > **演示视频在线播放链接**：[点击此处观看演示视频](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
 
