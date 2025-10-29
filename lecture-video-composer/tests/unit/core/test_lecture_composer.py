@@ -317,7 +317,13 @@ class TestProcess:
         mock_validate.return_value = True
         from src.services.metadata.metadata_service import ProjectMetadata
         mock_metadata = Mock(spec=ProjectMetadata)
-        mock_create_meta.return_value = mock_metadata
+        
+        # 关键修复：让 create_project_metadata 同时返回值并设置实例属性
+        def set_metadata_and_return(title=None):
+            composer.project_metadata = mock_metadata
+            return mock_metadata
+        
+        mock_create_meta.side_effect = set_metadata_and_return
         
         # 执行
         result = composer.process(title="Test", save=True)
@@ -341,7 +347,13 @@ class TestProcess:
         mock_validate.return_value = True
         from src.services.metadata.metadata_service import ProjectMetadata
         mock_metadata = Mock(spec=ProjectMetadata)
-        mock_create_meta.return_value = mock_metadata
+        
+        # 关键修复：让 create_project_metadata 同时返回值并设置实例属性
+        def set_metadata_and_return(title=None):
+            composer.project_metadata = mock_metadata
+            return mock_metadata
+        
+        mock_create_meta.side_effect = set_metadata_and_return
         
         result = composer.process(save=False)
         
