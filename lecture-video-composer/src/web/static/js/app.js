@@ -402,6 +402,14 @@ class App {
      * 绑定事件
      */
     bindEvents() {
+        // 使用统计按钮
+        const usageStatsBtn = document.getElementById('usage-stats-btn');
+        if (usageStatsBtn) {
+            usageStatsBtn.addEventListener('click', () => {
+                window.open('/usage.html', '_blank');
+            });
+        }
+        
         // 帮助按钮
         const helpBtn = document.getElementById('help-btn');
         if (helpBtn) {

@@ -250,6 +250,7 @@
         
         <div class="action-buttons">
             <button class="btn btn-secondary" onclick="checkHealth()">检查状态</button>
+            <a href="/usage.html" class="btn btn-secondary">使用统计</a>
             <a href="/app.html" class="btn btn-primary">开始使用</a>
         </div>
         
@@ -262,25 +263,57 @@
     <script>
         // 检查服务器健康状态
         async function checkHealth() {
+            const statusElement = document.getElementById('server-status');
+            const sessionCountElement = document.getElementById('session-count');
+            
             try {
+                console.log('开始检查健康状态...');
+                statusElement.textContent = '检查中...';
+                statusElement.className = 'status-value status-pending';
+                
                 const response = await fetch('/health');
+                console.log('健康检查响应:', response);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('健康检查数据:', data);
                 
-                document.getElementById('server-status').textContent = 
-                    `运行中 ✓ (${data.version})`;
-                document.getElementById('session-count').textContent = 
-                    data.sessions || 0;
+                // 更新显示
+                statusElement.textContent = `运行中 ✓ (${data.version})`;
+                statusElement.className = 'status-value status-good';
                 
-                alert(`服务器状态: ${data.status}\n版本: ${data.version}\n会话数: ${data.sessions}`);
+                sessionCountElement.textContent = data.sessions || 0;
+                
+                // 显示详细信息
+                alert(
+                    `✅ 服务器健康检查成功！\n\n` +
+                    `状态: ${data.status}\n` +
+                    `版本: ${data.version}\n` +
+                    `活跃会话: ${data.sessions || 0}个`
+                );
+                
             } catch (error) {
-                document.getElementById('server-status').textContent = '连接失败 ✗';
-                document.getElementById('server-status').className = 'status-value';
-                alert('无法连接到服务器: ' + error.message);
+                console.error('健康检查失败:', error);
+                
+                statusElement.textContent = '连接失败 ✗';
+                statusElement.className = 'status-value';
+                
+                alert(
+                    `❌ 无法连接到服务器\n\n` +
+                    `错误信息: ${error.message}\n\n` +
+                    `请确认服务器是否正在运行。`
+                );
             }
         }
         
         // 页面加载时自动检查
-        window.addEventListener('load', checkHealth);
+        window.addEventListener('load', () => {
+            console.log('页面加载完成，开始健康检查');
+            checkHealth();
+        });
     </script>
 </body>
 </html>

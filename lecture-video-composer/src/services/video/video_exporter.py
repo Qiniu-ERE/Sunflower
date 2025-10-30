@@ -270,8 +270,9 @@ class VideoExporter:
             shutil.copy2(subtitle_file, temp_subtitle)
             logger.info(f"Created temporary subtitle file: {temp_subtitle}")
             
-            # 使用简单的文件名（没有特殊字符）
-            vf_param = f"subtitles={temp_subtitle.name}"
+            # 使用绝对路径并正确转义，在Windows上需要转换路径分隔符
+            subtitle_path_for_filter = str(temp_subtitle.absolute()).replace('\\', '/').replace(':', '\\:')
+            vf_param = f"subtitles='{subtitle_path_for_filter}'"
             
             cmd = [
                 'ffmpeg',
@@ -285,21 +286,21 @@ class VideoExporter:
                 str(output_file)
             ]
             
-            logger.info(f"FFmpeg subtitle command: {' '.join(cmd[:6])}...")
+            logger.info(f"FFmpeg subtitle command: {' '.join(cmd[:8])}...")
             
             try:
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
                     text=True,
-                    timeout=600,  # 增加超时时间，因为需要重新编码视频
-                    cwd=temp_subtitle.parent  # 设置工作目录为临时文件所在目录
+                    timeout=600  # 增加超时时间，因为需要重新编码视频
                 )
                 
                 if result.returncode != 0:
                     # 如果还是失败，记录详细错误并提供备选方案
                     logger.error(f"FFmpeg subtitle embedding failed")
-                    logger.error(f"Error output: {result.stderr[-500:]}")  # 只显示最后500字符
+                    logger.error(f"Command: {' '.join(cmd)}")
+                    logger.error(f"Error output: {result.stderr[-1000:]}")  # 显示最后1000字符
                     logger.warning("Subtitle embedding failed. Creating video without subtitles...")
                     logger.warning(f"Subtitle file is available at: {subtitle_file}")
                     logger.warning(f"You can manually add subtitles later using: ffmpeg -i video.mp4 -vf subtitles={subtitle_file} output.mp4")
@@ -356,9 +357,13 @@ class VideoExporter:
             str(segment_file)
         ]
         
+        # 大幅增加超时时间：每秒持续时间分配5秒处理时间，最少5分钟
+        # 这样49秒的片段有 max(49*5+60, 300) = max(305, 300) = 305秒超时
+        timeout = max(duration * 5.0 + 60, 300)  # Minimum 5 minutes timeout
+        
+        logger.info(f"FFmpeg timeout set to {timeout:.1f}s for {duration:.1f}s segment")
+        
         try:
-            timeout = max(duration * 2.0 + 30, 120)  # Minimum 2 minutes timeout
-            
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -405,7 +410,7 @@ class VideoExporter:
         logger.info(f"Using {max_workers} parallel workers to process {len(timeline_items)} segments")
         
         # 并行处理所有片段
-        segment_files = [None] * len(timeline_items)  # 预分配列表以保持顺序
+        segment_files: List[Optional[Path]] = [None] * len(timeline_items)  # 预分配列表以保持顺序
         
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # 提交所有任务
@@ -427,8 +432,12 @@ class VideoExporter:
                     logger.error(f"Failed to create segment {index}: {e}")
                     raise
         
+        # 验证所有片段都已创建
+        if any(f is None for f in segment_files):
+            raise RuntimeError("Some video segments failed to create")
+        
         logger.info(f"All {len(timeline_items)} segments created successfully")
-        return segment_files
+        return [f for f in segment_files if f is not None]  # 类型收窄：过滤None值
     
     def _concatenate_segments(self, segment_files: List[Path], output_file: Path):
         """
