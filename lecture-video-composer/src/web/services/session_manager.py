@@ -37,6 +37,23 @@ class Session:
     projects: Dict[str, ProjectInfo] = field(default_factory=dict)
     current_project_id: Optional[str] = None
     data: Dict[str, Any] = field(default_factory=dict)
+    usage: Dict[str, Any] = field(default_factory=lambda: {
+        'files': {
+            'audio_count': 0,
+            'image_count': 0,
+            'total_size': 0
+        },
+        'exports': {
+            'total': 0,
+            'success': 0,
+            'failed': 0,
+            'total_duration': 0
+        },
+        'ai_services': {
+            'subtitle_generation': 0,
+            'total_audio_duration': 0
+        }
+    })
     
     def update_access_time(self):
         """更新最后访问时间"""
@@ -260,6 +277,16 @@ class SessionManager:
         
         return session.data.get(key, default)
     
+    def save_session(self, session: Session):
+        """
+        保存会话（公共方法）
+        
+        Args:
+            session: 会话对象
+        """
+        with self._lock:
+            self._save_session(session)
+    
     def cleanup_expired_sessions(self) -> int:
         """
         清理过期会话
@@ -295,7 +322,8 @@ class SessionManager:
             'projects': {
                 pid: proj.to_dict() for pid, proj in session.projects.items()
             },
-            'data': session.data
+            'data': session.data,
+            'usage': session.usage
         }
         
         try:
@@ -329,7 +357,24 @@ class SessionManager:
                 last_accessed=session_data['last_accessed'],
                 current_project_id=session_data.get('current_project_id'),
                 projects=projects,
-                data=session_data.get('data', {})
+                data=session_data.get('data', {}),
+                usage=session_data.get('usage', {
+                    'files': {
+                        'audio_count': 0,
+                        'image_count': 0,
+                        'total_size': 0
+                    },
+                    'exports': {
+                        'total': 0,
+                        'success': 0,
+                        'failed': 0,
+                        'total_duration': 0
+                    },
+                    'ai_services': {
+                        'subtitle_generation': 0,
+                        'total_audio_duration': 0
+                    }
+                })
             )
             
             return session
