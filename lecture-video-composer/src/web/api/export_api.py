@@ -225,6 +225,27 @@ def start_export():
                         
                         app.logger.info(f"Video export completed: {result_path}")
                         
+                        # 记录使用统计 - 导出成功
+                        try:
+                            from .usage_api import record_usage_internal
+                            video_duration = metadata.get('duration', 0)
+                            record_usage_internal(
+                                session_id=session_id,
+                                action='export',
+                                project_id=project_id,
+                                metadata={
+                                    'resolution': resolution,
+                                    'fps': fps,
+                                    'format': output_format,
+                                    'ai_subtitle': enable_ai_subtitle,
+                                    'duration': video_duration,
+                                    'photo_count': len(timeline_items)
+                                }
+                            )
+                            app.logger.info(f"Usage recorded for export {export_id}")
+                        except Exception as usage_error:
+                            app.logger.error(f"Failed to record usage: {usage_error}")
+                        
                     finally:
                         # 恢复原始方法
                         exporter._create_photo_segments = original_create_segments

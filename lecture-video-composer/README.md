@@ -2,7 +2,7 @@
 
 > 智能的演讲内容记录与回放工具，将音频与照片通过时间轴同步，生成流畅的演讲视频
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/Qiniu-ERE/Sunflower)
+[![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)](https://github.com/Qiniu-ERE/Sunflower)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](./LICENSE)
 
@@ -21,12 +21,13 @@
 ## 🎬 效果展示
 
 <!-- 演示视频 -->
-
 ### 📹 演示视频
-> **演示视频预览**
-<td><img src="./docs/assets/demo-video-placeholder.png" alt="视频截图" /><br/><center>视频截图</center></td>
 
-> **演示视频在线播放链接**：[点击此处观看演示视频](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
+https://github.com/user-attachments/assets/bdbe6ed6-7458-4afe-a2a0-426c59d901b1
+
+
+
+> **高清演示视频链接**：[点击此处观看](http://rzkkr9sg3.hd-bkt.clouddn.com/test_tools/039f854e886ae45cc4947318ba4b9dfa.mov)
 
 
 **视频内容：**
@@ -207,6 +208,12 @@ lecture-video-composer/
 
 ### 历史版本
 
+- **v3.0.1** - 使用统计与用户体验优化（2025-10-30）
+  - ✅ 修复视频导出使用统计脱节问题
+  - ✅ 添加使用统计页面快捷入口
+  - ✅ 优化首页健康检查功能
+  - ✅ 完善用户交互体验
+- **v3.0.0** - GA 正式版本（2025-10-26）
 - **v2.2** - Web 界面完善（2025-10）
 - **v2.1** - 播放器核心模块（2025-10）
 - **v2.0** - 智能字幕生成（2025-09）

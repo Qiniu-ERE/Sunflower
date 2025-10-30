@@ -3,7 +3,7 @@
 > 七牛云第四届内部 Hackathon 参赛项目
 > **让每一场演讲都值得被记录、被回放、被分享**
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/Qiniu-ERE/Sunflower)
+[![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)](https://github.com/Qiniu-ERE/Sunflower)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](./LICENSE)
 ---
@@ -383,6 +383,12 @@ Sunflower/
 
 ### 历史版本
 
+- **v3.0.1** - 使用统计与用户体验优化（2025-10-30）
+  - ✅ 修复视频导出使用统计脱节问题
+  - ✅ 添加使用统计页面快捷入口
+  - ✅ 优化首页健康检查功能
+  - ✅ 完善用户交互体验
+- **v3.0.0** - GA 正式版本（2025-10-26）
 - **v2.2** - Web 界面版本（2025-10-25）
 - **v2.1** - 播放器核心模块（2025-10）
 - **v2.0** - 智能字幕生成（2025-09）

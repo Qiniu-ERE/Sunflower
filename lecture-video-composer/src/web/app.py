@@ -61,11 +61,12 @@ def create_app(config_name: str = None) -> Flask:
 def register_blueprints(app: Flask):
     """注册蓝图"""
     # 注册API蓝图
-    from .api import file_bp, project_bp, playback_bp, export_bp
+    from .api import file_bp, project_bp, playback_bp, export_bp, usage_bp
     app.register_blueprint(file_bp, url_prefix='/api/file')
     app.register_blueprint(project_bp, url_prefix='/api/project')
     app.register_blueprint(playback_bp, url_prefix='/api/playback')
     app.register_blueprint(export_bp, url_prefix='/api/export')
+    app.register_blueprint(usage_bp, url_prefix='/api/usage')
     
     # 暂时添加基础路由
     @app.route('/')
@@ -82,6 +83,11 @@ def register_blueprints(app: Flask):
     def help_page():
         """帮助中心页面"""
         return app.send_static_file('help.html')
+    
+    @app.route('/usage.html')
+    def usage_page():
+        """使用统计页面"""
+        return app.send_static_file('usage.html')
     
     @app.route('/uploads/<path:filepath>')
     def serve_upload(filepath):

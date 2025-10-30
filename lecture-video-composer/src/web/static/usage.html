@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使用统计 - 演讲视频合成系统</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .usage-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .stat-limit {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.warning {
+            background: #FF9800;
+        }
+
+        .progress-fill.danger {
+            background: #F44336;
+        }
+
+        .history-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .history-section h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-description {
+            color: #333;
+        }
+
+        .history-time {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .action-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .action-upload {
+            background: #E3F2FD;
+            color: #1976D2;
+        }
+
+        .action-create {
+            background: #F3E5F5;
+            color: #7B1FA2;
+        }
+
+        .action-export {
+            background: #E8F5E9;
+            color: #388E3C;
+        }
+
+        .btn-reset {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn-reset:hover {
+            background: #d32f2f;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .percentage-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="usage-container">
+        <header style="text-align: center; margin-bottom: 30px;">
+            <h1>📊 使用统计</h1>
+            <p style="color: #666;">查看您的使用情况和配额</p>
+        </header>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- 统计卡片将通过JS动态生成 -->
+        </div>
+
+        <div class="history-section">
+            <h2>使用历史</h2>
+            <ul class="history-list" id="historyList">
+                <!-- 历史记录将通过JS动态生成 -->
+            </ul>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn-reset" onclick="resetUsage()">重置统计数据</button>
+            <a href="app.html" style="margin-left: 20px; color: #4CAF50;">返回主页</a>
+        </div>
+    </div>
+
+    <script>
+        // 加载使用统计
+        async function loadUsageStats() {
+            try {
+                const response = await fetch('/api/usage/stats');
+                const data = await response.json();
+
+                if (!data.success) {
+                    if (response.status === 401) {
+                        // 创建会话
+                        await fetch('/api/session/create', { method: 'POST' });
+                        // 重新加载
+                        return loadUsageStats();
+                    }
+                    throw new Error(data.error || '加载失败');
+                }
+
+                renderStats(data.stats);
+                renderHistory(data.stats.history);
+            } catch (error) {
+                console.error('加载使用统计失败:', error);
+                alert('加载使用统计失败: ' + error.message);
+            }
+        }
+
+        // 渲染统计卡片
+        function renderStats(stats) {
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = '';
+
+            // 项目统计
+            grid.appendChild(createStatCard(
+                '创建的项目',
+                stats.projects.used,
+                stats.projects.limit,
+                stats.projects.percentage,
+                '项目'
+            ));
+
+            // 导出统计
+            grid.appendChild(createStatCard(
+                '导出的视频',
+                stats.exports.used,
+                stats.exports.limit,
+                stats.exports.percentage,
+                '个'
+            ));
+
+            // 时长统计
+            grid.appendChild(createStatCard(
+                '导出时长',
+                stats.duration.formatted,
+                formatDuration(stats.duration.limit),
+                stats.duration.percentage,
+                ''
+            ));
+
+            // 存储统计
+            grid.appendChild(createStatCard(
+                '使用的存储',
+                stats.storage.formatted,
+                formatSize(stats.storage.limit),
+                stats.storage.percentage,
+                ''
+            ));
+        }
+
+        // 创建统计卡片
+        function createStatCard(title, used, limit, percentage, unit) {
+            const card = document.createElement('div');
+            card.className = 'stat-card';
+
+            const progressClass = percentage > 80 ? 'danger' : percentage > 60 ? 'warning' : '';
+
+            // 处理已格式化的字符串（如 "1.5 MB"）和需要添加单位的数字
+            const usedDisplay = typeof used === 'string' && used.includes(' ') ? used : `${used}${unit}`;
+            const limitDisplay = typeof limit === 'string' && limit.includes(' ') ? limit : `${limit}${unit}`;
+
+            card.innerHTML = `
+                <h3>${title}</h3>
+                <div class="stat-value">${usedDisplay}</div>
+                <div class="stat-limit">限制: ${limitDisplay}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill ${progressClass}" style="width: ${percentage}%"></div>
+                </div>
+                <div class="percentage-text">${percentage}% 已使用</div>
+            `;
+
+            return card;
+        }
+
+        // 渲染历史记录
+        function renderHistory(history) {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+
+            if (!history || history.length === 0) {
+                list.innerHTML = '<li class="empty-state">暂无使用记录</li>';
+                return;
+            }
+
+            history.reverse().forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+
+                const actionClass = {
+                    'upload': 'action-upload',
+                    'create_project': 'action-create',
+                    'export': 'action-export'
+                }[item.action] || 'action-upload';
+
+                const actionText = {
+                    'upload': '上传',
+                    'create_project': '创建',
+                    'export': '导出'
+                }[item.action] || item.action;
+
+                li.innerHTML = `
+                    <div>
+                        <span class="action-badge ${actionClass}">${actionText}</span>
+                        <span class="history-description">${item.description}</span>
+                    </div>
+                    <span class="history-time">${formatTime(item.timestamp)}</span>
+                `;
+
+                list.appendChild(li);
+            });
+        }
+
+        // 重置统计
+        async function resetUsage() {
+            if (!confirm('确定要重置所有使用统计吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/usage/reset', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('统计已重置');
+                    loadUsageStats();
+                } else {
+                    throw new Error(data.error || '重置失败');
+                }
+            } catch (error) {
+                console.error('重置失败:', error);
+                alert('重置失败: ' + error.message);
+            }
+        }
+
+        // 格式化时间
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+
+            // 小于1分钟
+            if (diff < 60000) {
+                return '刚刚';
+            }
+            // 小于1小时
+            if (diff < 3600000) {
+                return Math.floor(diff / 60000) + '分钟前';
+            }
+            // 小于1天
+            if (diff < 86400000) {
+                return Math.floor(diff / 3600000) + '小时前';
+            }
+            // 显示日期
+            return date.toLocaleDateString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 格式化时长
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (hours > 0) {
+                return `${hours}小时${minutes}分钟`;
+            }
+            return `${minutes}分钟`;
+        }
+
+        // 格式化大小
+        function formatSize(bytes) {
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unitIndex = 0;
+            
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            
+            return `${size.toFixed(1)} ${units[unitIndex]}`;
+        }
+
+        // 页面加载时获取统计
+        window.addEventListener('load', loadUsageStats);
+    </script>
+</body>
+</html>
