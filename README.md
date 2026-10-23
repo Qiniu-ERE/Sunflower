@@ -158,7 +158,9 @@ python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/�
 
 ## 现场演示
 
-完整话术与真人实测耗时见 [docs/demo-script.md](docs/demo-script.md)。每次彩排前先 `python3 -m sunflower.demo reset`：会话越长、上下文越大，同类任务从 44 s 可以拖到近 5 分钟。
+完整话术与真人实测耗时见 [docs/demo-script.md](docs/demo-script.md)。每次彩排前先 `python3 -m sunflower.demo reset`（工作区回到初始状态，Codex 开新会话）。
+
+实测同一会话内连续追问，Codex 出第一步的等待越来越长：16 s → 19 s → 83 s；闲置 99 分钟后再追问，等了 161 s，其间上游流式连接断开重连 4 次，整轮 288 s。新会话同类任务整轮 44 s、无断流。
 
 ## 项目结构
 
