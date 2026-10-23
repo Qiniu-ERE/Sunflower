@@ -89,7 +89,7 @@ function addBubble(role, text, ts) {
       last.querySelector("span").textContent += text; last._t = t; return;
     }
     const b = document.createElement("div"); b.className = "bubble " + role; b._t = t;
-    b.innerHTML = `<small>${role === "user" ? "你" : "向日葵"}</small><span></span>`;
+    b.innerHTML = `<small>${role === "user" ? "你" : "太阳花"}</small><span></span>`;
     b.querySelector("span").textContent = text; el.appendChild(b);
   });
 }
