@@ -27,4 +27,4 @@ notes=$(printf '%s\n' "## 合入的 PR" "$(git log --first-parent --merges --for
   "" "门禁：main@${sha:0:7} CI 全绿")
 gh release create "$tag" --target "$sha" --title "$tag" --notes "$notes"
 git fetch -q --tags origin
-echo "✔ 已发布 $tag（${sha:0:7}）"
+echo "✔ 已发布 ${tag}（${sha:0:7}）"

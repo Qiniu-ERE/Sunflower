@@ -1,4 +1,5 @@
 import pathlib
+import re
 import unittest
 
 from scripts import gate_check as gc
@@ -51,6 +52,16 @@ class EvaluateTest(unittest.TestCase):
     def test_fails_without_any_spec(self):
         ok, _ = gc.evaluate([], gc.parse_results(LOG_BASE), gc.parse_results(LOG_HEAD))
         self.assertFalse(ok)
+
+
+class ShellLintTest(unittest.TestCase):
+    def test_vars_are_braced_before_non_ascii(self):
+        # bash 在部分 locale 下把紧跟的全角字符算进变量名：「$n：」→ unbound variable `n：`
+        bad = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7f])")
+        scripts = list((ROOT / "scripts").rglob("*.sh")) + [ROOT / "scripts/git-hooks/pre-push"]
+        hits = [f"{p.relative_to(ROOT)}:{i}" for p in scripts
+                for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if bad.search(line)]
+        self.assertEqual(hits, [], "改成 ${var} 写法")
 
 
 class WorkflowLockTest(unittest.TestCase):
