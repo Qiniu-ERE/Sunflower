@@ -23,10 +23,13 @@ jobs:
       - run: pip install -r requirements.txt
       - name: ffmpeg（TG 入口的语音转码 OGG/Opus ↔ PCM）
         timeout-minutes: 6
-        # apt 源偶尔卡住不动（2026-10-23 实测 8 分钟无输出）：单次限 100 s，最多 3 次
+        # apt 源偶尔卡住不动（2026-10-23 实测 8 分钟无输出）：每次限 120 s，最多 3 次。
+        # timeout 放在 sudo 里面，超时杀的是 apt 本身，不会留着 dpkg 锁让下一次干等
         run: |
           for i in 1 2 3; do
-            timeout 100 sh -c 'sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg' && exit 0
+            date +%T
+            sudo timeout -k 5 120 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update -q \
+              && sudo timeout -k 5 120 apt-get install -y -q ffmpeg && exit 0
             echo "apt 第 $i 次没装上，重试"
           done
           exit 1
