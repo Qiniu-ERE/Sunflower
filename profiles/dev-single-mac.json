@@ -1,0 +1,16 @@
+{
+  "description": "单机开发：设备客户端与主机都跑在同一台 Mac 上",
+  "device": {
+    "mac": "02:CC:72:00:00:01",
+    "audio_in": ["ffmpeg", "-loglevel", "error", "-f", "avfoundation", "-i", ":default", "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],
+    "audio_out": ["ffplay", "-loglevel", "error", "-nodisp", "-autoexit", "-f", "s16le", "-ar", "16000", "-ch_layout", "mono", "-i", "-"],
+    "trigger": "stdin",
+    "host_url": "http://127.0.0.1:8787"
+  },
+  "host": {
+    "bind": "127.0.0.1",
+    "port": 8787,
+    "agent": "codex",
+    "workspace": "~/sunflower-demo"
+  }
+}

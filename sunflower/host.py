@@ -1,0 +1,177 @@
+"""Host: one process, one port, three consumers.
+
+    device  --POST /api/*-->  host  --codex exec-->  agent
+    device  <--SSE /events--  host  --SSE /events-->  panel (AirPlay screen / kiosk)
+
+    python3 -m sunflower.host --profile dev-single-mac
+"""
+import argparse
+import collections
+import hmac
+import json
+import pathlib
+import queue
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
+
+from . import agents, config
+
+WEB = pathlib.Path(__file__).resolve().parent / "web"
+HEARTBEAT_S = 30
+
+
+class Bus:
+    """Fan-out of named events with a replay buffer so a reloaded panel catches up."""
+
+    def __init__(self, history=300):
+        self.lock = threading.Lock()
+        self.subs = []
+        self.history = collections.deque(maxlen=history)
+        self.seq = 0
+
+    def emit(self, event, data):
+        with self.lock:
+            self.seq += 1
+            msg = (self.seq, event, dict(data, ts=time.time()))
+            self.history.append(msg)
+            for q in list(self.subs):
+                q.put(msg)
+
+    def subscribe(self, replay=True):
+        q = queue.Queue()
+        with self.lock:
+            if replay:
+                for m in self.history:
+                    q.put(m)
+            self.subs.append(q)
+        return q
+
+    def unsubscribe(self, q):
+        with self.lock:
+            if q in self.subs:
+                self.subs.remove(q)
+
+
+def make_handler(bus, runner, token):
+    class H(BaseHTTPRequestHandler):
+        server_version = "sunflower/0.1"
+
+        def log_message(self, fmt, *args):  # keep stdout for our own log lines
+            pass
+
+        def _authed(self):
+            got = self.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+            if not got:
+                got = (parse_qs(urlparse(self.path).query).get("t") or [""])[0]
+            return bool(token) and hmac.compare_digest(got, token)
+
+        def _json(self, code, obj):
+            body = json.dumps(obj, ensure_ascii=False).encode()
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            path = urlparse(self.path).path
+            if path == "/health":
+                return self._json(200, {"ok": True, "busy": runner.busy()})
+            if path in ("/", "/panel"):
+                body = (WEB / "panel.html").read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                return self.wfile.write(body)
+            if path == "/events":
+                if not self._authed():
+                    return self._json(401, {"error": "token required"})
+                return self._sse(replay=parse_qs(urlparse(self.path).query).get("replay", ["1"])[0] == "1")
+            self._json(404, {"error": "not found"})
+
+        def do_POST(self):
+            if not self._authed():
+                return self._json(401, {"error": "token required"})
+            n = int(self.headers.get("Content-Length") or 0)
+            try:
+                body = json.loads(self.rfile.read(n) or b"{}")
+            except ValueError:
+                return self._json(400, {"error": "bad json"})
+            path = urlparse(self.path).path
+            if path == "/api/dispatch":
+                text = (body.get("text") or "").strip()
+                if not text:
+                    return self._json(400, {"ok": False, "say": "没听清需求，请再说一遍"})
+                bus.emit("log", {"kind": "user", "text": text})
+                return self._json(200, runner.dispatch(text))
+            if path == "/api/status":
+                return self._json(200, runner.status())
+            if path == "/api/cancel":
+                return self._json(200, runner.cancel())
+            if path == "/api/undo":
+                return self._json(200, runner.undo())
+            if path == "/api/voice":
+                # device mirrors what it heard / is saying so the screen shows the conversation
+                bus.emit("voice", {"role": body.get("role", "?"), "text": body.get("text", "")})
+                return self._json(200, {"ok": True})
+            self._json(404, {"error": "not found"})
+
+        def _sse(self, replay):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "keep-alive")
+            self.end_headers()
+            q = bus.subscribe(replay=replay)
+            try:
+                while True:
+                    try:
+                        seq, event, data = q.get(timeout=HEARTBEAT_S)
+                        chunk = f"id: {seq}\nevent: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+                    except queue.Empty:
+                        chunk = ": heartbeat\n\n"
+                    self.wfile.write(chunk.encode())
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            finally:
+                bus.unsubscribe(q)
+
+    return H
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="sunflower.host")
+    ap.add_argument("--profile", default="dev-single-mac")
+    a = ap.parse_args(argv)
+    prof = config.load_profile(a.profile)
+    hcfg = prof["host"]
+    token = config.load_env().get("SUNFLOWER_TOKEN")
+    if not token:
+        raise SystemExit("SUNFLOWER_TOKEN 未配置（.env）")
+    bus = Bus()
+
+    def emit(event, data):
+        bus.emit(event, data)
+        if event in ("state", "announce"):
+            print(f"[{time.strftime('%H:%M:%S')}] {event} {json.dumps(data, ensure_ascii=False)}", flush=True)
+
+    runner = agents.CodexRunner(hcfg["workspace"], emit, base_argv=hcfg.get("agent_argv"),
+                                run_dir=config.HOME / "run")
+    srv = ThreadingHTTPServer((hcfg.get("bind", "127.0.0.1"), int(hcfg.get("port", 8787))),
+                              make_handler(bus, runner, token))
+    srv.daemon_threads = True
+    print(f"sunflower host on http://{srv.server_address[0]}:{srv.server_address[1]}  "
+          f"workspace={runner.workspace}  panel=/panel?t=<SUNFLOWER_TOKEN>", flush=True)
+    emit("state", {"state": "idle"})
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()

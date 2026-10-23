@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunflower · 语音编程</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #30363d; --fg: #e6edf3; --dim: #8b949e;
+    --sun: #f5b301; --ok: #3fb950; --bad: #f85149; --info: #58a6ff; --warn: #d29922;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--sans); }
+  body { display: grid; grid-template-rows: auto 1fr auto; gap: 1.2vh; padding: 2vh 2vw; font-size: clamp(14px, 1.6vw, 26px); }
+  header { display: flex; align-items: center; gap: 1.2vw; }
+  .brand { font-weight: 700; font-size: 1.3em; letter-spacing: .02em; }
+  .brand b { color: var(--sun); }
+  .pill { padding: .25em .8em; border-radius: 999px; font-size: .8em; font-weight: 600; border: 1px solid var(--line); color: var(--dim); }
+  .pill.running { color: #111; background: var(--sun); border-color: var(--sun); animation: pulse 1.6s ease-in-out infinite; }
+  .pill.idle { color: var(--ok); border-color: var(--ok); }
+  .pill.offline { color: var(--bad); border-color: var(--bad); }
+  @keyframes pulse { 50% { opacity: .65; } }
+  .task { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
+  .timer { font-family: var(--mono); color: var(--dim); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 1.2vw; min-height: 0; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.4vh 1.2vw; display: flex; flex-direction: column; min-height: 0; }
+  h2 { margin: 0 0 1vh; font-size: .75em; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .12em; }
+  .scroll { overflow-y: auto; flex: 1; min-height: 0; scroll-behavior: smooth; }
+  .bubble { margin: .5em 0; padding: .55em .8em; border-radius: 12px; line-height: 1.45; max-width: 92%; }
+  .bubble.user { background: #1f2a3a; border: 1px solid #284566; }
+  .bubble.assistant { background: #2a2414; border: 1px solid #5c4a12; margin-left: auto; }
+  .bubble small { display: block; font-size: .65em; color: var(--dim); margin-bottom: .2em; }
+  .row { display: grid; grid-template-columns: 1.6em 1fr; gap: .5em; padding: .35em 0; border-bottom: 1px dashed #21262d; line-height: 1.4; animation: in .25s ease-out; }
+  @keyframes in { from { opacity: 0; transform: translateY(4px); } }
+  .row .t { font-family: var(--mono); font-size: .82em; word-break: break-all; }
+  .row.msg .t, .row.user .t { font-family: var(--sans); font-size: 1em; }
+  .row.cmd .t { color: var(--info); } .row.cmd_ok .t { color: var(--ok); } .row.cmd_fail .t { color: var(--bad); }
+  .row.file .t { color: var(--sun); } .row.warn .t { color: var(--warn); } .row.system .t, .row.think .t { color: var(--dim); }
+  .row.user .t { color: #9ecbff; font-weight: 600; }
+  footer { display: grid; grid-template-columns: 1fr auto; gap: 1.2vw; align-items: end; }
+  pre.diff { margin: 0; font-family: var(--mono); font-size: .7em; color: var(--dim); white-space: pre-wrap; max-height: 16vh; overflow: hidden; }
+  .say { font-size: .95em; color: var(--sun); text-align: right; }
+  .empty { color: var(--dim); font-style: italic; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } section.voice { max-height: 30vh; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🌻 <b>Sunflower</b> 语音编程</div>
+  <span id="pill" class="pill offline">连接中</span>
+  <div id="task" class="task"></div>
+  <div id="timer" class="timer"></div>
+</header>
+<main>
+  <section class="voice"><h2>🎙 对话</h2><div id="voice" class="scroll"><div class="empty">按下翻页笔，说出你的需求…</div></div></section>
+  <section><h2>⚙️ 执行流 · Codex</h2><div id="log" class="scroll"><div class="empty">等待任务</div></div></section>
+</main>
+<footer>
+  <pre id="diff" class="diff"></pre>
+  <div id="say" class="say"></div>
+</footer>
+<script>
+const $ = (id) => document.getElementById(id);
+const ICON = { user: "🗣", cmd: "▶", cmd_ok: "✔", cmd_fail: "✘", file: "✎", msg: "💬", warn: "⚠", system: "·", think: "…" };
+const token = new URLSearchParams(location.search).get("t") || "";
+let startedAt = null, timerId = null;
+
+function clearEmpty(el) { const e = el.querySelector(".empty"); if (e) e.remove(); }
+function stick(el, fn) { const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 80; fn(); if (atEnd) el.scrollTop = el.scrollHeight; }
+function addRow(kind, text) {
+  const el = $("log"); clearEmpty(el);
+  stick(el, () => {
+    const r = document.createElement("div"); r.className = "row " + kind;
+    r.innerHTML = `<span>${ICON[kind] || "·"}</span><span class="t"></span>`;
+    r.querySelector(".t").textContent = text; el.appendChild(r);
+    while (el.children.length > 400) el.firstChild.remove();
+  });
+}
+function addBubble(role, text) {
+  const el = $("voice"); clearEmpty(el);
+  stick(el, () => {
+    const last = el.lastElementChild;
+    if (role === "assistant" && last && last.classList.contains("assistant") && Date.now() - (last._t || 0) < 8000) {
+      last.querySelector("span").textContent += text; last._t = Date.now(); return;
+    }
+    const b = document.createElement("div"); b.className = "bubble " + role; b._t = Date.now();
+    b.innerHTML = `<small>${role === "user" ? "你" : "向日葵"}</small><span></span>`;
+    b.querySelector("span").textContent = text; el.appendChild(b);
+  });
+}
+function tick() { if (startedAt) $("timer").textContent = Math.floor(Date.now() / 1000 - startedAt) + "s"; }
+function setState(d) {
+  const p = $("pill");
+  if (d.state === "running") {
+    p.className = "pill running"; p.textContent = d.resume ? "继续执行" : "执行中";
+    $("task").textContent = d.task || ""; startedAt = d.started || Date.now() / 1000;
+    clearInterval(timerId); timerId = setInterval(tick, 500); tick();
+  } else {
+    p.className = "pill idle"; p.textContent = "空闲";
+    clearInterval(timerId); startedAt = null;
+    if (d.task) { $("task").textContent = (d.exit === 0 ? "✔ " : "✘ ") + d.task; $("timer").textContent = (d.elapsed ?? "") + "s"; }
+  }
+}
+function connect() {
+  const es = new EventSource("/events?t=" + encodeURIComponent(token));
+  es.addEventListener("state", (e) => setState(JSON.parse(e.data)));
+  es.addEventListener("log", (e) => { const d = JSON.parse(e.data); if (d.text) addRow(d.kind, d.text); });
+  es.addEventListener("voice", (e) => { const d = JSON.parse(e.data); if (d.text) addBubble(d.role, d.text); });
+  es.addEventListener("diff", (e) => { $("diff").textContent = JSON.parse(e.data).stat || ""; });
+  es.addEventListener("announce", (e) => { $("say").textContent = "🔊 " + JSON.parse(e.data).text; });
+  es.onerror = () => { $("pill").className = "pill offline"; $("pill").textContent = "重连中"; };
+  es.onopen = () => { if ($("pill").classList.contains("offline")) { $("pill").className = "pill idle"; $("pill").textContent = "空闲"; } };
+}
+if (!token) { $("pill").textContent = "缺少 ?t= 令牌"; } else { connect(); }
+</script>
+</body>
+</html>

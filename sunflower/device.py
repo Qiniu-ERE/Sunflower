@@ -1,0 +1,373 @@
+"""Linx (灵矽) soft device: mic + speaker + push-to-talk, exposing code tools over device-side MCP.
+
+    python3 -m sunflower.device --profile dev-single-mac        # 按空格/翻页笔说话
+    python3 -m sunflower.device --profile dev-single-mac --text "给项目加个单元测试"
+
+Only outbound connections: wss to Linx cloud, http to the host on the LAN.
+Facts this relies on (measured 2026-10-22):
+  * listen/detect + text   -> the platform treats text as the user's utterance
+  * listen/detect + text_response -> TTS of exactly that text, even on a cold connection
+  * tools/call must answer within ~15s (platform gives up at ~30s), so dispatch only enqueues
+"""
+import argparse
+import asyncio
+import json
+import os
+import struct
+import subprocess
+import sys
+import threading
+import time
+import urllib.request
+
+import websockets
+
+from . import config, linx_admin
+
+WS_URL = "wss://xrobo-io.qiniuapi.com/v1/ws/"
+FRAME_BYTES = 640  # 20 ms of 16 kHz s16le mono
+HELLO = {"type": "hello", "version": 1, "features": {"mcp": True}, "transport": "websocket",
+         "audio_params": {"format": "pcm", "sample_rate": 16000, "channels": 1, "bit_depth": 16,
+                          "endianness": "little", "frame_duration": 20, "frame_size": 320,
+                          "sample_format": "signed_int16", "play_buffer_duration": 1000}}
+
+TOOLS = [
+    {"name": "self.code.dispatch",
+     "description": "把用户的编程需求交给编程代理执行（写代码、改代码、修 bug、跑测试、提交）。用户提出任何编程需求时调用。",
+     "inputSchema": {"type": "object", "properties": {"text": {"type": "string", "description": "用户原话，完整保留"}},
+                     "required": ["text"]}},
+    {"name": "self.code.status", "description": "查询编程代理当前进度。用户问进度、好了没有时调用。",
+     "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "self.code.cancel", "description": "让编程代理停止当前任务。用户说停下、取消时调用。",
+     "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "self.code.undo", "description": "撤销上一次语音任务的代码改动。用户说撤销、回滚时调用。",
+     "inputSchema": {"type": "object", "properties": {}}},
+]
+TOOL_ROUTES = {"self.code.dispatch": "/api/dispatch", "self.code.status": "/api/status",
+               "self.code.cancel": "/api/cancel", "self.code.undo": "/api/undo"}
+
+
+def log(*a):
+    print(f"[{time.strftime('%H:%M:%S')}]", *a, flush=True)
+
+
+class Host:
+    """Blocking HTTP client for the host API (called via asyncio.to_thread)."""
+
+    def __init__(self, url, token):
+        self.url, self.token = url.rstrip("/"), token
+
+    def post(self, path, body=None, timeout=12):
+        req = urllib.request.Request(self.url + path, data=json.dumps(body or {}).encode(), method="POST",
+                                     headers={"Content-Type": "application/json",
+                                              "Authorization": "Bearer " + self.token})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read())
+
+    def events(self):
+        """Yield (event, data) from the host SSE stream (no replay)."""
+        req = urllib.request.Request(self.url + "/events?replay=0",
+                                     headers={"Authorization": "Bearer " + self.token})
+        with urllib.request.urlopen(req, timeout=HEARTBEAT_TIMEOUT) as r:
+            event = None
+            for raw in r:
+                line = raw.decode("utf-8").rstrip("\n")
+                if line.startswith("event: "):
+                    event = line[7:]
+                elif line.startswith("data: ") and event:
+                    yield event, json.loads(line[6:])
+                elif not line:
+                    event = None
+
+
+HEARTBEAT_TIMEOUT = 75  # host heartbeats every 30s
+
+
+class Player:
+    """Streams downlink PCM into the profile's audio_out command."""
+
+    def __init__(self, argv):
+        self.argv, self.proc = argv, None
+
+    def write(self, pcm):
+        if self.proc is None or self.proc.poll() is not None:
+            self.proc = subprocess.Popen(self.argv, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                                         stderr=subprocess.DEVNULL)
+        try:
+            self.proc.stdin.write(pcm)
+            self.proc.stdin.flush()
+        except (BrokenPipeError, ValueError):
+            self.proc = None
+
+    def close(self):
+        """End of one TTS burst: EOF lets the player drain and exit; next burst spawns a new one."""
+        proc, self.proc = self.proc, None
+        if proc and proc.poll() is None:
+            try:
+                proc.stdin.close()
+            except (BrokenPipeError, ValueError):
+                pass
+
+
+class Device:
+    def __init__(self, prof, host):
+        self.prof, self.dev, self.host = prof, prof["device"], host
+        self.ws = None
+        self.sid = None
+        self.ready = None
+        self.lock = asyncio.Lock()
+        self.player = Player(self.dev["audio_out"])
+        self.mic = None
+        self.mic_task = None
+        self.loop = None
+        self.speaking = asyncio.Event()
+
+    # -- connection ------------------------------------------------------
+    async def ensure(self):
+        async with self.lock:
+            if self.ws is not None and self.ws.state.name == "OPEN" and self.ready.is_set():
+                return
+            st = config.read_state(linx_admin.STATE)
+            if not st.get("ws_token") or st.get("mac") != self.dev["mac"]:
+                st = await asyncio.to_thread(linx_admin.refresh_token, self.dev["mac"])
+            hdr = {"Authorization": "Bearer " + st["ws_token"], "Protocol-Version": "1",
+                   "Device-Id": st["mac"], "Client-Id": st["client_id"]}
+            try:
+                self.ws = await websockets.connect(WS_URL, additional_headers=hdr, max_size=None,
+                                                   open_timeout=10)
+            except websockets.InvalidStatus as e:
+                if e.response.status_code in (401, 403):  # token rotated: refetch once
+                    st = await asyncio.to_thread(linx_admin.refresh_token, self.dev["mac"])
+                    hdr["Authorization"] = "Bearer " + st["ws_token"]
+                    self.ws = await websockets.connect(WS_URL, additional_headers=hdr, max_size=None)
+                else:
+                    raise
+            self.ready = asyncio.Event()
+            await self.ws.send(json.dumps(HELLO))
+            asyncio.ensure_future(self._recv(self.ws))
+            await asyncio.wait_for(self.ready.wait(), timeout=10)
+            log("linx session", self.sid)
+
+    async def _send(self, obj):
+        await self.ws.send(json.dumps(dict(obj, session_id=self.sid)))
+
+    async def _recv(self, ws):
+        try:
+            async for m in ws:
+                if isinstance(m, bytes):
+                    self.player.write(m)
+                    continue
+                d = json.loads(m)
+                t = d.get("type")
+                if t == "hello":
+                    self.sid = d.get("session_id")
+                elif t == "mcp":
+                    await self._mcp(d["payload"])
+                elif t == "stt":
+                    log("听到:", d.get("text"))
+                    self._mirror("user", d.get("text", ""))
+                elif t == "tts":
+                    s = d.get("state")
+                    if s == "start":
+                        self.speaking.set()
+                    elif s == "sentence_start":
+                        log("播报:", d.get("text"))
+                        self._mirror("assistant", d.get("text", ""))
+                    elif s == "stop":
+                        self.speaking.clear()
+                        self.player.close()
+        except websockets.ConnectionClosed as e:
+            log("linx session closed", e.code, e.reason or "")
+        finally:
+            self.speaking.clear()
+            self.player.close()
+
+    async def _mcp(self, p):
+        meth, rid = p.get("method"), p.get("id")
+        if meth == "initialize":
+            await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {
+                "protocolVersion": "2024-11-05", "capabilities": {"tools": {}},
+                "serverInfo": {"name": "sunflower", "version": "0.1.0"}}}})
+        elif meth == "tools/list":
+            await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {"tools": TOOLS}}})
+            self.ready.set()
+        elif meth == "tools/call":
+            asyncio.ensure_future(self._tool(rid, p.get("params") or {}))
+
+    async def _tool(self, rid, params):
+        name, args = params.get("name"), params.get("arguments") or {}
+        log("工具:", name, json.dumps(args, ensure_ascii=False))
+        route = TOOL_ROUTES.get(name)
+        try:
+            if not route:
+                raise ValueError(f"unknown tool {name}")
+            res = await asyncio.to_thread(self.host.post, route, args)
+            text, err = res.get("say", "好的"), False
+        except Exception as e:  # host down / timeout must still answer within the platform budget
+            text, err = f"主机连接失败：{type(e).__name__}，请检查电脑上的服务", True
+        await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {
+            "content": [{"type": "text", "text": text}], "isError": err}}})
+
+    def _mirror(self, role, text):
+        if text:
+            threading.Thread(target=self._mirror_blocking, args=(role, text), daemon=True).start()
+
+    def _mirror_blocking(self, role, text):
+        try:
+            self.host.post("/api/voice", {"role": role, "text": text}, timeout=3)
+        except Exception:
+            pass
+
+    # -- user actions ----------------------------------------------------
+    async def say_text(self, text):
+        await self.ensure()
+        await self._send({"type": "listen", "state": "detect", "text": text})
+
+    async def announce(self, text):
+        await self.ensure()
+        await self._send({"type": "listen", "state": "detect", "text": "任务回执", "text_response": text})
+
+    async def toggle_talk(self):
+        if self.mic is None:
+            await self.ensure()
+            if self.speaking.is_set():
+                await self._send({"type": "abort", "reason": "wake_word_detected"})
+            await self._send({"type": "listen", "state": "start", "mode": "manual"})
+            self.mic = subprocess.Popen(self.dev["audio_in"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            self.mic_task = asyncio.ensure_future(self._pump_mic(self.mic))
+            log("🎙 录音中…（再按一次结束）")
+        else:
+            mic, self.mic = self.mic, None
+            mic.terminate()
+            await self.mic_task
+            await self._send({"type": "listen", "state": "stop"})
+            log("🎙 结束，识别中…")
+
+    async def _pump_mic(self, mic):
+        buf = b""
+        while True:
+            chunk = await asyncio.to_thread(mic.stdout.read, FRAME_BYTES)
+            if not chunk:
+                break
+            buf += chunk
+            while len(buf) >= FRAME_BYTES:
+                frame, buf = buf[:FRAME_BYTES], buf[FRAME_BYTES:]
+                try:
+                    await self.ws.send(frame)
+                except websockets.ConnectionClosed:
+                    return
+
+    # -- host announcements ----------------------------------------------
+    def watch_host(self):
+        while True:
+            try:
+                for event, data in self.host.events():
+                    if event == "announce" and data.get("text"):
+                        log("回执:", data["text"])
+                        asyncio.run_coroutine_threadsafe(self.announce(data["text"]), self.loop)
+            except Exception as e:
+                log("host events reconnect:", type(e).__name__)
+                time.sleep(2)
+
+
+# -- triggers ----------------------------------------------------------------
+def stdin_trigger(loop, dev):
+    """Space / Enter / presenter PageUp-PageDown toggle talking; `t` types a text request; `q` quits."""
+    import termios
+    import tty
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        while True:
+            ch = os.read(fd, 1)
+            if ch == b"\x1b":  # escape sequence: PageUp \x1b[5~ / PageDown \x1b[6~ / arrows
+                os.read(fd, 8)
+                ch = b" "
+            if ch in (b" ", b"\n", b"\r"):
+                asyncio.run_coroutine_threadsafe(dev.toggle_talk(), loop)
+            elif ch in (b"t", b"T"):
+                termios.tcsetattr(fd, termios.TCSADRAIN, old)
+                text = input("\n文字需求> ").strip()
+                tty.setcbreak(fd)
+                if text:
+                    asyncio.run_coroutine_threadsafe(dev.say_text(text), loop)
+            elif ch in (b"q", b"Q"):
+                loop.call_soon_threadsafe(loop.stop)
+                return
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+
+EV_KEY = 1
+TOGGLE_KEYS = {57, 28, 104, 109, 48, 63, 425}  # SPACE ENTER PAGEUP PAGEDOWN B(black) F5 presenter
+
+
+def evdev_trigger(loop, dev):
+    """Read raw Linux input events (stdlib only); any presenter/keyboard toggle key = push-to-talk."""
+    import glob
+    import select
+    fmt = "llHHi"
+    size = struct.calcsize(fmt)
+    fds = []
+    for path in sorted(glob.glob("/dev/input/event*")):
+        try:
+            fds.append(os.open(path, os.O_RDONLY | os.O_NONBLOCK))
+        except PermissionError:
+            log(f"no access to {path}: sudo usermod -aG input $USER")
+    if not fds:
+        log("no input devices; fall back to stdin trigger")
+        return stdin_trigger(loop, dev)
+    while True:
+        ready, _, _ = select.select(fds, [], [])
+        for fd in ready:
+            try:
+                data = os.read(fd, size * 16)
+            except BlockingIOError:
+                continue
+            for i in range(0, len(data) - size + 1, size):
+                _, _, etype, code, value = struct.unpack(fmt, data[i:i + size])
+                if etype == EV_KEY and value == 1 and code in TOGGLE_KEYS:
+                    asyncio.run_coroutine_threadsafe(dev.toggle_talk(), loop)
+
+
+async def amain(a):
+    prof = config.load_profile(a.profile)
+    env = config.load_env()
+    token = env.get("SUNFLOWER_TOKEN")
+    if not token:
+        raise SystemExit("SUNFLOWER_TOKEN 未配置（.env）")
+    host = Host(a.host or env.get("SUNFLOWER_HOST_URL") or prof["device"]["host_url"], token)
+    dev = Device(prof, host)
+    dev.loop = asyncio.get_running_loop()
+    threading.Thread(target=dev.watch_host, daemon=True).start()
+    if a.text:
+        await dev.say_text(a.text)
+        await asyncio.sleep(a.linger)
+        return
+    if a.announce:
+        await dev.announce(a.announce)
+        await asyncio.sleep(8)
+        return
+    trig = evdev_trigger if prof["device"].get("trigger") == "evdev" else stdin_trigger
+    threading.Thread(target=trig, args=(dev.loop, dev), daemon=True).start()
+    log(f"向日葵设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出")
+    await asyncio.Event().wait()
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="sunflower.device")
+    ap.add_argument("--profile", default="dev-single-mac")
+    ap.add_argument("--host", help="override profile device.host_url")
+    ap.add_argument("--text", help="send one text request, then exit after --linger seconds")
+    ap.add_argument("--linger", type=float, default=40)
+    ap.add_argument("--announce", help="speak this text once (cold connection test)")
+    a = ap.parse_args(argv)
+    try:
+        asyncio.run(amain(a))
+    except (KeyboardInterrupt, RuntimeError):
+        pass
+
+
+if __name__ == "__main__":
+    main()

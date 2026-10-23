@@ -1,0 +1,12 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.token
+# runtime
+__pycache__/
+*.pyc
+.venv/
+/run/
+*.log
+.DS_Store
