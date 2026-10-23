@@ -116,6 +116,56 @@ class ReapTest(unittest.TestCase):
         self.assertEqual([x for x in w if issubclass(x.category, ResourceWarning)], [])
 
 
+class ReloadTest(unittest.TestCase):
+    """部署目录换了提交 → 设备空闲时原地 exec 新代码（#27）。"""
+
+    @staticmethod
+    def check(setup, head):
+        async def go():
+            d = make_device()
+            d.ws = None
+            setup(d)
+            calls = []
+            done = await d.reload_check(head=lambda: head, execv=lambda exe, argv: calls.append(argv))
+            return done, calls
+        return asyncio.run(go())
+
+    def test_device_reexecs_when_deploy_moves_and_idle(self):
+        done, calls = self.check(lambda d: None, "f" * 40)
+        self.assertTrue(done)
+        self.assertEqual(calls[0][1:3], ["-m", "sunflower.device"])
+        self.assertEqual(self.check(lambda d: None, device.COMMIT), (False, []))  # 提交没变不动
+
+    def test_device_defers_reexec_while_busy(self):
+        busy = {"recording": lambda d: setattr(d, "mic", object()),
+                "tool": lambda d: setattr(d, "pending_tools", 1),
+                "speaking": lambda d: d.speaking.set(),
+                "linx open": lambda d: setattr(d, "ws", FakeWs()),
+                "typing": lambda d: setattr(d, "typing", True)}
+        for name, make_busy in busy.items():
+            self.assertEqual(self.check(make_busy, "f" * 40), (False, []), name)
+
+    def test_failed_reexec_stops_watching_and_stops_claiming_reload(self):
+        async def go():
+            d = make_device()
+            d.ws = None
+            tries = []
+
+            async def broken():
+                tries.append(1)
+                raise OSError("no such interpreter")
+            d.reload_check = broken
+            await asyncio.wait_for(d.reload_watch(), 1)
+            return tries
+        old = device.RELOAD_POLL_S, device.AUTO_RELOAD, device.log
+        device.RELOAD_POLL_S, device.AUTO_RELOAD, device.log = 0, True, lambda *a: None
+        try:
+            self.assertEqual(asyncio.run(go()), [1])
+            self.assertFalse(device.AUTO_RELOAD)
+        finally:
+            device.RELOAD_POLL_S, device.AUTO_RELOAD, device.log = old
+
+
 class EarconTest(unittest.TestCase):
     def test_tone_is_short_audible_pcm_with_soft_edges(self):
         pcm = device.tone(880, 90)

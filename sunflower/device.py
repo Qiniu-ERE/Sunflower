@@ -69,7 +69,8 @@ class Host:
         """Yield (event, data) from the host SSE stream (no replay)."""
         req = urllib.request.Request(self.url + "/events?replay=0",
                                      headers={"Authorization": "Bearer " + self.token,
-                                              "X-Sunflower-Commit": COMMIT or ""})
+                                              "X-Sunflower-Commit": COMMIT or "",
+                                              "X-Sunflower-Reload": "1" if AUTO_RELOAD else "0"})
         with urllib.request.urlopen(req, timeout=HEARTBEAT_TIMEOUT) as r:
             event = None
             for raw in r:
@@ -83,6 +84,10 @@ class Host:
 
 
 COMMIT = config.code_commit()  # 报给主机，service status 据此发现设备在跑旧代码
+# 只有从部署目录启动的设备才随部署换代；开发仓切分支时不该把半成品 exec 进来
+AUTO_RELOAD = config.ROOT.resolve() == config.APP.resolve()
+RELOAD_POLL_S = 5
+_tty = []  # stdin_trigger 改了终端模式；exec 前要还原，否则新进程会把 cbreak 当成原始模式
 HEARTBEAT_TIMEOUT = 75  # host heartbeats every 30s
 
 
@@ -145,6 +150,44 @@ class Device:
         self.idle_close_s = float(self.dev.get("idle_close_s", 20))
         self.last_activity = 0.0
         self.pending_tools = 0
+        self.typing = False  # 「t」文字输入进行中：exec 会吞掉半行字，剩下的击键还会被当快捷键
+
+    # -- self reload (#27) -------------------------------------------------
+    def idle(self):
+        return (self.mic is None and not self.toggling and not self.typing and self.pending_tools == 0
+                and not self.speaking.is_set()
+                and not self.lock.locked() and (self.ws is None or self.ws.state.name != "OPEN"))
+
+    async def reload_check(self, head=config.code_commit, execv=os.execv):
+        """部署目录换了提交且设备空闲 → 原地 exec 新代码。pid 不变，终端给的麦克风授权也不变。"""
+        new = await asyncio.to_thread(head)
+        if not new or new == COMMIT or not self.idle():
+            return False
+        log(f"部署已更新 {(COMMIT or '?')[:7]} → {new[:7]}，设备空闲，切到新代码")
+        import termios
+        import tty
+        for fd, mode in _tty:
+            termios.tcsetattr(fd, termios.TCSADRAIN, mode)
+        self.player.close()
+        try:
+            execv(sys.executable, [sys.executable, "-m", "sunflower.device", *sys.argv[1:]])
+        except OSError:
+            for fd, _ in _tty:  # 回到按键模式，旧代码照常可用
+                tty.setcbreak(fd)
+            raise
+        return True
+
+    async def reload_watch(self):
+        global AUTO_RELOAD
+        while True:
+            await asyncio.sleep(RELOAD_POLL_S)
+            try:
+                await self.reload_check()
+            except Exception as e:  # 失败一次就停：不刷屏，也不再向主机报「会自动换代」
+                AUTO_RELOAD = False
+                log(f"✘ 自动换代失败：{type(e).__name__}: {e}；本次运行不再自动换代，"
+                    "Ctrl-C 后用 python3 -m sunflower.service device 重启")
+                return
 
     # -- connection ------------------------------------------------------
     async def ensure(self):
@@ -365,6 +408,7 @@ def stdin_trigger(loop, dev):
     import tty
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
+    _tty.append((fd, old))
     try:
         tty.setcbreak(fd)
         while True:
@@ -376,7 +420,11 @@ def stdin_trigger(loop, dev):
                 asyncio.run_coroutine_threadsafe(dev.toggle_talk(), loop)
             elif ch in (b"t", b"T"):
                 termios.tcsetattr(fd, termios.TCSADRAIN, old)
-                text = input("\n文字需求> ").strip()
+                dev.typing = True
+                try:
+                    text = input("\n文字需求> ").strip()
+                finally:
+                    dev.typing = False
                 tty.setcbreak(fd)
                 if text:
                     asyncio.run_coroutine_threadsafe(dev.say_text(text), loop)
@@ -439,7 +487,10 @@ async def amain(a):
         return
     trig = evdev_trigger if prof["device"].get("trigger") == "evdev" else stdin_trigger
     threading.Thread(target=trig, args=(dev.loop, dev), daemon=True).start()
-    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出")
+    if AUTO_RELOAD:
+        asyncio.ensure_future(dev.reload_watch())
+    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出"
+        + (" · 随部署自动换代" if AUTO_RELOAD else ""))
     await asyncio.Event().wait()
 
 

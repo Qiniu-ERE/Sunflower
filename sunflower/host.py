@@ -136,7 +136,8 @@ def make_handler(bus, runner, token, resolve=None):
                 if not (self._loopback() or self._authed()):
                     return self._json(401, {"error": "token required"})
                 if self.headers.get("X-Sunflower-Commit"):
-                    device.update(commit=self.headers["X-Sunflower-Commit"][:40], seen=time.time())
+                    device.update(commit=self.headers["X-Sunflower-Commit"][:40], seen=time.time(),
+                                  reload=self.headers.get("X-Sunflower-Reload") == "1")
                 return self._sse(replay=parse_qs(urlparse(self.path).query).get("replay", ["1"])[0] == "1")
             self._json(404, {"error": "not found"})
 

@@ -6,6 +6,7 @@ import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 HOME = pathlib.Path(os.environ.get("SUNFLOWER_HOME", pathlib.Path.home() / ".sunflower"))
+APP = HOME / "app"  # 部署目录：主机和设备都从这里跑（sunflower.service 维护）
 
 
 def code_commit(root=None):
