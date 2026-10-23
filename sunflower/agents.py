@@ -17,6 +17,7 @@ VOICE_PREFIX = ("以下需求来自语音识别，可能有同音错字（尤其
                 "请结合仓库实际内容理解并模糊匹配。\n需求：")
 VOICE_SUFFIX = ("\n\n完成后在回复最后单独一行写「语音摘要：」加不超过 30 个字的中文总结"
                 "（改了什么、验证结果如何），不要包含文件路径和代码。")
+_RECONNECT_RE = re.compile(r"Reconnecting\.\.\.\s*(\d+/\d+)")
 _SUMMARY_RE = re.compile(r"语音摘要[:：]\s*(.+)")
 
 CODEX_BASE = ["codex", "exec", "-s", "danger-full-access", "-c", 'approval_policy="never"',
@@ -44,7 +45,9 @@ def describe(ev):
     if t == "thread.started":
         return ("system", "会话已建立")
     if t == "error":
-        return ("warn", ev.get("message", "error"))
+        msg = ev.get("message", "error")
+        m = _RECONNECT_RE.match(msg)
+        return ("warn", f"上游连接中断，自动重试 {m.group(1)}" if m else msg)
     if t == "item.started" and it == "command_execution":
         return ("cmd", _short_cmd(item.get("command", "")))
     if t == "item.completed" and it == "command_execution":
