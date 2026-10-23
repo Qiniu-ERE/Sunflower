@@ -152,6 +152,21 @@ class RunnerTest(unittest.TestCase):
         self.assertNotIn("撤销", self.rec.of("announce")[-1]["text"])  # 失败不提交，撤销会撤掉上一次成功的
         self.assertIsNone(self.rec.of("state")[-1]["commit"])
 
+    def test_misheard_stop_word_cancels_instead_of_dispatching(self):
+        # 平台 ASR 常把「停下」听成「听下」，灵矽又可能把它当新需求 dispatch（#35）
+        self.assertTrue(self.r.dispatch("SLOW 跑个大任务")["ok"])
+        res = self.r.dispatch("嗯，听下。")
+        self.assertTrue(res["ok"], res)
+        self.assertTrue(self.rec.done.wait(10), "cancel did not stop the task")
+        self.assertIn("取消", self.rec.of("announce")[-1]["text"])
+        for said in ("听下", "挺下", "停止", "别做了"):
+            res = self.r.dispatch(said)
+            self.assertFalse(res["ok"], said)           # 空闲时也不派出一个叫「听下」的任务
+            self.assertIn("没有在执行", res["say"], said)
+        self.assertEqual(len([s for s in self.rec.of("state") if s.get("state") == "running"]), 1)
+        for real in ("听一下测试结果", "停止按钮改成红色", "把下载停下来的逻辑修一下"):
+            self.assertFalse(agents.stop_intent(real), real)  # 带了别的内容就是正常需求
+
 
 class LinxPromptTest(unittest.TestCase):
     def test_prompt_maps_single_words_to_tools(self):
@@ -161,6 +176,12 @@ class LinxPromptTest(unittest.TestCase):
         for word, tool in (("「停」", "cancel"), ("「撤」", "undo"), ("「进度」", "status"), ("「修」", "dispatch")):
             line = next((l for l in p.splitlines() if word in l), "")
             self.assertIn(tool, line, word)
+
+    def test_prompt_routes_stop_homophones_to_cancel(self):
+        from sunflower import linx_admin
+        line = next(l for l in linx_admin.SYSTEM_PROMPT.splitlines() if "「停」" in l)
+        for word in ("「听下」", "「挺下」"):
+            self.assertIn(word, line)
 
 
 class ReadOnlyIntentTest(unittest.TestCase):

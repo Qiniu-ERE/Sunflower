@@ -24,8 +24,16 @@ _WRITE_RE = re.compile(r"修|改|加|增|删|去掉|写|实现|重构|提交|补
                        r"调整|处理|搞定|弄好|解决|跑|运行|fix|add|implement|refactor|run", re.I)
 VOICE_SUFFIX = ("\n\n完成后在回复最后单独一行写「语音摘要：」加不超过 30 个字的中文总结"
                 "（改了什么、验证结果如何），不要包含文件路径和代码。")
+# 叫停（#35）：平台 ASR 常把「停下」听成「听下」「挺下」，灵矽 LLM 再把它当新需求 dispatch。
+# 整句只有这些（去掉语气词和标点）才算，带了别的内容就是正常需求
+_STOP_RE = re.compile(r"[停听挺亭婷庭](?:下|止|一下|下来)?|别做了|别弄了|不要做了|取消|算了")
+_FILLER_RE = re.compile(r"[\s，。！？、,.!?~…嗯啊呃哦唉诶哎吧呀]")
 _RECONNECT_RE = re.compile(r"Reconnecting\.\.\.\s*(\d+/\d+)")
 _SUMMARY_RE = re.compile(r"语音摘要[:：]\s*(.+)")
+
+def stop_intent(text):
+    return bool(_STOP_RE.fullmatch(_FILLER_RE.sub("", text or "")))
+
 
 def read_only_intent(text):
     return bool(_READ_RE.search(text or "")) and not _WRITE_RE.search(text or "")
@@ -173,6 +181,9 @@ class CodexRunner:
 
     # -- commands --------------------------------------------------------
     def dispatch(self, text):
+        if stop_intent(text):
+            self.emit("log", {"kind": "system", "text": f"「{text}」按叫停处理"})
+            return self.cancel()
         with self.lock:
             if self.busy():
                 return {"ok": False, "say": f"上一个任务还在进行：{self.task[:20]}，可以说取消"}
