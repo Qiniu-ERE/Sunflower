@@ -21,7 +21,7 @@ STATE = "linx.json"
 AGENT_NAME = "sunflower-voice-coder"
 LLM_DEEPSEEK_V4_FLASH = "f3626c105383d71654a57f2bb8a973f3"
 
-SYSTEM_PROMPT = """你是「向日葵」语音编程助手，住在一台带屏幕的小设备里。你自己不看代码、不写代码，所有和代码有关的事都交给编程代理 Codex，它已经打开了用户的项目，知道代码在哪。
+SYSTEM_PROMPT = """你是「太阳花」语音编程助手，住在一台带屏幕的小设备里。你自己不看代码、不写代码，所有和代码有关的事都交给编程代理 Codex，它已经打开了用户的项目，知道代码在哪。
 工具选择（只看用户意图，不要追问细节）：
 1. self.code.dispatch：凡是涉及代码、项目、测试、bug、功能、检查、审查、解释、重构、提交的请求，一律立刻调用，把用户原话完整放进 text（口头禅和语气词可以保留，不要改写）。
    例：「代码有没有逻辑问题」「跑一下测试把失败的修好」「看看项目是干什么的」「加个删除命令」「这个函数写得对吗」→ 全部 dispatch。
@@ -77,7 +77,7 @@ def ensure_agent(key, st):
         agent = next((a for a in resp.get("data") or [] if a["id"] == st["agent_id"]), None)
     if agent is None:
         resp = _ok(_call("POST", f"{API}/xiaozhi/agent", key, {
-            "agentName": AGENT_NAME, "assistantName": "向日葵",
+            "agentName": AGENT_NAME, "assistantName": "太阳花",
             "llmModelId": LLM_DEEPSEEK_V4_FLASH, "intentModelId": "Intent_function_call",
             "memModelId": "Memory_nomem", "systemPrompt": SYSTEM_PROMPT}), "create agent")
         agent_id = resp["data"]
@@ -86,7 +86,7 @@ def ensure_agent(key, st):
         agent_id = agent["id"]
         print(f"reuse agent {agent_id}")
     _ok(_call("PUT", f"{API}/xiaozhi/agent/{agent_id}", key, {
-        "agentName": AGENT_NAME, "assistantName": "向日葵", "systemPrompt": SYSTEM_PROMPT,
+        "agentName": AGENT_NAME, "assistantName": "太阳花", "systemPrompt": SYSTEM_PROMPT,
         "llmModelId": LLM_DEEPSEEK_V4_FLASH, "intentModelId": "Intent_function_call",
         "memModelId": "Memory_nomem",
         "extra": {"disable_greeting": True, "goodbye": {"idle_timeout_seconds": 300}}}), "update agent")

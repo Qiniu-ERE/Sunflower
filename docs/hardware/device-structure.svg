@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" font-family="PingFang SC, Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#7A6E5D"/></marker><marker id="arrI" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#3B3227"/></marker><marker id="arrO" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#D9801A"/></marker><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#FFFDF7"/><line x1="0" y1="0" x2="0" y2="6" stroke="#CFC6B4" stroke-width="1.6"/></pattern><pattern id="hatchD" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#8A8F96"/><line x1="0" y1="0" x2="0" y2="5" stroke="#5E636A" stroke-width="1.5"/></pattern><pattern id="grille" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#5D4E44"/><circle cx="3.5" cy="3.5" r="1.4" fill="#2E2621"/></pattern><radialGradient id="face" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#FFC56B"/><stop offset="1" stop-color="#F29A2E"/></radialGradient><linearGradient id="potg" x1="0" x2="1"><stop offset="0" stop-color="#F1EBDD"/><stop offset=".35" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E9E2D2"/></linearGradient></defs>
 <rect width="1800" height="1200" fill="#FBF8F0"/>
-<text x="40.0" y="52.0" font-size="30" fill="#3B3227" text-anchor="start" font-weight="800" >Sunflower 实体设备 · 结构设计图</text>
+<text x="40.0" y="52.0" font-size="30" fill="#3B3227" text-anchor="start" font-weight="800" >太阳花 Sunflower · 实体设备结构设计图</text>
 <text x="40.0" y="82.0" font-size="15" fill="#7A6E5D" text-anchor="start" font-weight="400" >桌面语音编程伙伴：听声转向（4 麦阵列定位 + 单轴偏航）· 表情屏 · 花瓣状态灯 · 瓢虫说话键 —— 单位 mm，三视图 1 mm = 2 px</text>
 <text x="1760.0" y="52.0" font-size="15" fill="#7A6E5D" text-anchor="end" font-weight="600" >v0.1 概念结构</text>
 <text x="1760.0" y="76.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-23</text>
@@ -327,11 +327,11 @@
 <path d="M1716.0,638 L1716.0,664 L1460.0,664 L1460.0,641" fill="none" stroke="#3B3227" stroke-width="1.4" marker-end="url(#arrI)"/>
 <text x="1588.0" y="658.0" font-size="11.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >⑬ 编码器回读角度 φ（绝对值，上电免归零）</text>
 <rect x="1150" y="700" width="150" height="56" rx="8" fill="#FFF8E5" stroke="#B9AE9A" stroke-width="1.3"/>
-<text x="1225.0" y="725.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >花朵设备</text>
+<text x="1225.0" y="725.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >太阳花设备</text>
 <text x="1225.0" y="743.0" font-size="11.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >ESP32-S3 · 端侧 MCP</text>
 <rect x="1420" y="700" width="150" height="56" rx="8" fill="#FFFFFF" stroke="#B9AE9A" stroke-width="1.3"/>
-<text x="1495.0" y="725.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >灵矽云</text>
-<text x="1495.0" y="743.0" font-size="11.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >ASR · LLM · TTS</text>
+<text x="1495.0" y="725.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >语音服务</text>
+<text x="1495.0" y="743.0" font-size="11.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >灵矽 ASR · LLM · TTS</text>
 <rect x="1150" y="800" width="150" height="56" rx="8" fill="#FFFFFF" stroke="#B9AE9A" stroke-width="1.3"/>
 <text x="1225.0" y="825.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >主机 :8787</text>
 <text x="1225.0" y="843.0" font-size="11.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >Codex 执行 · 提交</text>
@@ -382,8 +382,8 @@
 <text x="1408.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >橙红常亮</text>
 <text x="1568.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >播报下一步建议</text>
 <text x="1150.0" y="1140.0" font-size="12.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >「点头」= 偏航 ±8° 往复一次（单轴实现，无需俯仰电机）</text>
-<text x="40.0" y="720.0" font-size="19" fill="#3B3227" text-anchor="start" font-weight="700" >零件表</text>
-<text x="40.0" y="742.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >外购件尺寸取自供应商页面，以实物 / 规格书为准</text>
+<text x="40.0" y="720.0" font-size="19" fill="#3B3227" text-anchor="start" font-weight="700" >零件表（标准版）</text>
+<text x="40.0" y="742.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >屏显版只换花头（⑲–㉒），见解构图；外购件尺寸取自供应商页面，以实物 / 规格书为准</text>
 <circle cx="51" cy="765" r="10.5" fill="#3B3227"/>
 <text x="51.0" y="769.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
 <text x="68.0" y="770.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >脸盖</text>
@@ -452,6 +452,10 @@
 <text x="601.0" y="979.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >17</text>
 <text x="618.0" y="980.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >USB-C 供电</text>
 <text x="740.0" y="980.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >PD 取 12 V 给电机；DC-DC 降 5 V / 3.3 V</text>
+<circle cx="601" cy="1005" r="10.5" fill="#3B3227"/>
+<text x="601.0" y="1009.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >18</text>
+<text x="618.0" y="1010.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >花盆壳体</text>
+<text x="740.0" y="1010.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >ABS 哑光白，Ø100 × 75，底部 4 颗螺丝开盖检修</text>
 <rect x="40" y="1038" width="1090" height="96" rx="8" fill="#FFFFFF" stroke="#B9AE9A"/>
 <text x="56.0" y="1062.0" font-size="14.5" fill="#3B3227" text-anchor="start" font-weight="700" >关键数字（估算）</text>
 <text x="56.0" y="1090.0" font-size="12.8" fill="#3B3227" text-anchor="start" font-weight="400" >· 仰角 20°：用户眼高 400、距离 600、脸心 182 → atan(218/600) ≈ 20°</text>

@@ -439,7 +439,7 @@ async def amain(a):
         return
     trig = evdev_trigger if prof["device"].get("trigger") == "evdev" else stdin_trigger
     threading.Thread(target=trig, args=(dev.loop, dev), daemon=True).start()
-    log(f"向日葵设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出")
+    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出")
     await asyncio.Event().wait()
 
 

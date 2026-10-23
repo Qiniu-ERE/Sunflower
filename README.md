@@ -1,16 +1,18 @@
 <div align="center">
 
-# 🌻 Sunflower · 向日葵语音编程
+# 🌻 Sunflower · 太阳花语音编程
 
-**对着灵矽设备说一句话，Codex 就开始写代码；<br>每一步进展实时上屏，做完了用语音告诉你结果。**
+**对着太阳花说一句话，Codex 就开始写代码；<br>花面转向你，每一步进展实时上屏，做完了用语音告诉你结果。**
 
 [![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies](https://img.shields.io/badge/dependencies-1%20(websockets)-brightgreen)](./requirements.txt)
 [![Agent](https://img.shields.io/badge/agent-Codex%20CLI-412991)](https://github.com/openai/codex)
-[![Linx](https://img.shields.io/badge/voice-%E7%81%B5%E7%9F%BD%20Linx-F5A623)](https://linx.qiniu.com/)
+[![Voice](https://img.shields.io/badge/voice-%E7%81%B5%E7%9F%BD%20Linx-F5A623)](https://linx.qiniu.com/)
 [![License](https://img.shields.io/badge/license-MIT-orange)](./LICENSE)
 
 七牛云内部 Hackathon 参赛项目 · 议题：*灵矽应用——连接屏幕，用语音控制编程代理进行开发*（AirPlay 只是协议举例）
+
+软件链路今天就能跑：语音 → Codex 写代码 → 进展上屏 → 语音播报。我们再为它设计了桌面硬件载体「太阳花」，分两种型号，让「进展上屏」在桌面上闭环。
 
 </div>
 
@@ -30,7 +32,7 @@
 <tr>
 <td width="58%" valign="top">
 <img src="docs/images/device-terminal.png" alt="设备端终端：听到、工具调用、播报">
-<p align="center"><sub>设备端日志（真人语音实测）：撤销 → 派新任务 → 中途问进度 → 完成播报。<br>空闲 20 s 主动断开灵矽会话，播报时冷连接自动重连。</sub></p>
+<p align="center"><sub>设备端日志（真人语音实测）：撤销 → 派新任务 → 中途问进度 → 完成播报。<br>空闲 20 s 主动断开语音会话，播报时冷连接自动重连。</sub></p>
 </td>
 <td width="42%" valign="top">
 <img src="docs/images/panel-7in.png" alt="7 寸屏布局">
@@ -39,6 +41,33 @@
 </tr>
 </table>
 
+## 太阳花硬件（概念设计 v0.1）
+
+<p align="center">
+  <img src="docs/hardware/device-hero.png" alt="太阳花两种型号：标准版与屏显版（圆屏花芯回显进展），五种状态表情" width="100%">
+</p>
+
+一盆放在桌上的太阳花：你说话时，花面转向你；Codex 在听、在做、做完还是出错，看脸上的表情和花瓣灯就知道。两种型号用同一个花盆底座（转向、麦克风、扬声器都一样），屏显版只把花芯换成一块圆屏：平时就是那张脸，执行和完成时回显进展。屏幕跟着花面转，所以始终朝向你。
+
+| | 标准版 | 屏显版 |
+|---|---|---|
+| 花芯 | 1.28″ 240×240，只显示表情 | 2.1″ 480×480：平时是脸，执行和完成时回显步骤、进度环、测试结果和提交号 |
+| 进展显示 | 任意浏览器 / 投到大屏 | 花芯一眼可看；完整日志照样在浏览器里看 |
+| 主控 | 底座 ESP32-S3 | 底座 ESP32-S3，加一颗花头 ESP32-S3：Wi-Fi 订阅主机事件，驱动圆屏 |
+| 过转动关节 | 10 芯 | 4 芯（电源 + 按键） |
+| 尺寸 / 供电 | Ø105 × 235 mm · USB-C PD 12 V | 同标准版 |
+
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/hardware/device-structure.svg"><img src="docs/hardware/device-structure.png" alt="结构设计图"></a>
+<p align="center"><sub>结构图：正视尺寸 · 侧剖视 · 俯视听声转向 · 零件表（<a href="docs/hardware/device-structure.svg">矢量版</a>）</sub></p></td>
+<td width="50%" valign="top"><a href="docs/hardware/device-exploded.svg"><img src="docs/hardware/device-exploded.png" alt="解构图"></a>
+<p align="center"><sub>解构图：标准版沿装配轴拆开，屏显版只换花头（<a href="docs/hardware/device-exploded.svg">矢量版</a>）</sub></p></td>
+</tr>
+</table>
+
+**听声转向**：土面下装一圈 4 麦克风阵列，算出说话人方向 θ；盆里的云台无刷电机带花茎转过去，磁编码器闭环，范围 ±170°。转向在设备本地完成，不经过云端。设计说明、尺寸来源和待核实项见 [docs/hardware/](docs/hardware/README.md)。
+
 ## 它是怎么工作的
 
 ```mermaid
@@ -46,7 +75,7 @@ flowchart LR
     U(["🗣️ 人声"]) --> MIC["🎙️ 设备麦克风<br>按键开始 / 结束"]
     MIC -- "PCM 16k<br>WebSocket" --> ASR
 
-    subgraph LINX["灵矽云"]
+    subgraph LINX["语音服务（当前接入灵矽）"]
         ASR["语音识别"] --> LLM["意图识别<br>工具路由"]
         TTS["语音合成"]
     end
@@ -64,9 +93,9 @@ flowchart LR
     TTS --> SPK["🔊 设备扬声器"]
 ```
 
-- **灵矽负责「听懂」和「说话」**：语音识别、意图识别、工具路由、TTS 都在灵矽云上；设备只上传 PCM、执行平台下发的 MCP 工具调用。
+- **语音服务负责「听懂」和「说话」**：语音识别、意图识别、工具路由和语音合成都在云端，当前接入的是灵矽。设备只上传 PCM，执行平台下发的 MCP 工具调用。
 - **主机负责「干活」和「展示」**：一个进程、一个端口，同时服务设备接口、面板 SSE 和面板页面。
-- **设备只做出站连接**：笔记本、另一台 Mac、树莓派都能当设备，差异只在 `profiles/*.json` 里的录音、播放、按键、主机地址四项。
+- **设备只做出站连接**：硬件做出来之前，由笔记本、另一台 Mac 或树莓派扮演太阳花。各设备之间的差异只在 `profiles/*.json` 里的四项：录音、播放、按键、主机地址。
 
 ### 一次语音任务的时序
 
@@ -75,7 +104,7 @@ sequenceDiagram
     autonumber
     actor 你
     participant 设备
-    participant 灵矽 as 灵矽云
+    participant 灵矽 as 语音服务
     participant 主机
     participant Codex
 
@@ -106,11 +135,11 @@ sequenceDiagram
 
 ## 设计取舍
 
-每一条都来自对灵矽平台和 Codex 的实测：
+每一条都来自对语音平台（灵矽）和 Codex 的实测：
 
 | 实测事实 | 设计 |
 |---|---|
-| 灵矽 `tools/call` 约 30 s 超时，晚到的结果被丢弃 | `dispatch` 立即回执，Codex 在后台跑；完成后由主机反向推送 `announce` |
+| 语音平台 `tools/call` 约 30 s 超时，晚到的结果被丢弃 | `dispatch` 立即回执，Codex 在后台跑；完成后由主机反向推送 `announce` |
 | 设备侧 `text_response` 可在冷连接上逐字播报，连上到播完约 10 s | 空闲 20 s 主动断开，结果出来再连；会话时长只花在真正说话的时候 |
 | 平台模型容易把「代码有没有问题」路由成查进度并反问 | 系统提示词规定「不确定就 dispatch，绝不反问代码在哪」，并附正反例 |
 | ASR 会把英文标识符听成同音字 | 派发前给 Codex 加提示：原话可能有同音错字，按模糊匹配理解 |
@@ -191,23 +220,15 @@ python3 -m sunflower.service logs
 
 跨机器时设备通过 `SUNFLOWER_HOST_URL` 找到主机；面板在非本机访问时需带 `?t=<SUNFLOWER_TOKEN>`。
 
-### 实体设备（概念设计 v0.1）
-
-![Sunflower 实体设备结构设计图](docs/images/device-structure.png)
-
-外形是一盆桌面向日葵。花盆土面下装一圈 4 麦克风阵列，负责声源定位（DOA）；花茎由盆内的云台无刷电机带动，按声源方向 θ 偏航转动，范围 ±170°，用磁编码器闭环。脸是一块 1.28″ 圆屏，用来显示表情；花瓣内藏一圈灯环，用来显示状态；叶片上的瓢虫是说话键。转向在设备本地完成，不经过云端。设备通过 WebSocket 直连灵矽，端侧 MCP 工具 `self.code.*` 把编程请求转发给主机，所以主机和面板的代码都不用改。图由 [`docs/hardware/draw_structure.py`](docs/hardware/draw_structure.py) 生成；外购件尺寸取自供应商页面，以实物为准。
-
 ## 现场演示
 
 完整话术与真人实测耗时见 [docs/demo-script.md](docs/demo-script.md)。每次彩排前先 `python3 -m sunflower.demo reset`（工作区回到初始状态，Codex 开新会话）。
-
-实测同一会话内连续追问，Codex 出第一步的等待越来越长：16 s → 19 s → 83 s；闲置 99 分钟后再追问，等了 161 s，其间上游流式连接断开重连 4 次，整轮 288 s。新会话同类任务整轮 44 s、无断流。
 
 ## 项目结构
 
 ```
 sunflower/
-├── device.py       设备：灵矽 WebSocket、录音/播放、端侧 MCP 工具、按键触发、空闲断连
+├── device.py       设备：语音服务 WebSocket、录音/播放、端侧 MCP 工具、按键触发、空闲断连
 ├── host.py         主机：HTTP API + SSE 广播（带回放缓冲），一个端口服务三方
 ├── agents.py       CodexRunner：exec/resume、事件流解析、voice: 提交、撤销、语音摘要
 ├── linx_admin.py   灵矽平台侧：按需建删智能体、预注册设备、OTA 取令牌
@@ -219,6 +240,7 @@ profiles/           部署形态：硬件差异只放在这里
 demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
 scripts/            门禁 / 合入 / 发版（gate · merge · release），树莓派整备与密钥下发
 tests/              离线单测（fake_codex 回放事件流，不连云）
+docs/hardware/      太阳花硬件：形象图 / 结构图 / 解构图（draw.py 生成 SVG）
 ```
 
 ## 测试
