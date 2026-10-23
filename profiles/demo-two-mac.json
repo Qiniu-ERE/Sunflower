@@ -1,5 +1,5 @@
 {
-  "description": "双 Mac 演示：Mac B 扮演树莓派（麦克风/音箱/AirPlay 接收屏），Mac A 跑编程代理",
+  "description": "双 Mac 演示：Mac B 扮演带屏设备（麦克风/音箱/浏览器打开面板），Mac A 跑编程代理",
   "device": {
     "mac": "02:CC:72:00:00:01",
     "audio_in": ["ffmpeg", "-loglevel", "error", "-f", "avfoundation", "-i", ":default", "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],

@@ -2,7 +2,7 @@
 
 # 🌻 Sunflower · 向日葵语音编程
 
-**对着灵矽设备说一句话，Codex 就开始写代码；<br>每一步进展实时投到屏幕上，做完了用语音告诉你结果。**
+**对着灵矽设备说一句话，Codex 就开始写代码；<br>每一步进展实时上屏，做完了用语音告诉你结果。**
 
 [![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies](https://img.shields.io/badge/dependencies-1%20(websockets)-brightgreen)](./requirements.txt)
@@ -10,7 +10,7 @@
 [![Linx](https://img.shields.io/badge/voice-%E7%81%B5%E7%9F%BD%20Linx-F5A623)](https://linx.qiniu.com/)
 [![License](https://img.shields.io/badge/license-MIT-orange)](./LICENSE)
 
-七牛云内部 Hackathon 参赛项目 · 议题：*灵矽应用——通过 AirPlay 连接屏幕，用语音控制编程代理进行开发*
+七牛云内部 Hackathon 参赛项目 · 议题：*灵矽应用——连接屏幕，用语音控制编程代理进行开发*（AirPlay 只是协议举例）
 
 </div>
 
@@ -23,7 +23,7 @@
 </p>
 
 <p align="center"><sub>
-进展面板（AirPlay 投屏画面，真实运行截图）。说出「跑一下测试，把失败的修好」后：Codex 跑测试 → <b>红色失败</b> → 改 <code>todo.py</code> → 测试转绿 → 自动提交 <code>voice:</code> → 播报结果。全程 44 秒。
+进展面板（真实运行截图，一次完整的两轮语音会话）。先说「检查一下代码有没有逻辑问题」：Codex 跑测试，<b>红色失败</b>，只报告不改，用时 79 s。再说「给待办清单加一个删除命令，按编号删除并补上测试」，中途问「进度怎么样了？」：Codex 改代码、补测试、测试转绿、自动提交 <code>voice:</code>，播报结果，用时 103 s。
 </sub></p>
 
 <table>
@@ -59,13 +59,13 @@ flowchart LR
     end
 
     R <-- "exec --json / resume" --> CX[["Codex CLI"]]
-    SSE --> P["🖥️ 进展面板<br>AirPlay 投屏"]
+    SSE --> P["🖥️ 进展面板<br>任意浏览器即屏幕"]
     SSE -- "announce<br>（经设备 text_response）" --> TTS
     TTS --> SPK["🔊 设备扬声器"]
 ```
 
 - **灵矽负责「听懂」和「说话」**：语音识别、意图识别、工具路由、TTS 都在灵矽云上；设备只上传 PCM、执行平台下发的 MCP 工具调用。
-- **主机负责「干活」和「展示」**：一个进程、一个端口，同时服务设备接口、面板 SSE 和投屏页面。
+- **主机负责「干活」和「展示」**：一个进程、一个端口，同时服务设备接口、面板 SSE 和面板页面。
 - **设备只做出站连接**：笔记本、另一台 Mac、树莓派都能当设备，差异只在 `profiles/*.json` 里的录音、播放、按键、主机地址四项。
 
 ### 一次语音任务的时序
@@ -139,20 +139,32 @@ python3 -m sunflower.host   --profile dev-single-mac   # 主机：Codex 执行�
 python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/结束说话，t 输入文字，q 退出
 ```
 
-浏览器打开 <http://127.0.0.1:8787/panel>，全屏后通过 macOS「控制中心 → 屏幕镜像」投到 AirPlay 接收端（Apple TV，或打开了「AirPlay 接收器」的另一台 Mac）。
+浏览器打开 <http://127.0.0.1:8787/panel>，这个页面就是屏幕。
 
 > 不想开麦克风？`python3 -m sunflower.device --text "跑一下测试，把失败的修好"` 用文字走完整条链路。
 
 用完清理灵矽侧资源：`python3 -m sunflower.linx_admin down`。
 
+## 屏幕：任意浏览器
+
+议题里的 AirPlay 只是举例。Sunflower 的屏幕协议是 **HTTP + SSE**：面板是一个零依赖的网页，订阅主机的 `/events` 事件流，所以任何能开浏览器的屏幕都能接入，不需要专门的接收端。
+
+| 接入方式 | 做法 | 适合 |
+|---|---|---|
+| 本机浏览器 | 打开 `http://127.0.0.1:8787/panel` | 开发、笔记本直连投影仪 |
+| 局域网里的任意屏幕 | profile 的 `bind` 设为 `0.0.0.0`，在电视、平板、另一台电脑或树莓派上打开 `http://<主机 IP>:8787/panel?t=<SUNFLOWER_TOKEN>` | 现场大屏、设备自带屏 |
+| AirPlay 镜像 | 本机面板全屏后，用 macOS「控制中心 → 屏幕镜像」投到 Apple TV 或打开了「AirPlay 接收器」的 Mac | 场地只有 AirPlay 接收端时 |
+
+事件流只读；本机访问不需要令牌，其他机器访问需要 `?t=<SUNFLOWER_TOKEN>`。面板按 1080p 大屏和 7 寸屏自适应排版，刷新时回放最近 300 条事件，所以中途接入的屏幕也能看到完整上下文。
+
 ## 部署形态
 
 | profile | 设备 | 主机 + Codex | 屏幕 |
 |---|---|---|---|
-| `dev-single-mac` | 同一台 Mac | 同一台 Mac | 本机浏览器 / AirPlay 镜像 |
-| `demo-two-mac` | Mac B（扮演带屏设备） | Mac A | Mac B 作为 AirPlay 接收屏 |
-| `demo-pi` | 树莓派 4B + USB 会议麦 + 翻页笔 | Mac | 树莓派 HDMI 屏 + UxPlay |
-| `pi-standalone` | 树莓派 4B | 树莓派（Codex arm64） | 树莓派 HDMI 屏 |
+| `dev-single-mac` | 同一台 Mac | 同一台 Mac | 本机浏览器（可 AirPlay 镜像） |
+| `demo-two-mac` | Mac B（扮演带屏设备） | Mac A | Mac B 浏览器打开面板 |
+| `demo-pi` | 树莓派 4B + USB 会议麦 + 翻页笔 | Mac | 树莓派 HDMI 屏上的浏览器 |
+| `pi-standalone` | 树莓派 4B | 树莓派（Codex arm64） | 树莓派 HDMI 屏上的浏览器 |
 
 跨机器时设备通过 `SUNFLOWER_HOST_URL` 找到主机；面板在非本机访问时需带 `?t=<SUNFLOWER_TOKEN>`。
 
