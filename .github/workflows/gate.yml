@@ -22,15 +22,15 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: pip install -r requirements.txt
       - name: ffmpeg（TG 入口的语音转码 OGG/Opus ↔ PCM）
-        timeout-minutes: 6
-        # apt 源偶尔卡住不动（2026-10-23 实测 8 分钟无输出）：每次限 120 s，最多 3 次。
-        # timeout 放在 sudo 里面，超时杀的是 apt 本身，不会留着 dpkg 锁让下一次干等
+        timeout-minutes: 7
+        # runner 默认的 azure 镜像偶尔下载卡死（2026-10-23：同一个包连卡 3 次、每次 120 s）。
+        # 每次限 120 s（timeout 在 sudo 里面，杀的是 apt 本身）；重试前把官方源排到镜像列表最前面
         run: |
           for i in 1 2 3; do
-            date +%T
-            sudo timeout -k 5 120 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update -q \
-              && sudo timeout -k 5 120 apt-get install -y -q ffmpeg && exit 0
-            echo "apt 第 $i 次没装上，重试"
+            sudo timeout -k 5 120 sh -c 'apt-get -q update && apt-get install -y -q --no-install-recommends ffmpeg' && exit 0
+            echo "apt 第 $i 次没装上，改用官方源重试"
+            { echo http://archive.ubuntu.com/ubuntu/; cat /etc/apt/apt-mirrors.txt; } | sudo tee /etc/apt/apt-mirrors.txt.new >/dev/null
+            sudo mv /etc/apt/apt-mirrors.txt.new /etc/apt/apt-mirrors.txt
           done
           exit 1
       - name: scripts/gate.sh
