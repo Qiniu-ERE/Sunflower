@@ -10,9 +10,9 @@ import cost_model  # noqa: E402
 class CostModelTest(unittest.TestCase):
     def test_readme_tables_match_csv(self):
         # README 里的数字只能由脚本从 CSV 算出来：改了 CSV 没跑 --write，这里就红
-        text = (ROOT / "docs" / "business" / "README.md").read_text(encoding="utf-8")
-        body = text.split(cost_model.BEGIN, 1)[1].split(cost_model.END, 1)[0].strip()
+        body = cost_model.block(ROOT / "docs" / "business" / "README.md", (cost_model.BEGIN, cost_model.END))
         self.assertEqual(body, cost_model.tables().strip())
+        self.assertEqual(cost_model.block(ROOT / "README.md", cost_model.SUMMARY), cost_model.summary().strip())
 
     def test_every_quoted_part_has_source(self):
         for row in cost_model.read("bom.csv"):
