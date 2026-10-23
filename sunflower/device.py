@@ -12,6 +12,7 @@ Facts this relies on (measured 2026-10-22):
 import argparse
 import asyncio
 import json
+import math
 import os
 import struct
 import subprocess
@@ -83,6 +84,19 @@ class Host:
 HEARTBEAT_TIMEOUT = 75  # host heartbeats every 30s
 
 
+def tone(freq, ms, volume=0.2, rate=16000):
+    """A short sine beep as s16le PCM, with 5 ms ramps so it doesn't click."""
+    n = rate * ms // 1000
+    ramp = rate // 200
+    return b"".join(struct.pack("<h", int(32767 * volume * min(1.0, i / ramp, (n - 1 - i) / ramp)
+                                          * math.sin(2 * math.pi * freq * i / rate))) for i in range(n))
+
+
+# 本地提示音：演示者不看终端也知道开始 / 结束录音了（不经过灵矽）
+EARCON_START = tone(880, 90)
+EARCON_STOP = tone(660, 90)
+
+
 class Player:
     """Streams downlink PCM into the profile's audio_out command."""
 
@@ -120,6 +134,7 @@ class Device:
         self.mic = None
         self.mic_task = None
         self.toggling = False
+        self.earcons = self.dev.get("earcons", True)
         self.loop = None
         self.speaking = asyncio.Event()
         self.announcing = set()  # platform echoes text_response back as stt; don't show it as the user
@@ -263,21 +278,25 @@ class Device:
         self.toggling = True
         try:
             if self.mic is None:
-                if not (self.ws is not None and self.ws.state.name == "OPEN"):
-                    log("⏳ 连接灵矽中…")
+                # 先开麦再连灵矽：连接要 ~3 s，期间的话先攒着，listen start 之后补发
+                connected = self.ws is not None and self.ws.state.name == "OPEN"
+                ready = asyncio.Event()
+                self.mic = subprocess.Popen(self.dev["audio_in"], stdout=subprocess.PIPE,
+                                            stderr=subprocess.DEVNULL)
+                self.mic_task = asyncio.ensure_future(self._pump_mic(self.mic, ready))
+                self._earcon(EARCON_START)
+                log("🎙 录音中…（再按一次结束）" if connected else "🎙 录音中…（连接灵矽中，可以直接说）")
                 await self.ensure()
                 if self.speaking.is_set():
                     await self._send({"type": "abort", "reason": "wake_word_detected"})
                 await self._send({"type": "listen", "state": "start", "mode": "manual"})
-                self.mic = subprocess.Popen(self.dev["audio_in"], stdout=subprocess.PIPE,
-                                            stderr=subprocess.DEVNULL)
-                self.mic_task = asyncio.ensure_future(self._pump_mic(self.mic))
-                log("🎙 录音中…（再按一次结束）")
+                ready.set()
             else:
                 mic, self.mic = self.mic, None
                 mic.terminate()
                 await self.mic_task
                 await self._send({"type": "listen", "state": "stop"})
+                self._earcon(EARCON_STOP)
                 log("🎙 结束，识别中…")
         except Exception as e:
             log(f"✘ 说话失败：{type(e).__name__}: {e}")
@@ -287,8 +306,13 @@ class Device:
         finally:
             self.toggling = False
 
-    async def _pump_mic(self, mic):
-        buf = b""
+    def _earcon(self, pcm):
+        if self.earcons:
+            self.player.write(pcm)
+            self.player.close()
+
+    async def _pump_mic(self, mic, ready):
+        buf, pending = b"", []
         while True:
             chunk = await asyncio.to_thread(mic.stdout.read, FRAME_BYTES)
             if not chunk:
@@ -296,10 +320,20 @@ class Device:
             buf += chunk
             while len(buf) >= FRAME_BYTES:
                 frame, buf = buf[:FRAME_BYTES], buf[FRAME_BYTES:]
-                try:
-                    await self.ws.send(frame)
-                except websockets.ConnectionClosed:
-                    return
+                pending.append(frame)
+            if ready.is_set() and not await self._flush(pending):
+                return
+        if ready.is_set():
+            await self._flush(pending)
+
+    async def _flush(self, frames):
+        try:
+            for f in frames:
+                await self.ws.send(f)
+        except websockets.ConnectionClosed:
+            return False
+        frames.clear()
+        return True
 
     # -- host announcements ----------------------------------------------
     def watch_host(self):
