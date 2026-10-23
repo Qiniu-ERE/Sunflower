@@ -166,6 +166,74 @@ class ReloadTest(unittest.TestCase):
             device.RELOAD_POLL_S, device.AUTO_RELOAD, device.log = old
 
 
+class HandsFreeTest(unittest.TestCase):
+    """不开口也能用：数字键快捷指令、静音只上屏（#10）。"""
+
+    def test_quick_keys_send_preset_requests(self):
+        async def go(quick=None):
+            d = make_device()
+            if quick:
+                d.quick.update(quick)
+            sent = []
+
+            async def say(text):
+                sent.append(text)
+            d.say_text = say
+            for k in "15x":
+                await d.press_quick(k)
+            return sent
+        sent = asyncio.run(go())
+        self.assertEqual(len(sent), 2)  # 未映射的键不发
+        self.assertIn("检查", sent[0])
+        self.assertIn("撤销", sent[1])
+        self.assertEqual(asyncio.run(go({"1": "跑一下测试"}))[0], "跑一下测试")
+
+    def test_quick_key_failure_is_visible(self):
+        async def go():
+            d = make_device()
+
+            async def down(text):
+                raise OSError("linx unreachable")
+            d.say_text = down
+            lines = []
+            orig, device.log = device.log, lambda *a: lines.append(" ".join(map(str, a)))
+            try:
+                await d.press_quick("1")
+            finally:
+                device.log = orig
+            return lines
+        self.assertTrue(any("✘" in l and "再按一次" in l for l in asyncio.run(go())))
+        self.assertEqual([device.evdev_action(c) for c in (57, 2, 6, 79, 30)],
+                         ["toggle", "1", "5", "1", None])
+
+    def test_muted_device_shows_but_does_not_speak(self):
+        class Stream:
+            def __init__(self, msgs):
+                self.msgs = msgs
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if not self.msgs:
+                    raise StopAsyncIteration
+                return self.msgs.pop(0)
+
+        async def go():
+            d = make_device()
+            played = []
+            d.player.write = played.append
+            d.ensure = lambda: asyncio.sleep(0)
+            self.assertTrue(d.toggle_mute())
+            await d.announce("任务完成")
+            await d._recv(Stream([b"\x00" * 640]))
+            return d, played
+        d, played = asyncio.run(go())
+        self.assertEqual(d.ws.json, [])  # 回执不送去合成
+        self.assertEqual(played, [])     # 平台下行的语音也不放
+        self.assertFalse(d.toggle_mute())
+
+
 class EarconTest(unittest.TestCase):
     def test_tone_is_short_audible_pcm_with_soft_edges(self):
         pcm = device.tone(880, 90)

@@ -237,7 +237,7 @@ class CodexRunner:
                 return {"ok": False, "say": "没有可撤销的语音任务提交"}
             r = _git(self.workspace, "revert", "--no-edit", "HEAD")
             if r.returncode:
-                return {"ok": False, "say": "撤销失败，请看屏幕日志"}
+                return {"ok": False, "say": "撤销失败，详情在屏幕上；可以说「检查一下工作区」"}
             self.emit("log", {"kind": "system", "text": f"已撤销：{head.stdout.strip()}"})
             self.emit("diff", self.diffstat())
             return {"ok": True, "say": "已撤销上一次改动"}
@@ -269,7 +269,7 @@ class CodexRunner:
         if self.cancelled:
             say = "任务已取消"
         elif code != 0:
-            say = f"任务失败，退出码{code}，请看屏幕"
+            say = f"任务失败，退出码{code}，详情在屏幕上；可以说「再试一次」"
         else:
             say = voice_summary(last)
         if self.read_only:

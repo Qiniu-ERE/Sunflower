@@ -190,12 +190,28 @@ python3 -m sunflower.demo reset      # 生成演示工作区 ~/sunflower-demo（
 
 ```bash
 python3 -m sunflower.host   --profile dev-single-mac   # 主机：Codex 执行器 + 面板
-python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/结束说话，t 输入文字，q 退出
+python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/结束说话，1–5 快捷指令，t 输入文字，m 静音，q 退出
 ```
 
 浏览器打开 <http://127.0.0.1:8787/panel>，这个页面就是屏幕。
 
 > 不想开麦克风？`python3 -m sunflower.device --text "跑一下测试，把失败的修好"` 用文字走完整条链路。
+
+<details>
+<summary><b>不方便说话时</b></summary>
+
+嗓子哑、气短，或者需要安静的场合，下面这些方式都不用开口，或者只需少说几个字：
+
+| 方式 | 怎么用 |
+|---|---|
+| 快捷指令键 | 设备终端按 `1`–`5`：检查代码 / 跑测试并修复 / 问进度 / 停下 / 撤销。小键盘和接在树莓派上的键盘（evdev）同样可用；在 profile 的 `device.quick` 里可以改成别的话 |
+| 静音只上屏 | 按 `m` 切换。完成回执只显示在面板上，平台下行的语音也不放；开始和结束录音的提示音保留。profile 里写 `device.mute: true` 则启动即静音 |
+| 一两个字 | 「修」「查」派给 Codex，「停」取消，「撤」撤销，「进度」查状态。改了提示词以后，要重跑一次 `linx_admin up` 才会推到平台 |
+| 文字 | 按 `t` 打字，或者用 `--text` |
+
+出错时的播报会带上下一步，例如「任务失败……可以说「再试一次」」。失败的任务不会提交，这时说「撤销」撤掉的是上一次成功的改动，所以播报不会这样建议。
+
+</details>
 
 用完清理灵矽侧资源：`python3 -m sunflower.linx_admin down`。
 

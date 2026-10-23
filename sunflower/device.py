@@ -142,6 +142,8 @@ class Device:
         self.mic_task = None
         self.toggling = False
         self.earcons = self.dev.get("earcons", True)
+        self.quick = dict(QUICK, **self.dev.get("quick", {}))
+        self.muted = bool(self.dev.get("mute", False))
         self.loop = None
         self.speaking = asyncio.Event()
         self.announcing = set()  # platform echoes text_response back as stt; don't show it as the user
@@ -235,7 +237,8 @@ class Device:
             async for m in ws:
                 self.last_activity = time.monotonic()
                 if isinstance(m, bytes):
-                    self.player.write(m)
+                    if not self.muted:
+                        self.player.write(m)
                     continue
                 d = json.loads(m)
                 t = d.get("type")
@@ -310,7 +313,27 @@ class Device:
         await self.ensure()
         await self._send({"type": "listen", "state": "detect", "text": text})
 
+    async def press_quick(self, key):
+        text = self.quick.get(key)
+        if text:
+            await self.submit_text(text, f"快捷键 {key}")
+
+    async def submit_text(self, text, via):
+        """按键 / 打字发出的需求：失败要在终端上看得见（这些入口的用户往往只看屏幕）。"""
+        log(f"{via}:", text)
+        try:
+            await self.say_text(text)
+        except Exception as e:
+            log(f"✘ {via}没发出去：{type(e).__name__}: {e}；可以再按一次")
+
+    def toggle_mute(self):
+        self.muted = not self.muted
+        log("🔇 静音：回执只上屏，不播报" if self.muted else "🔊 已恢复播报")
+        return self.muted
+
     async def announce(self, text):
+        if self.muted:  # 面板照常显示回执；不连灵矽，也不占通话时长
+            return
         await self.ensure()
         self.announcing.add(text)
         await self._send({"type": "listen", "state": "detect", "text": "任务回执", "text_response": text})
@@ -403,7 +426,8 @@ class Device:
 
 # -- triggers ----------------------------------------------------------------
 def stdin_trigger(loop, dev):
-    """Space / Enter / presenter PageUp-PageDown toggle talking; `t` types a text request; `q` quits."""
+    """Space / Enter / presenter PageUp-PageDown toggle talking; 1-5 quick requests; `t` types a text request;
+    `m` toggles mute; `q` quits."""
     import termios
     import tty
     fd = sys.stdin.fileno()
@@ -427,7 +451,11 @@ def stdin_trigger(loop, dev):
                     dev.typing = False
                 tty.setcbreak(fd)
                 if text:
-                    asyncio.run_coroutine_threadsafe(dev.say_text(text), loop)
+                    asyncio.run_coroutine_threadsafe(dev.submit_text(text, "文字"), loop)
+            elif ch.decode(errors="ignore") in dev.quick:
+                asyncio.run_coroutine_threadsafe(dev.press_quick(ch.decode()), loop)
+            elif ch in (b"m", b"M"):
+                dev.toggle_mute()
             elif ch in (b"q", b"Q"):
                 loop.call_soon_threadsafe(loop.stop)
                 return
@@ -437,6 +465,14 @@ def stdin_trigger(loop, dev):
 
 EV_KEY = 1
 TOGGLE_KEYS = {57, 28, 104, 109, 48, 63, 425}  # SPACE ENTER PAGEUP PAGEDOWN B(black) F5 presenter
+DIGIT_KEYS = {2: "1", 3: "2", 4: "3", 5: "4", 6: "5", 79: "1", 80: "2", 81: "3", 75: "4", 76: "5"}  # 主键盘 / 小键盘
+# 一个键代替一句话（#10）：走和说话同一条路，由灵矽路由到工具；profile 的 device.quick 可覆盖
+QUICK = {"1": "检查一下代码有没有问题", "2": "跑一下测试，把失败的修好", "3": "进度怎么样了",
+         "4": "停下", "5": "撤销刚才的改动"}
+
+
+def evdev_action(code):
+    return "toggle" if code in TOGGLE_KEYS else DIGIT_KEYS.get(code)
 
 
 def evdev_trigger(loop, dev):
@@ -463,8 +499,11 @@ def evdev_trigger(loop, dev):
                 continue
             for i in range(0, len(data) - size + 1, size):
                 _, _, etype, code, value = struct.unpack(fmt, data[i:i + size])
-                if etype == EV_KEY and value == 1 and code in TOGGLE_KEYS:
+                act = evdev_action(code) if etype == EV_KEY and value == 1 else None
+                if act == "toggle":
                     asyncio.run_coroutine_threadsafe(dev.toggle_talk(), loop)
+                elif act:
+                    asyncio.run_coroutine_threadsafe(dev.press_quick(act), loop)
 
 
 async def amain(a):
@@ -489,8 +528,9 @@ async def amain(a):
     threading.Thread(target=trig, args=(dev.loop, dev), daemon=True).start()
     if AUTO_RELOAD:
         asyncio.ensure_future(dev.reload_watch())
-    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出"
-        + (" · 随部署自动换代" if AUTO_RELOAD else ""))
+    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，1–5 快捷指令，t 输入文字，m 静音，q 退出"
+        + (" · 随部署自动换代" if AUTO_RELOAD else "") + (" · 🔇 静音" if dev.muted else ""))
+    log("快捷指令：" + " / ".join(f"{k} {v}" for k, v in sorted(dev.quick.items())))
     await asyncio.Event().wait()
 
 
