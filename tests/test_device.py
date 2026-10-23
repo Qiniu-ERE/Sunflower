@@ -74,6 +74,29 @@ class TalkTest(unittest.TestCase):
         self.assertEqual(len(d.ws.frames), FRAMES)
 
 
+    def test_recording_hint_says_press_again_even_when_connecting(self):
+        # 冷连接时也要提示再按一次结束，否则用户说完就等，录音一直开着像卡死（#23）
+        async def go(cold):
+            d = make_device()
+            lines = []
+            orig, device.log = device.log, lambda *a: lines.append(" ".join(map(str, a)))
+            try:
+                if cold:
+                    ws, d.ws = d.ws, None
+
+                    async def ensure():
+                        d.ws = ws
+                    d.ensure = ensure
+                await d.toggle_talk()
+                await d.toggle_talk()
+            finally:
+                device.log = orig
+            return lines
+        for cold in (False, True):
+            hint = next(l for l in asyncio.run(go(cold)) if "录音中" in l)
+            self.assertIn("再按一次结束", hint, f"cold={cold}")
+
+
 class ReapTest(unittest.TestCase):
     def test_mic_process_reaped_after_stop(self):
         async def go():

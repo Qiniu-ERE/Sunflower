@@ -287,7 +287,7 @@ class Device:
                                             stderr=subprocess.DEVNULL)
                 self.mic_task = asyncio.ensure_future(self._pump_mic(self.mic, ready))
                 self._earcon(EARCON_START)
-                log("🎙 录音中…（再按一次结束）" if connected else "🎙 录音中…（连接灵矽中，可以直接说）")
+                log("🎙 录音中…（再按一次结束）" if connected else "🎙 录音中…（连接灵矽中，可以直接说；说完再按一次结束）")
                 await self.ensure()
                 if self.speaking.is_set():
                     await self._send({"type": "abort", "reason": "wake_word_detected"})
