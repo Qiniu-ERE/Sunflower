@@ -215,7 +215,7 @@ class CodexRunner:
         if self.cancelled:
             say = "任务已取消"
         elif code != 0:
-            say = f"任务失败，退出码{code}，详情在屏幕上；可以说「再试一次」或「撤销」"
+            say = f"任务失败，退出码{code}，详情在屏幕上；可以说「再试一次」"
         else:
             say = voice_summary(last)
         commit = self._commit() if code == 0 and not self.cancelled else None

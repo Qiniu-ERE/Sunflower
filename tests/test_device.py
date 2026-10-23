@@ -187,6 +187,22 @@ class HandsFreeTest(unittest.TestCase):
         self.assertIn("检查", sent[0])
         self.assertIn("撤销", sent[1])
         self.assertEqual(asyncio.run(go({"1": "跑一下测试"}))[0], "跑一下测试")
+
+    def test_quick_key_failure_is_visible(self):
+        async def go():
+            d = make_device()
+
+            async def down(text):
+                raise OSError("linx unreachable")
+            d.say_text = down
+            lines = []
+            orig, device.log = device.log, lambda *a: lines.append(" ".join(map(str, a)))
+            try:
+                await d.press_quick("1")
+            finally:
+                device.log = orig
+            return lines
+        self.assertTrue(any("✘" in l and "再按一次" in l for l in asyncio.run(go())))
         self.assertEqual([device.evdev_action(c) for c in (57, 2, 6, 79, 30)],
                          ["toggle", "1", "5", "1", None])
 

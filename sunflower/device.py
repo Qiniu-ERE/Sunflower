@@ -316,8 +316,15 @@ class Device:
     async def press_quick(self, key):
         text = self.quick.get(key)
         if text:
-            log(f"快捷键 {key}:", text)
+            await self.submit_text(text, f"快捷键 {key}")
+
+    async def submit_text(self, text, via):
+        """按键 / 打字发出的需求：失败要在终端上看得见（这些入口的用户往往只看屏幕）。"""
+        log(f"{via}:", text)
+        try:
             await self.say_text(text)
+        except Exception as e:
+            log(f"✘ {via}没发出去：{type(e).__name__}: {e}；可以再按一次")
 
     def toggle_mute(self):
         self.muted = not self.muted
@@ -444,7 +451,7 @@ def stdin_trigger(loop, dev):
                     dev.typing = False
                 tty.setcbreak(fd)
                 if text:
-                    asyncio.run_coroutine_threadsafe(dev.say_text(text), loop)
+                    asyncio.run_coroutine_threadsafe(dev.submit_text(text, "文字"), loop)
             elif ch.decode(errors="ignore") in dev.quick:
                 asyncio.run_coroutine_threadsafe(dev.press_quick(ch.decode()), loop)
             elif ch in (b"m", b"M"):

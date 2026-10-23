@@ -149,6 +149,7 @@ class RunnerTest(unittest.TestCase):
         self.run_task("FAIL")
         self.assertIn("失败", self.rec.of("announce")[-1]["text"])
         self.assertIn("可以说", self.rec.of("announce")[-1]["text"])  # 出错带下一步（#10）
+        self.assertNotIn("撤销", self.rec.of("announce")[-1]["text"])  # 失败不提交，撤销会撤掉上一次成功的
         self.assertIsNone(self.rec.of("state")[-1]["commit"])
 
 
