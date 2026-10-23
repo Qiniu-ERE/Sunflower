@@ -170,6 +170,19 @@ class ReadOnlyIntentTest(unittest.TestCase):
         self.assertIsNone(rec.of("state")[-1]["commit"])
         self.assertTrue(rec.of("state")[0]["read_only"])
 
+    def test_check_request_can_run_tests_and_edits_are_stashed_not_committed(self):
+        # 只读沙箱连临时文件都写不了，演示测试会全红（0.164 实测）→ 检查类用 workspace-write；
+        # Codex 若仍改了文件，主机收进 stash、不提交，工作区保持原样（#15）
+        ws, rec = git_repo(), Recorder()
+        r = agents.CodexRunner(ws, rec, base_argv=FAKE + ["-s", "danger-full-access"], run_dir=tempfile.mkdtemp())
+        self.assertEqual(r.base_for("检查一下代码有没有逻辑问题")[-1:], ["workspace-write"])
+        r.dispatch("检查一下代码有没有逻辑问题")
+        self.assertTrue(rec.done.wait(10), "no announce")
+        git = lambda *a: subprocess.run(["git", "-C", str(ws), *a], capture_output=True, text=True).stdout
+        self.assertEqual(git("status", "--porcelain"), "")
+        self.assertIn("voice-check:", git("stash", "list"))
+        self.assertIn("stash", rec.of("announce")[-1]["text"])
+
 
 class CodexHomeTest(unittest.TestCase):
     def test_isolated_codex_home_keeps_only_channel_config(self):

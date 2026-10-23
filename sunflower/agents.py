@@ -16,7 +16,7 @@ import time
 
 VOICE_PREFIX = ("以下需求来自语音识别，可能有同音错字（尤其是英文文件名、函数名），"
                 "请结合仓库实际内容理解并模糊匹配。提问、检查类需求只报告结论，不修改文件。\n需求：")
-READ_ONLY_NOTE = "\n\n（这是只问不改的请求：本次运行在只读沙箱里，只报告发现，不要尝试修改文件。）"
+READ_ONLY_NOTE = "\n\n（这是只问不改的请求：可以跑测试，只报告发现，不要修改文件；即使改了也不会被提交。）"
 # 只问不改（#15）：出现查看 / 提问类词、且没有任何动手类词，才走只读沙箱；拿不准时按可写处理
 _READ_RE = re.compile(r"检查|看看|看一下|看下|有没有|是不是|是否|对不对|为什么|怎么回事|什么|哪里|哪些|哪个|"
                       r"解释|讲讲|说说|分析|评估|审查|review|explain", re.I)
@@ -44,8 +44,9 @@ def with_sandbox(argv, mode):
 def isolated_codex_home(src, dst):
     """给主机用的 CODEX_HOME：只放渠道配置（[model_providers.*] 和各渠道的 <名>.config.toml）。
 
-    使用者的 ~/.codex 里还有个人 AGENTS.md、记忆、技能、MCP 服务；演示时 Codex 会去读，
-    既暴露在投屏上又让行为随机器而变（#15）。每次启动重建，渠道改动跟着 ~/.codex 走。"""
+    使用者的 ~/.codex 里还有个人 AGENTS.md、记忆、MCP 服务；演示时 Codex 会去读，
+    既暴露在投屏上又让行为随机器而变（#15）。每次启动重建，渠道改动跟着 ~/.codex 走。
+    已知边界：~/.agents/skills 下的个人技能不在 CODEX_HOME 里，仍会被加载（codex 0.164 无开关可关）。"""
     src, dst = pathlib.Path(src).expanduser(), pathlib.Path(dst)
     if dst.exists():
         shutil.rmtree(dst)
@@ -181,7 +182,7 @@ class CodexRunner:
             last_file.unlink(missing_ok=True)
             self.read_only = read_only_intent(text)
             prompt = VOICE_PREFIX + text + (READ_ONLY_NOTE if self.read_only else "") + VOICE_SUFFIX
-            base = with_sandbox(self.base_argv, "read-only") if self.read_only else self.base_argv
+            base = self.base_for(text)
             argv = list(base) + ["-C", str(self.workspace)]
             if self.thread_id:
                 argv += ["resume", self.thread_id]
@@ -271,6 +272,10 @@ class CodexRunner:
             say = f"任务失败，退出码{code}，请看屏幕"
         else:
             say = voice_summary(last)
+        if self.read_only:
+            n = self._stash_check_edits()
+            if n:
+                say += f"；检查时改动的{n}个文件已收进 git stash，未提交"
         commit = self._commit() if code == 0 and not self.cancelled and not self.read_only else None
         self.emit("state", {"state": "idle", "task": self.task, "exit": code,
                             "elapsed": int(time.time() - self.started), "commit": commit})
@@ -279,6 +284,24 @@ class CodexRunner:
         if commit:
             self.emit("diff", self.diffstat())
         self.emit("announce", {"text": say})
+
+    def base_for(self, text):
+        # 只读沙箱连临时文件都写不了，跑测试会全是环境错误（codex 0.164 实测）→ 用 workspace-write，
+        # 「不改」由主机兜底：检查任务结束后工作区有改动就收进 stash（_stash_check_edits）
+        return with_sandbox(self.base_argv, "workspace-write") if read_only_intent(text) else self.base_argv
+
+    def _stash_check_edits(self):
+        st = _git(self.workspace, "status", "--porcelain", "--", ".", ":!.sunflower")
+        files = [l for l in st.stdout.splitlines() if l.strip()] if st.returncode == 0 else []
+        if not files:
+            return 0
+        r = _git(self.workspace, "stash", "push", "-u", "-m", "voice-check: " + (self.task or "")[:60],
+                 "--", ".", ":!.sunflower")
+        if r.returncode:
+            self.emit("log", {"kind": "error", "text": "检查任务改了文件，收进 stash 失败：" + r.stderr.strip()[:120]})
+            return 0
+        self.emit("log", {"kind": "system", "text": f"检查任务改动了 {len(files)} 个文件，已收进 git stash（git stash pop 可取回）"})
+        return len(files)
 
     def _commit(self):
         if _git(self.workspace, "rev-parse", "--git-dir").returncode:
