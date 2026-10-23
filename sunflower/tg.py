@@ -19,6 +19,7 @@ from . import config, device
 
 API = "https://api.telegram.org"
 EDIT_GAP_S = 3  # 同一聊天官方上限约 1 条/秒；卡片 3 s 一刷足够看进度
+POLL_BACKOFF_S = 3
 LABELS = {"1": "🔍 检查", "2": "🛠 修复", "3": "⏱ 进度", "4": "⏹ 停下", "5": "↩️ 撤销"}
 KEYBOARD = {"inline_keyboard": [[{"text": v, "callback_data": f"q:{k}"} for k, v in LABELS.items()]]}
 HELP = ("太阳花 · 发文字或语音说需求，或者点下面的按钮。\n"
@@ -107,28 +108,45 @@ def parse_allow(raw):
 
 
 class Card:
-    """一张进度卡片，原地编辑：内容没变不调接口，两次编辑至少隔 EDIT_GAP_S；结束态立即发。"""
+    """一张进度卡片，执行中原地编辑：内容没变不调接口，两次编辑至少隔 EDIT_GAP_S。
+
+    结束态立即发，而且删掉进度卡、在底部另发一条：编辑旧消息手机不推通知，卡片也早被后来的回复压在上面。
+    发失败的留在 pending，下一拍（tick）补发。主机事件线程和 tick 线程都会调，一把锁串起来。
+    """
 
     def __init__(self, bot, chat_id, clock=time.monotonic, gap=EDIT_GAP_S):
         self.bot, self.chat_id, self.clock, self.gap = bot, chat_id, clock, gap
-        self.msg_id, self.shown, self.pending, self.at = None, None, None, -1e9
+        self.msg_id, self.shown, self.pending, self.final, self.at = None, None, None, False, -1e9
+        self.lock = threading.Lock()
 
     def show(self, text, final=False):
-        self.pending = text
-        if final or self.clock() - self.at >= self.gap:
-            self.flush()
+        with self.lock:
+            self.pending, self.final = text, final
+            if final or self.clock() - self.at >= self.gap:
+                self._flush()
 
     def flush(self):
-        text, self.pending = self.pending, None
+        with self.lock:
+            self._flush()
+
+    def _flush(self):
+        text, final = self.pending, self.final
         if text is None or text == self.shown:
+            self.pending = None
             return
-        if self.msg_id is None:
-            self.msg_id = self.bot.call("sendMessage", {"chat_id": self.chat_id, "text": text,
-                                                         "reply_markup": KEYBOARD})["message_id"]
+        if final or self.msg_id is None:
+            new = self.bot.call("sendMessage", {"chat_id": self.chat_id, "text": text,
+                                                "reply_markup": KEYBOARD})["message_id"]
+            old, self.msg_id = self.msg_id, None if final else new
+            if final and old is not None:
+                try:
+                    self.bot.call("deleteMessage", {"chat_id": self.chat_id, "message_id": old})
+                except TgError as e:  # 删不掉（超 48 h 等）只是多留一张旧卡
+                    log("✘", e)
         else:
             self.bot.call("editMessageText", {"chat_id": self.chat_id, "message_id": self.msg_id, "text": text,
                                               "reply_markup": KEYBOARD})
-        self.shown, self.at = text, self.clock()
+        self.shown, self.pending, self.at = text, None, self.clock()
 
 
 def render(st, now=time.time):
@@ -176,20 +194,33 @@ class Bridge:
         self.said = []            # 灵矽这一轮的回复文字
         self.want_voice = False   # 这一轮是语音进来的 → 回语音
         self.ignored = set()
+        self.serial = None        # 灵矽输入一次只送一条：两段语音交织成一轮会识别成混在一起的指令
         dev.player = Capture(self._on_tts_audio)
         dev.on_event = self._on_dev_event
 
     # -- inbound -----------------------------------------------------------
-    def _run(self, coro):
-        return asyncio.run_coroutine_threadsafe(coro, self.loop)
+    async def _serially(self, coro, chat):
+        if self.serial is None:
+            self.serial = asyncio.Lock()
+        async with self.serial:
+            try:
+                await coro
+            except Exception as e:  # 灵矽连不上 / 未装配：用户那边不能石沉大海
+                why = self.bot._redact(f"{type(e).__name__}: {e}")
+                log("✘ 没发进灵矽：", why)
+                await asyncio.to_thread(self._send_text, f"✘ 没发出去（{why[:120]}）；可以再发一次", chat)
+
+    def _run(self, coro, chat):
+        return asyncio.run_coroutine_threadsafe(self._serially(coro, chat), self.loop)
 
     def handle(self, upd):
         msg = upd.get("message") or (upd.get("callback_query") or {}).get("message") or {}
         who = ((upd.get("message") or upd.get("callback_query") or {}).get("from") or {}).get("id")
-        if who not in self.allow:
-            if who not in self.ignored:
-                self.ignored.add(who)
-                log(f"忽略未授权用户 {who}（不回复）")
+        kind = (msg.get("chat") or {}).get("type")
+        if who not in self.allow or kind != "private":
+            if (who, kind) not in self.ignored:
+                self.ignored.add((who, kind))
+                log(f"忽略 {kind} 聊天里的用户 {who}（只接白名单私聊，不回复）")
             return
         chat = (msg.get("chat") or {}).get("id")
         if chat != self.chat:
@@ -200,27 +231,45 @@ class Bridge:
             self.bot.call("answerCallbackQuery", {"callback_query_id": cq["id"],
                                                   "text": self.dev.quick.get(key, "这个按钮已失效")})
             self.want_voice = False
-            self._run(self.dev.press_quick(key))
+            self._run(self.dev.press_quick(key), chat)
         elif msg.get("voice"):
             pcm = to_pcm(self.bot.download(msg["voice"]["file_id"]))
             self.want_voice = True
-            self._run(self.dev.say_audio(pcm))
+            self._run(self.dev.say_audio(pcm), chat)
         elif msg.get("text"):
             text = msg["text"].strip()
             if text in ("/start", "/help"):
                 self.bot.call("sendMessage", {"chat_id": chat, "text": HELP, "reply_markup": KEYBOARD})
                 return
             self.want_voice = False
-            self._run(self.dev.say_text(text))
+            self._run(self.dev.say_text(text), chat)
+
+    def skip_backlog(self):
+        """启动时丢弃停机期间攒下的消息（不执行），告诉发消息的人重发；返回下一次轮询的 offset。"""
+        ups = self.bot.call("getUpdates", {"timeout": 0, "allowed_updates": ["message", "callback_query"]})
+        if not ups:
+            return None
+        chats = {}
+        for u in ups:
+            m = u.get("message") or (u.get("callback_query") or {}).get("message") or {}
+            who = ((u.get("message") or u.get("callback_query") or {}).get("from") or {}).get("id")
+            if who in self.allow and (m.get("chat") or {}).get("type") == "private":
+                chats[m["chat"]["id"]] = chats.get(m["chat"]["id"], 0) + 1
+        for chat, n in chats.items():
+            self._send_text(f"太阳花刚重启：离线期间的 {n} 条消息没有执行，需要的话请重发。", chat)
+        log(f"丢弃离线期间 {len(ups)} 条消息")
+        return ups[-1]["update_id"] + 1
 
     def poll(self, offset=None, stop=None):
         while not (stop and stop.is_set()):
             try:
-                ups = self.bot.call("getUpdates", {"timeout": 30, "offset": offset,
-                                                   "allowed_updates": ["message", "callback_query"]}, timeout=40)
-            except TgError as e:
-                log("✘", e)
-                time.sleep(3)
+                params = {"timeout": 30, "allowed_updates": ["message", "callback_query"]}
+                if offset is not None:
+                    params["offset"] = offset
+                ups = self.bot.call("getUpdates", params, timeout=40)
+            except Exception as e:  # 截断的长轮询会抛 http.client 异常；轮询线程死了进程还活着 = 静默失聪
+                log("✘", e if isinstance(e, TgError) else self.bot._redact(f"getUpdates: {type(e).__name__}: {e}"))
+                time.sleep(POLL_BACKOFF_S)
                 continue
             for u in ups:
                 offset = u["update_id"] + 1
@@ -252,9 +301,9 @@ class Bridge:
         if said:
             self._send_text(said)
 
-    def _send_text(self, text):
+    def _send_text(self, text, chat=None):
         try:
-            self.bot.call("sendMessage", {"chat_id": self.chat, "text": text})
+            self.bot.call("sendMessage", {"chat_id": chat or self.chat, "text": text})
         except TgError as e:
             log("✘", e)
 
@@ -279,12 +328,16 @@ class Bridge:
                 log("✘", e)
 
     def tick(self):
-        """running 时每 EDIT_GAP_S 把累积的进度推一次（无新事件时也刷新用时）。"""
-        if self.card and self.st.get("state") == "running":
-            try:
+        """running 时每 EDIT_GAP_S 把累积的进度推一次（无新事件时也刷新用时）；上次没发出去的补发。"""
+        if not self.card:
+            return
+        try:
+            if self.st.get("state") == "running":
                 self.card.show(render(self.st))
-            except TgError as e:
-                log("✘", e)
+            elif self.card.pending is not None:
+                self.card.flush()
+        except TgError as e:
+            log("✘", e)
 
 
 def watch_host(host, bridge):
@@ -310,7 +363,8 @@ async def amain(a):
     me = await asyncio.to_thread(bot.call, "getMe")
     bridge = Bridge(bot, dev, allow, dev.loop, voice_reply=prof.get("tg", {}).get("voice_reply", True))
     threading.Thread(target=watch_host, args=(host, bridge), daemon=True).start()
-    threading.Thread(target=bridge.poll, daemon=True).start()
+    offset = await asyncio.to_thread(bridge.skip_backlog)
+    threading.Thread(target=bridge.poll, args=(offset,), daemon=True).start()
     log(f"太阳花 TG 入口就绪 · @{me.get('username')} · 白名单 {len(allow)} 人 · profile={prof['name']}")
     while True:
         await asyncio.sleep(EDIT_GAP_S)
