@@ -60,8 +60,9 @@ def plist(python, app, logs, path_env):
 
 
 def keychain(svc):
-    r = subprocess.run(["/usr/bin/security", "find-generic-password", "-a", os.environ.get("USER", ""),
-                        "-s", svc, "-w"], capture_output=True, text=True)
+    # 只按服务名找：账户名随用户怎么存都行（服务名带 sunflower- 前缀，足够唯一）
+    r = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", svc, "-w"],
+                       capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f"钥匙串里没有服务「{svc}」：先执行 security add-generic-password -a $USER -s {svc} -w")
     return r.stdout.strip()

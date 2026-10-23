@@ -230,15 +230,19 @@ def main(argv=None):
         if event in ("state", "announce"):
             print(f"[{time.strftime('%H:%M:%S')}] {event} {json.dumps(data, ensure_ascii=False)}", flush=True)
 
+    env = home = None
     if hcfg.get("agent_argv"):  # pinned argv (tests, benchmarks): no channel switching
         base, channel, resolve = hcfg["agent_argv"], None, None
     else:
+        if hcfg.get("isolate_codex_home", True):  # 不让演示读到使用者的个人 AGENTS.md / 记忆 / 技能（#15）
+            home = agents.isolated_codex_home(os.environ.get("CODEX_HOME") or "~/.codex", config.HOME / "codex-home")
+            env = dict(os.environ, CODEX_HOME=str(home))
         channel = (a.channel or os.environ.get("SUNFLOWER_CODEX_CHANNEL")
                    or hcfg.get("codex_channel") or "qiniu-gpt")
-        resolve = lambda name: resolve_channel(hcfg, name)  # noqa: E731
+        resolve = lambda name: resolve_channel(hcfg, name, codex_home=home)  # noqa: E731
         base = resolve(channel)
     runner = agents.CodexRunner(hcfg["workspace"], emit, base_argv=base,
-                                run_dir=config.HOME / "run", channel=channel)
+                                run_dir=config.HOME / "run", channel=channel, env=env)
     srv = QuietServer((hcfg.get("bind", "127.0.0.1"), int(hcfg.get("port", 8787))),
                       make_handler(bus, runner, token, resolve))
     srv.daemon_threads = True
