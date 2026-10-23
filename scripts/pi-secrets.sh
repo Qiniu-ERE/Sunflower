@@ -26,7 +26,7 @@ push)
   esac
   svc=${3:?缺 codex 钥匙串服务名}
   linx=$(linx_key "$label")
-  [ -n "$linx" ] || { echo "笔记里找不到「$label」下的 lx- key" >&2; exit 1; }
+  [ -n "$linx" ] || { echo "笔记里找不到「${label}」下的 lx- key" >&2; exit 1; }
   codex=$(/usr/bin/security find-generic-password -s "$svc" -w) || { echo "钥匙串里没有服务 $svc" >&2; exit 1; }
   printf 'LINX_API_KEY=%s\nQINIU_GPT_API_KEY=%s\n' "$linx" "$codex" | ssh "$PI" 'set -e
     umask 077; cd ~/Sunflower

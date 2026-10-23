@@ -1,0 +1,33 @@
+# 与本地同一条门禁：scripts/gate.sh。私有免费仓没有 required check，
+# 合入由 scripts/merge.sh 把关——它要求本 workflow 在 PR 头提交上全绿。
+name: gate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]   # edited：改 PR 正文的「规格」段要重跑
+  push:
+    branches: [main]
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -r requirements.txt
+      - name: scripts/gate.sh
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            scripts/gate.sh --base "origin/$BASE_REF"
+          else
+            scripts/gate.sh
+          fi
