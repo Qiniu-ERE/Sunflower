@@ -68,6 +68,8 @@
 
 **听声转向**：土面下装一圈 4 麦克风阵列，算出说话人方向 θ；盆里的云台无刷电机带花茎转过去，磁编码器闭环，范围 ±170°。转向在设备本地完成，不经过云端。设计说明、尺寸来源和待核实项见 [docs/hardware/](docs/hardware/README.md)。
 
+**成本与竞品**：两种型号的 BOM、亚马逊渠道费用、软件费率与 ROI，以及和 Echo Show、Stream Deck、EMO 等 11 款亚马逊在售产品的价格对比，见 [docs/business/](docs/business/README.md)。表格由 CSV 和脚本生成，改数字后重跑即可。
+
 ## 它是怎么工作的
 
 ```mermaid
@@ -241,6 +243,7 @@ demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
 scripts/            门禁 / 合入 / 发版（gate · merge · release），树莓派整备与密钥下发
 tests/              离线单测（fake_codex 回放事件流，不连云）
 docs/hardware/      太阳花硬件：形象图 / 结构图 / 解构图（draw.py 生成 SVG）
+docs/business/      两种型号的 BOM、软件费率、ROI 与竞品价格（CSV + cost_model.py）
 ```
 
 ## 测试
