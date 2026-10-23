@@ -323,7 +323,7 @@ sunflower/
 └── web/panel.html  进展面板（1080p 投屏 / 7 寸屏自适应，零依赖）
 profiles/           部署形态：硬件差异只放在这里
 demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
-scripts/            门禁 / 合入 / 发版（gate · merge · release），树莓派整备与密钥下发
+scripts/            门禁 / 合入 / 发版（gate · merge · release），演示计时（bench_demo），树莓派整备与密钥下发
 tests/              离线单测（fake_codex 回放事件流，不连云）
 docs/hardware/      硬件概念设计：形象图 / 结构图 / 解构图（draw.py 生成）
 docs/business/      成本、费率、盈亏平衡与竞品（CSV + cost_model.py 生成表格）
