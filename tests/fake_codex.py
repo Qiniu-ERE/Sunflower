@@ -19,6 +19,9 @@ emit({"type": "turn.started"})
 emit({"type": "error", "message": "Reconnecting... 1/5"})
 emit({"type": "item.started", "item": {"type": "command_execution", "command": "/bin/zsh -lc 'ls'"}})
 emit({"type": "item.completed", "item": {"type": "command_execution", "command": "/bin/zsh -lc 'ls'", "exit_code": 0}})
+if "SLOW" in args[-1]:  # 长任务：等着被 cancel 打断
+    import time
+    time.sleep(30)
 if "read-only" not in args:  # 检查类任务跑在 workspace-write 里：Codex 仍可能改文件，由主机兜底
     (ws / "feature.txt").write_text("resumed\n" if resumed else "first\n", encoding="utf-8")
 emit({"type": "item.completed", "item": {"type": "file_change", "changes": [{"path": str(ws / "feature.txt"), "kind": "add"}]}})
