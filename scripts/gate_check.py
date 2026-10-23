@@ -5,20 +5,15 @@ PR 正文「规格」段每行一条不变量 + 反引号测试名。点名的�
   在本分支上 ok——证明实现满足规格。
 纯重构可写「写红豁免: <理由>」跳过，但全量测试仍须全绿。
 
-    python3 scripts/gate_check.py <base.log> <head.log>    # PR 正文从环境变量 PR_BODY 读
+    python3 scripts/gate_check.py <base.json> <head.json>   # 由 run_tests.py 产出；PR 正文从环境变量 PR_BODY 读
 """
+import json
 import os
 import re
 import sys
 
-_RESULT = re.compile(r"^(test\w*) \([\w.]+\) \.\.\. (ok|FAIL|ERROR|skipped.*|expected failure|unexpected success)$",
-                     re.M)
 _SPEC_HEAD = re.compile(r"^##\s*规格.*$", re.M)
 _TEST_NAME = re.compile(r"`(test\w+)`")
-
-
-def parse_results(log):
-    return {name: status for name, status in _RESULT.findall(log)}
 
 
 def spec_tests(body):
@@ -52,13 +47,13 @@ def evaluate(specs, base, head):
 
 
 def main(argv):
-    base_log, head_log = (open(p, encoding="utf-8").read() for p in argv[1:3])
+    base, head = (json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {} for p in argv[1:3])
     body = os.environ.get("PR_BODY", "")
     reason = exemption(body)
     if reason:
         print(f"写红豁免：{reason}")
         return 0
-    ok, lines = evaluate(spec_tests(body), parse_results(base_log), parse_results(head_log))
+    ok, lines = evaluate(spec_tests(body), base, head)
     print("\n".join(lines))
     return 0 if ok else 1
 
