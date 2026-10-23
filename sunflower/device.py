@@ -68,7 +68,8 @@ class Host:
     def events(self):
         """Yield (event, data) from the host SSE stream (no replay)."""
         req = urllib.request.Request(self.url + "/events?replay=0",
-                                     headers={"Authorization": "Bearer " + self.token})
+                                     headers={"Authorization": "Bearer " + self.token,
+                                              "X-Sunflower-Commit": COMMIT or ""})
         with urllib.request.urlopen(req, timeout=HEARTBEAT_TIMEOUT) as r:
             event = None
             for raw in r:
@@ -81,6 +82,7 @@ class Host:
                     event = None
 
 
+COMMIT = config.code_commit()  # 报给主机，service status 据此发现设备在跑旧代码
 HEARTBEAT_TIMEOUT = 75  # host heartbeats every 30s
 
 

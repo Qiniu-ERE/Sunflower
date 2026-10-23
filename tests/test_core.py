@@ -199,6 +199,18 @@ class HostApiTest(unittest.TestCase):
         self.assertIn("log", seen)
         self.assertIn("announce", seen)
 
+    def test_health_reports_commits(self):
+        with urllib.request.urlopen(self.base + "/health", timeout=5) as r:
+            h = json.loads(r.read())
+        self.assertRegex(h["commit"], r"^[0-9a-f]{7,}$")
+        self.assertIn("pid", h)
+        req = urllib.request.Request(self.base + "/events?replay=0", headers={
+            "Authorization": "Bearer tok", "X-Sunflower-Commit": "dev1234"})
+        with urllib.request.urlopen(req, timeout=5):
+            with urllib.request.urlopen(self.base + "/health", timeout=5) as r:
+                h = json.loads(r.read())
+        self.assertEqual(h["device"]["commit"], "dev1234")
+
     def test_channel_switch_api(self):
         res = self.post("/api/channel", {"name": "alt"})
         self.assertTrue(res["ok"])

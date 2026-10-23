@@ -66,6 +66,9 @@ def resolve_channel(hcfg, name, codex_home=None):
 
 
 def make_handler(bus, runner, token, resolve=None):
+    commit, pid, started = config.code_commit(), os.getpid(), time.time()
+    device = {}  # 最近一次连上 /events 的设备所报告的代码提交
+
     class H(BaseHTTPRequestHandler):
         server_version = "sunflower/0.1"
 
@@ -92,7 +95,9 @@ def make_handler(bus, runner, token, resolve=None):
         def do_GET(self):
             path = urlparse(self.path).path
             if path == "/health":
-                return self._json(200, {"ok": True, "busy": runner.busy(), "channel": runner.channel})
+                return self._json(200, {"ok": True, "busy": runner.busy(), "channel": runner.channel,
+                                        "commit": commit, "pid": pid, "started": int(started),
+                                        "device": dict(device) or None})
             if path in ("/", "/panel"):
                 body = (WEB / "panel.html").read_bytes()
                 self.send_response(200)
@@ -104,6 +109,8 @@ def make_handler(bus, runner, token, resolve=None):
                 # read-only stream: loopback (the panel window on this machine) needs no token
                 if not (self._loopback() or self._authed()):
                     return self._json(401, {"error": "token required"})
+                if self.headers.get("X-Sunflower-Commit"):
+                    device.update(commit=self.headers["X-Sunflower-Commit"][:40], seen=time.time())
                 return self._sse(replay=parse_qs(urlparse(self.path).query).get("replay", ["1"])[0] == "1")
             self._json(404, {"error": "not found"})
 
