@@ -1,0 +1,22 @@
+id,part,variant,qty,unit_1,unit_1k,currency,kind,source,note
+1,ESP32-S3-WROOM-1-N16R8 底座主控,共用,1,5.3966,3.6203,USD,报价,https://www.lcsc.com/product-detail/C2913202.html,1k 取 650 档
+2,XVF3800-QF60B-C 语音处理（DOA/AEC）,共用,1,21.68,14.21911,USD,报价,https://www.digikey.com.mx/en/products/detail/xmos/XVF3800-QF60B-C/21280440,1k 无档，取最高 416 档（上界）
+3,SPH0641LU4H-1 PDM 麦克风,共用,4,3.68,1.96912,USD,报价,https://www.digikey.com.mx/en/products/detail/syntiant/SPH0641LU4H-1/5332438,1k 取 500 档
+4,GM2804 云台无刷电机,共用,1,21.99,21.99,USD,报价,https://shop.iflight.com/ipower-gm2804-gimbal-motor-pro1153,只有零售价，1k 按零售计（上界）
+5,AS5600-ASOM 磁编码器,共用,1,1.7235,0.8618,USD,报价,https://www.lcsc.com/product-detail/C79815.html,查询时库存 0
+6,DRV8313PWPR FOC 驱动,共用,1,4.4787,2.8644,USD,报价,https://www.lcsc.com/product-detail/C92482.html,
+7,MAX98357AETE+T 功放,共用,1,1.3356,0.8238,USD,报价,https://www.lcsc.com/product-detail/C910544.html,
+8,40 mm 4 Ω 3 W 扬声器（PUI AS04004PR-WR-R）,共用,1,8.28,4.05,USD,报价,https://www.digikey.com.mx/en/products/detail/pui-audio-inc/AS04004PR-WR-R/13165952,
+9,6800ZZ 轴承,共用,1,4.50,4.05,AUD,报价,https://minibearings.com.au/products/10x19x5-bearings-6800zz,1k 无档，取 50 个以上档（上界）
+10,CH224K USB PD 取电,共用,1,0.4953,0.2666,USD,报价,https://www.lcsc.com/product-detail/C970725.html,查询时库存 0
+11,WS2812B-2020 花瓣灯,共用,16,0.1175,0.0748,USD,报价,https://www.lcsc.com/product-detail/C965555.html,1k 取 500 档；查询时库存 0
+12,TS-1187A 轻触开关（瓢虫键）,共用,2,0.0208,0.0140,USD,报价,https://www.lcsc.com/product-detail/C318884.html,1k 取 600 档
+13,PCB ×2（主板 + 环形麦克风板）+ 被动件、连接器、DC-DC,共用,1,30,6.00,USD,假设,https://jlcpcb.com/help/article/pcb-assembly-price,单台含 JLC 贴片开机费 25.56 起；1k 为估计
+14,外壳塑件（脸盖、花瓣、头壳、叶片、花盆）,共用,1,68.75,4.00,USD,假设,https://jlc3dp.com/blog/drastic-material-price-cuts-and-adjusted-post-processing-service-fees,单台 = MJF 0.275/g × 约 250 g；1k 为注塑件估计（模具费另计在 NRE）
+15,铝管、配重钢环、线材、螺丝、脚垫,共用,1,8,2.50,USD,假设,,估计
+16,包装（彩盒、内衬、说明书）,共用,1,0,2.00,USD,假设,,样机不计
+17,组装与测试人工,共用,1,0,3.00,USD,假设,,约 15 min/台 × 12 USD/h
+18,GC9A01 1.28″ 圆屏模块,标准版,1,14.59,14.31,USD,报价,https://www.waveshare.com/1.28inch-lcd-module.htm,模块价（非裸屏），1k 取 50–99 档（上界）
+19,2.1″ 480×480 圆屏 ST7701S（Orient AFI480480A0R）,屏显版,1,19.23,14.61,USD,报价,https://orientdisplay.com/products/2-1-sunlight-readable-round-ips-480x480-600-nits/,1k 取 50 片以上档（上界）
+20,ESP32-S3-WROOM-1-N8R8 花头主控,屏显版,1,5.0796,3.5366,USD,报价,https://www.lcsc.com/product-detail/C2913201.html,1k 取 650 档；查询时库存 0
+21,花头板 PCB + 被动件 + 透明面罩,屏显版,1,15,2.50,USD,假设,,估计
