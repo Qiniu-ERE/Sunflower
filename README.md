@@ -180,6 +180,12 @@ curl -X POST -H "Authorization: Bearer $SUNFLOWER_TOKEN" -d '{"name":"qiniu-gpt"
 
 跨机器时设备通过 `SUNFLOWER_HOST_URL` 找到主机；面板在非本机访问时需带 `?t=<SUNFLOWER_TOKEN>`。
 
+### 实体设备（概念设计 v0.1）
+
+![Sunflower 实体设备结构设计图](docs/images/device-structure.png)
+
+外形是一盆桌面向日葵。花盆土面下装一圈 4 麦克风阵列，负责声源定位（DOA）；花茎由盆内的云台无刷电机带动，按声源方向 θ 偏航转动，范围 ±170°，用磁编码器闭环。脸是一块 1.28″ 圆屏，用来显示表情；花瓣内藏一圈灯环，用来显示状态；叶片上的瓢虫是说话键。转向在设备本地完成，不经过云端。设备通过 WebSocket 直连灵矽，端侧 MCP 工具 `self.code.*` 把编程请求转发给主机，所以主机和面板的代码都不用改。图由 [`docs/hardware/draw_structure.py`](docs/hardware/draw_structure.py) 生成；外购件尺寸取自供应商页面，以实物为准。
+
 ## 现场演示
 
 完整话术与真人实测耗时见 [docs/demo-script.md](docs/demo-script.md)。每次彩排前先 `python3 -m sunflower.demo reset`（工作区回到初始状态，Codex 开新会话）。
