@@ -59,6 +59,11 @@ class DescribeTest(unittest.TestCase):
         ev = {"type": "item.completed", "item": {"type": "command_execution", "command": "x", "exit_code": 1}}
         self.assertEqual(agents.describe(ev)[0], "cmd_fail")
 
+    def test_reconnect_warning_is_chinese(self):
+        ev = {"type": "error", "message": "Reconnecting... 2/5 (stream disconnected before completion: stream closed)"}
+        self.assertEqual(agents.describe(ev), ("warn", "上游连接中断，自动重试 2/5"))
+        self.assertEqual(agents.describe({"type": "error", "message": "boom"}), ("warn", "boom"))
+
     def test_message_hides_home_and_link_targets(self):
         home = os.path.expanduser("~")
         text = f"问题在 [todo.py 第 37 行]({home}/ws/todo.py:37)，另见 {home}/ws"
