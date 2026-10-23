@@ -79,14 +79,16 @@ function addRow(kind, text) {
     while (el.children.length > 400) el.firstChild.remove();
   });
 }
-function addBubble(role, text) {
+function addBubble(role, text, ts) {
+  // 一句话的 TTS 分句到达，8s 内连续的播报并成一个气泡；按事件时间判断，回放历史时也不会误并
   const el = $("voice"); clearEmpty(el);
+  const t = (ts || Date.now() / 1000) * 1000;
   stick(el, () => {
     const last = el.lastElementChild;
-    if (role === "assistant" && last && last.classList.contains("assistant") && Date.now() - (last._t || 0) < 8000) {
-      last.querySelector("span").textContent += text; last._t = Date.now(); return;
+    if (role === "assistant" && last && last.classList.contains("assistant") && t - (last._t || 0) < 8000) {
+      last.querySelector("span").textContent += text; last._t = t; return;
     }
-    const b = document.createElement("div"); b.className = "bubble " + role; b._t = Date.now();
+    const b = document.createElement("div"); b.className = "bubble " + role; b._t = t;
     b.innerHTML = `<small>${role === "user" ? "你" : "向日葵"}</small><span></span>`;
     b.querySelector("span").textContent = text; el.appendChild(b);
   });
@@ -109,7 +111,7 @@ function connect() {
   const es = new EventSource(token ? "/events?t=" + encodeURIComponent(token) : "/events");
   es.addEventListener("state", (e) => setState(JSON.parse(e.data)));
   es.addEventListener("log", (e) => { const d = JSON.parse(e.data); if (d.text) addRow(d.kind, d.text); });
-  es.addEventListener("voice", (e) => { const d = JSON.parse(e.data); if (d.text) addBubble(d.role, d.text); });
+  es.addEventListener("voice", (e) => { const d = JSON.parse(e.data); if (d.text) addBubble(d.role, d.text, d.ts); });
   es.addEventListener("diff", (e) => { $("diff").textContent = JSON.parse(e.data).stat || ""; });
   es.addEventListener("announce", (e) => { $("say").textContent = "🔊 " + JSON.parse(e.data).text; });
   es.onerror = () => { $("pill").className = "pill offline"; $("pill").textContent = "重连中"; };

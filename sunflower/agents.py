@@ -54,9 +54,9 @@ def describe(ev):
         return ("file", ", ".join(f"{c.get('kind', '?')} {pathlib.Path(c.get('path', '')).name}"
                                   for c in item.get("changes") or []))
     if t == "item.completed" and it == "agent_message":
-        return ("msg", item.get("text", ""))
+        return ("msg", _clean_text(item.get("text", "")))
     if t == "item.completed" and it == "reasoning":
-        return ("think", item.get("text", "")[:200])
+        return ("think", _clean_text(item.get("text", ""))[:200])
     if t == "turn.completed":
         u = ev.get("usage") or {}
         return ("system", f"本轮完成 · 输出 {u.get('output_tokens', '?')} tokens")
@@ -64,6 +64,11 @@ def describe(ev):
 
 
 _HOME = os.path.expanduser("~")
+
+
+def _clean_text(text):
+    # 屏幕会被投影/截图：markdown 链接只留文字，家目录折叠成 ~
+    return re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text).replace(_HOME, "~")
 
 
 def _short_cmd(cmd):

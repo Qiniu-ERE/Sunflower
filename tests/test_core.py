@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -57,6 +58,12 @@ class DescribeTest(unittest.TestCase):
     def test_failed_command_kind(self):
         ev = {"type": "item.completed", "item": {"type": "command_execution", "command": "x", "exit_code": 1}}
         self.assertEqual(agents.describe(ev)[0], "cmd_fail")
+
+    def test_message_hides_home_and_link_targets(self):
+        home = os.path.expanduser("~")
+        text = f"问题在 [todo.py 第 37 行]({home}/ws/todo.py:37)，另见 {home}/ws"
+        kind, out = agents.describe({"type": "item.completed", "item": {"type": "agent_message", "text": text}})
+        self.assertEqual((kind, out), ("msg", "问题在 todo.py 第 37 行，另见 ~/ws"))
 
 
 class RunnerTest(unittest.TestCase):
