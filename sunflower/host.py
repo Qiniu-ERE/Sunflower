@@ -9,6 +9,7 @@ import argparse
 import collections
 import hmac
 import json
+import os
 import pathlib
 import queue
 import threading
@@ -54,7 +55,17 @@ class Bus:
                 self.subs.remove(q)
 
 
-def make_handler(bus, runner, token):
+def resolve_channel(hcfg, name, codex_home=None):
+    """Channel name -> codex argv. Known if listed in the profile's codex_channels or if a
+    Codex profile file of that name exists (then it gets no extra overrides)."""
+    chans = hcfg.get("codex_channels") or {}
+    home = pathlib.Path(codex_home or os.environ.get("CODEX_HOME") or "~/.codex").expanduser()
+    if not name or (name not in chans and not (home / f"{name}.config.toml").exists()):
+        raise ValueError(f"未知渠道「{name}」：profile 的 codex_channels 里没有，{home}/{name}.config.toml 也不存在")
+    return agents.codex_argv(name, chans.get(name, []))
+
+
+def make_handler(bus, runner, token, resolve=None):
     class H(BaseHTTPRequestHandler):
         server_version = "sunflower/0.1"
 
@@ -81,7 +92,7 @@ def make_handler(bus, runner, token):
         def do_GET(self):
             path = urlparse(self.path).path
             if path == "/health":
-                return self._json(200, {"ok": True, "busy": runner.busy()})
+                return self._json(200, {"ok": True, "busy": runner.busy(), "channel": runner.channel})
             if path in ("/", "/panel"):
                 body = (WEB / "panel.html").read_bytes()
                 self.send_response(200)
@@ -119,6 +130,16 @@ def make_handler(bus, runner, token):
                 return self._json(200, runner.undo())
             if path == "/api/new-session":
                 return self._json(200, runner.new_session())
+            if path == "/api/channel":
+                if resolve is None:
+                    return self._json(400, {"ok": False, "say": "当前 profile 固定了 agent_argv，不能切换渠道"})
+                name = (body.get("name") or "").strip()
+                try:
+                    argv = resolve(name)
+                except ValueError as e:
+                    return self._json(400, {"ok": False, "say": str(e)})
+                res = runner.set_agent(argv, name)
+                return self._json(200 if res["ok"] else 409, res)
             if path == "/api/voice":
                 # device mirrors what it heard / is saying so the screen shows the conversation
                 bus.emit("voice", {"role": body.get("role", "?"), "text": body.get("text", "")})
@@ -161,6 +182,7 @@ class QuietServer(ThreadingHTTPServer):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="sunflower.host")
     ap.add_argument("--profile", default="dev-single-mac")
+    ap.add_argument("--channel", help="Codex 渠道（~/.codex/<名>.config.toml），覆盖 SUNFLOWER_CODEX_CHANNEL 与 profile")
     a = ap.parse_args(argv)
     prof = config.load_profile(a.profile)
     hcfg = prof["host"]
@@ -174,14 +196,22 @@ def main(argv=None):
         if event in ("state", "announce"):
             print(f"[{time.strftime('%H:%M:%S')}] {event} {json.dumps(data, ensure_ascii=False)}", flush=True)
 
-    runner = agents.CodexRunner(hcfg["workspace"], emit, base_argv=hcfg.get("agent_argv"),
-                                run_dir=config.HOME / "run")
+    if hcfg.get("agent_argv"):  # pinned argv (tests, benchmarks): no channel switching
+        base, channel, resolve = hcfg["agent_argv"], None, None
+    else:
+        channel = (a.channel or os.environ.get("SUNFLOWER_CODEX_CHANNEL")
+                   or hcfg.get("codex_channel") or "qiniu-gpt")
+        resolve = lambda name: resolve_channel(hcfg, name)  # noqa: E731
+        base = resolve(channel)
+    runner = agents.CodexRunner(hcfg["workspace"], emit, base_argv=base,
+                                run_dir=config.HOME / "run", channel=channel)
     srv = QuietServer((hcfg.get("bind", "127.0.0.1"), int(hcfg.get("port", 8787))),
-                      make_handler(bus, runner, token))
+                      make_handler(bus, runner, token, resolve))
     srv.daemon_threads = True
     print(f"sunflower host on http://{srv.server_address[0]}:{srv.server_address[1]}  "
-          f"workspace={runner.workspace}  panel=/panel?t=<SUNFLOWER_TOKEN>", flush=True)
-    emit("state", {"state": "idle"})
+          f"workspace={runner.workspace}  channel={channel or '(pinned argv)'}  "
+          f"panel=/panel?t=<SUNFLOWER_TOKEN>", flush=True)
+    emit("state", {"state": "idle", "channel": channel})
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

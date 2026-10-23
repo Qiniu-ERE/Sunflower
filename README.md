@@ -145,6 +145,18 @@ python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/�
 
 用完清理灵矽侧资源：`python3 -m sunflower.linx_admin down`。
 
+### 切换 Codex 渠道
+
+渠道就是一个 Codex profile（`~/.codex/<名>.config.toml`），再加上这个渠道专属的修正参数，修正参数写在 profile 的 `host.codex_channels` 里：
+
+```bash
+python3 -m sunflower.host --profile dev-single-mac --channel icodeeasy      # 启动时选；也可设 SUNFLOWER_CODEX_CHANNEL
+curl -X POST -H "Authorization: Bearer $SUNFLOWER_TOKEN" -d '{"name":"qiniu-gpt"}' \
+     http://127.0.0.1:8787/api/channel                                       # 运行中切换（空闲时生效，切换后开新会话）
+```
+
+演示中上游连接不稳时，可以当场切到备用渠道。面板标题会显示当前渠道。
+
 ## 屏幕：任意浏览器
 
 议题里的 AirPlay 只是举例。Sunflower 的屏幕协议是 **HTTP + SSE**：面板是一个零依赖的网页，订阅主机的 `/events` 事件流，所以任何能开浏览器的屏幕都能接入，不需要专门的接收端。

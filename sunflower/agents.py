@@ -20,8 +20,13 @@ VOICE_SUFFIX = ("\n\n完成后在回复最后单独一行写「语音摘要：�
 _RECONNECT_RE = re.compile(r"Reconnecting\.\.\.\s*(\d+/\d+)")
 _SUMMARY_RE = re.compile(r"语音摘要[:：]\s*(.+)")
 
-CODEX_BASE = ["codex", "exec", "-s", "danger-full-access", "-c", 'approval_policy="never"',
-              "--profile", "qiniu-gpt", "--skip-git-repo-check"]
+def codex_argv(channel="qiniu-gpt", extra=()):
+    """`codex exec` on one model channel: a Codex profile plus that channel's overrides."""
+    return ["codex", "exec", "-s", "danger-full-access", "-c", 'approval_policy="never"',
+            "--profile", channel, *extra, "--skip-git-repo-check"]
+
+
+CODEX_BASE = codex_argv()
 
 
 def voice_summary(last_message, limit=60):
@@ -87,10 +92,11 @@ def _git(repo, *args):
 class CodexRunner:
     """One task at a time, multi-turn via `exec resume <thread_id>`."""
 
-    def __init__(self, workspace, emit, base_argv=None, run_dir=None):
+    def __init__(self, workspace, emit, base_argv=None, run_dir=None, channel=None):
         self.workspace = pathlib.Path(os.path.expanduser(workspace))
         self.emit = emit
         self.base_argv = list(base_argv or CODEX_BASE)
+        self.channel = channel
         self.run_dir = pathlib.Path(run_dir or self.workspace / ".sunflower")
         self.lock = threading.Lock()
         self.proc = None
@@ -156,6 +162,16 @@ class CodexRunner:
             self.emit("state", {"state": "idle", "reset": True})
             self.emit("log", {"kind": "system", "text": "已开启新会话（工作区已重置）"})
             return {"ok": True, "say": "已开启新会话"}
+
+    def set_agent(self, argv, channel):
+        """Switch model channel between tasks; the next task starts a new session on it."""
+        with self.lock:
+            if self.busy():
+                return {"ok": False, "say": "任务还在进行，先说取消再切换渠道"}
+            self.base_argv, self.channel, self.thread_id = list(argv), channel, None
+            self.emit("state", {"state": "idle", "channel": channel})
+            self.emit("log", {"kind": "system", "text": f"已切换渠道：{channel}"})
+            return {"ok": True, "say": f"已切换到 {channel} 渠道"}
 
     def undo(self):
         with self.lock:
