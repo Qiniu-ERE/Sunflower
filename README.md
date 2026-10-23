@@ -2,7 +2,7 @@
 
 # 🌻 Sunflower · 太阳花语音编程
 
-**对着太阳花说一句话，Codex 就开始写代码；<br>花面转向你，每一步进展实时上屏，做完了用语音告诉你结果。**
+**对着太阳花说一句话，Codex 就开始写代码。<br>花面转向说话的人，进展实时上屏，做完用语音报结果。**
 
 [![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies](https://img.shields.io/badge/dependencies-1%20(websockets)-brightgreen)](./requirements.txt)
@@ -12,65 +12,50 @@
 
 七牛云内部 Hackathon 参赛项目 · 议题：*灵矽应用——连接屏幕，用语音控制编程代理进行开发*（AirPlay 只是协议举例）
 
-软件链路今天就能跑：语音 → Codex 写代码 → 进展上屏 → 语音播报。我们再为它设计了桌面硬件载体「太阳花」，分两种型号，让「进展上屏」在桌面上闭环。
-
 </div>
+
+这个仓库有三部分：
+
+| [软件](#软件现在就能跑) | [硬件](#硬件太阳花概念设计-v01) | [成本与竞品](#成本与竞品) |
+|---|---|---|
+| <a href="#软件现在就能跑"><img src="docs/images/panel-1080p.png" alt="进展面板"></a> | <a href="#硬件太阳花概念设计-v01"><img src="docs/hardware/device-hero.png" alt="太阳花两种型号"></a> | 两种型号的 BOM、亚马逊与众筹两个渠道的盈亏平衡价、众筹要多少支持者才回本，以及和 11 款亚马逊在售产品的价格与功能对比 |
+| 已经能完整跑通：语音派活 → Codex 改代码 → 浏览器实时显示进展 → 语音播报结果 | 桌面摆件的概念设计，分标准版和屏显版；只做到图纸，没有打样 | 数据在 CSV 里，表格由脚本生成，改了数字重跑一次就更新 |
 
 ---
 
-## 效果
+## 软件：现在就能跑
 
 <p align="center">
   <img src="docs/images/panel-1080p.png" alt="进展面板：左侧语音对话，右侧 Codex 执行流，底部提交与播报" width="100%">
 </p>
 
 <p align="center"><sub>
-进展面板（真实运行截图，一次完整的两轮语音会话）。先说「检查一下代码有没有逻辑问题」：Codex 跑测试，<b>红色失败</b>，只报告不改，用时 79 s。再说「给待办清单加一个删除命令，按编号删除并补上测试」，中途问「进度怎么样了？」：Codex 改代码、补测试、测试转绿、自动提交 <code>voice:</code>，播报结果，用时 103 s。
+进展面板，真实运行截图，一次两轮的语音会话。第一轮说「检查一下代码有没有逻辑问题」：Codex 跑测试，<b>红色失败</b>，只报告不改，用时 79 s。第二轮说「给待办清单加一个删除命令，按编号删除并补上测试」，中途问「进度怎么样了？」：Codex 改代码、补测试、测试转绿、自动提交 <code>voice:</code> 并播报，用时 103 s。
 </sub></p>
 
 <table>
 <tr>
 <td width="58%" valign="top">
 <img src="docs/images/device-terminal.png" alt="设备端终端：听到、工具调用、播报">
-<p align="center"><sub>设备端日志（真人语音实测）：撤销 → 派新任务 → 中途问进度 → 完成播报。<br>空闲 20 s 主动断开语音会话，播报时冷连接自动重连。</sub></p>
+<p align="center"><sub>设备端日志（真人语音实测）：撤销 → 派新任务 → 中途问进度 → 完成播报。<br>空闲 20 s 断开语音会话，要播报时再连上。</sub></p>
 </td>
 <td width="42%" valign="top">
 <img src="docs/images/panel-7in.png" alt="7 寸屏布局">
-<p align="center"><sub>同一面板在 7 寸屏（1024×600）上的布局</sub></p>
+<p align="center"><sub>同一个面板在 7 寸屏（1024×600）上的布局</sub></p>
 </td>
 </tr>
 </table>
 
-## 太阳花硬件（概念设计 v0.1）
+### 用嘴能做的事
 
-<p align="center">
-  <img src="docs/hardware/device-hero.png" alt="太阳花两种型号：标准版与屏显版（圆屏花芯回显进展），五种状态表情" width="100%">
-</p>
-
-一盆放在桌上的太阳花：你说话时，花面转向你；Codex 在听、在做、做完还是出错，看脸上的表情和花瓣灯就知道。两种型号用同一个花盆底座（转向、麦克风、扬声器都一样），屏显版只把花芯换成一块圆屏：平时就是那张脸，执行和完成时回显进展。屏幕跟着花面转，所以始终朝向你。
-
-| | 标准版 | 屏显版 |
+| 你说 | 平台路由到的工具 | 发生什么 |
 |---|---|---|
-| 花芯 | 1.28″ 240×240，只显示表情 | 2.1″ 480×480：平时是脸，执行和完成时回显步骤、进度环、测试结果和提交号 |
-| 进展显示 | 任意浏览器 / 投到大屏 | 花芯一眼可看；完整日志照样在浏览器里看 |
-| 主控 | 底座 ESP32-S3 | 底座 ESP32-S3，加一颗花头 ESP32-S3：Wi-Fi 订阅主机事件，驱动圆屏 |
-| 过转动关节 | 10 芯 | 4 芯（电源 + 按键） |
-| 尺寸 / 供电 | Ø105 × 235 mm · USB-C PD 12 V | 同标准版 |
+| 「检查一下代码有没有逻辑问题」<br>「跑一下测试，把失败的修好」<br>「加个删除命令」 | `self.code.dispatch` | 原话交给 Codex；同一会话内的追问（「那就把它修好」）自动 `resume` 接上文 |
+| 「进度怎么样了？」 | `self.code.status` | 播报当前任务、已用时间、最近一步 |
+| 「停下」「别做了」 | `self.code.cancel` | 向 Codex 进程组发 SIGINT，不产生提交 |
+| 「撤销刚才的改动」 | `self.code.undo` | 只回滚 `voice:` 提交（`git revert`），手写的提交不动 |
 
-<table>
-<tr>
-<td width="50%" valign="top"><a href="docs/hardware/device-structure.svg"><img src="docs/hardware/device-structure.png" alt="结构设计图"></a>
-<p align="center"><sub>结构图：正视尺寸 · 侧剖视 · 俯视听声转向 · 零件表（<a href="docs/hardware/device-structure.svg">矢量版</a>）</sub></p></td>
-<td width="50%" valign="top"><a href="docs/hardware/device-exploded.svg"><img src="docs/hardware/device-exploded.png" alt="解构图"></a>
-<p align="center"><sub>解构图：标准版沿装配轴拆开，屏显版只换花头（<a href="docs/hardware/device-exploded.svg">矢量版</a>）</sub></p></td>
-</tr>
-</table>
-
-**听声转向**：土面下装一圈 4 麦克风阵列，算出说话人方向 θ；盆里的云台无刷电机带花茎转过去，磁编码器闭环，范围 ±170°。转向在设备本地完成，不经过云端。设计说明、尺寸来源和待核实项见 [docs/hardware/](docs/hardware/README.md)。
-
-**成本与竞品**：两种型号的 BOM、亚马逊渠道费用、软件费率与 ROI，以及和 Echo Show、Stream Deck、EMO 等 11 款亚马逊在售产品的价格对比，见 [docs/business/](docs/business/README.md)。表格由 CSV 和脚本生成，改数字后重跑即可。
-
-## 它是怎么工作的
+### 链路
 
 ```mermaid
 flowchart LR
@@ -95,11 +80,10 @@ flowchart LR
     TTS --> SPK["🔊 设备扬声器"]
 ```
 
-- **语音服务负责「听懂」和「说话」**：语音识别、意图识别、工具路由和语音合成都在云端，当前接入的是灵矽。设备只上传 PCM，执行平台下发的 MCP 工具调用。
-- **主机负责「干活」和「展示」**：一个进程、一个端口，同时服务设备接口、面板 SSE 和面板页面。
-- **设备只做出站连接**：硬件做出来之前，由笔记本、另一台 Mac 或树莓派扮演太阳花。各设备之间的差异只在 `profiles/*.json` 里的四项：录音、播放、按键、主机地址。
+语音识别、意图判断、工具路由和语音合成在云端的语音服务里完成，目前接的是灵矽；设备只上传 PCM 音频，再执行平台下发的 MCP 工具调用。主机是一个进程、一个端口，同时提供设备接口、面板的事件流和面板页面。设备只发起出站连接。硬件做出来之前，由笔记本、另一台 Mac 或树莓派充当设备，它们之间的差别只有 `profiles/*.json` 里的四项：录音、播放、按键、主机地址。
 
-### 一次语音任务的时序
+<details>
+<summary><b>一次语音任务的时序</b></summary>
 
 ```mermaid
 sequenceDiagram
@@ -126,18 +110,11 @@ sequenceDiagram
     灵矽->>你: 逐字播报结果
 ```
 
-## 用嘴能做的事
+</details>
 
-| 你说 | 平台路由到的工具 | 发生什么 |
-|---|---|---|
-| 「检查一下代码有没有逻辑问题」<br>「跑一下测试，把失败的修好」<br>「加个删除命令」 | `self.code.dispatch` | 原话交给 Codex；同一会话内的追问（「那就把它修好」）自动 `resume` 接上文 |
-| 「进度怎么样了？」 | `self.code.status` | 播报当前任务、已用时间、最近一步 |
-| 「停下」「别做了」 | `self.code.cancel` | 向 Codex 进程组发 SIGINT，不产生提交 |
-| 「撤销刚才的改动」 | `self.code.undo` | 只回滚 `voice:` 提交（`git revert`），手写的提交不动 |
+### 设计取舍
 
-## 设计取舍
-
-每一条都来自对语音平台（灵矽）和 Codex 的实测：
+下表每一行左边都是对语音平台（灵矽）和 Codex 实测得到的结果：
 
 | 实测事实 | 设计 |
 |---|---|
@@ -148,7 +125,53 @@ sequenceDiagram
 | 语音没有「确认对话框」 | 每个任务一个 `voice:` 提交，撤销 = `git revert`，可审计、可回退 |
 | 演示要可重复 | Codex 只改仓库外的一次性副本，`demo reset` 一键回到预埋 bug 的初始状态 |
 
-**唯一的第三方依赖是 `websockets`**（无传递依赖）；HTTP、SSE、evdev 按键、进程管理全部是标准库。
+第三方依赖只有 `websockets` 一个，且没有传递依赖；HTTP、SSE、evdev 按键和进程管理都用标准库。
+
+## 硬件：太阳花（概念设计 v0.1）
+
+<p align="center">
+  <img src="docs/hardware/device-hero.png" alt="太阳花两种型号：标准版与屏显版（圆屏花芯回显进展），五种状态表情" width="100%">
+</p>
+
+太阳花是一个放在桌上的摆件。有人说话时，花面转向说话的人。Codex 正在听、在做、做完了还是出错了，看脸上的表情和花瓣灯就能知道。两种型号共用一个花盆底座，转向、麦克风和扬声器都一样；屏显版只是把花芯换成一块更大的圆屏，平时显示脸，执行和完成时显示进展。屏幕装在花面上，跟着花面转，所以总是朝着说话的人。
+
+| | 标准版 | 屏显版 |
+|---|---|---|
+| 花芯 | 1.28″ 240×240，只显示表情 | 2.1″ 480×480：平时是脸，执行和完成时显示步骤、进度环、测试结果和提交号 |
+| 进展显示 | 任意浏览器，或投到大屏 | 花芯上看一眼就够；完整日志仍在浏览器里 |
+| 主控 | 底座一颗 ESP32-S3 | 底座同标准版，花头再加一颗 ESP32-S3，用 Wi-Fi 订阅主机事件、驱动圆屏 |
+| 过转动关节的线 | 10 芯 | 4 芯（电源和按键） |
+| 尺寸 / 供电 | Ø105 × 235 mm · USB-C PD 12 V | 同标准版 |
+
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/hardware/device-structure.svg"><img src="docs/hardware/device-structure.png" alt="结构设计图"></a>
+<p align="center"><sub>结构图：正视尺寸 · 侧剖视 · 俯视听声转向 · 零件表（<a href="docs/hardware/device-structure.svg">矢量版</a>）</sub></p></td>
+<td width="50%" valign="top"><a href="docs/hardware/device-exploded.svg"><img src="docs/hardware/device-exploded.png" alt="解构图"></a>
+<p align="center"><sub>解构图：标准版沿装配轴拆开，屏显版只换花头（<a href="docs/hardware/device-exploded.svg">矢量版</a>）</sub></p></td>
+</tr>
+</table>
+
+听声转向的做法：土面下面装一圈 4 个麦克风，算出说话人的方向角；盆里的云台无刷电机带着花茎转过去，磁编码器做闭环，转动范围 ±170°。整个过程在设备本地完成，不经过云端。设计依据、尺寸来源和还没核实的地方见 [docs/hardware/](docs/hardware/README.md)。
+
+## 成本与竞品
+
+下表由 [`docs/business/cost_model.py`](docs/business/cost_model.py) 从 CSV 生成。BOM 按量产 1k 台计；有几样零件查不到 1k 档报价，只能用更小批量的价格代替，所以成本是上界。
+
+<!-- cost_summary:begin -->
+| 型号 · 渠道 | 售价 | 海外报价：落地成本 | 海外报价：盈亏平衡价 | 国内采购：落地成本 | 国内采购：盈亏平衡价 |
+|---|---:|---:|---:|---:|---:|
+| 标准版 · 亚马逊（建议售价） | 299.00 | 120.18 | **190.96** | 108.67 | **176.01** |
+| 标准版 · 众筹（早鸟价） | 249.00 | 120.18 | **220.61** | 108.67 | **203.93** |
+| 屏显版 · 亚马逊（建议售价） | 349.00 | 128.42 | **201.66** | 129.99 | **203.70** |
+| 屏显版 · 众筹（早鸟价） | 289.00 | 128.42 | **232.55** | 129.99 | **234.82** |
+
+落地成本 = 量产 1k 的 BOM ×（1 + 30% 头程与关税）；盈亏平衡价 =（落地成本 + 每台固定费用）÷（1 − 按售价提成的费用比例）。国内采购只替换查到了国内报价的零件，其余沿用海外报价。
+
+按早鸟价 249.00 / 289.00 USD，开模方案要 1,200 / 706 名支持者才收回 NRE；自己 FDM 打印 + 自己组装要 733 / 328 名。Kickstarter 上同类先例的支持者数：ESP32 Agent Dev Kit 170、Ropet KAMOMO 1,134、Living.ai EMO 2,126、Loona 7,811、Anki Vector 8,300。
+<!-- cost_summary:end -->
+
+BOM 明细、各项费用、NRE、外壳做法（开模 / 3D 打印）对回本的影响、Kickstarter 先例、软件费率，以及竞品的价格与功能对比，见 [初期商业可行性评估](docs/business/README.md)。
 
 ## 快速开始
 
@@ -176,7 +199,9 @@ python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/�
 
 用完清理灵矽侧资源：`python3 -m sunflower.linx_admin down`。
 
-### 切换 Codex 渠道
+<details>
+<summary><b>切换 Codex 渠道</b></summary>
+
 
 渠道就是一个 Codex profile（`~/.codex/<名>.config.toml`），再加上这个渠道专属的修正参数，修正参数写在 profile 的 `host.codex_channels` 里：
 
@@ -188,7 +213,11 @@ curl -X POST -H "Authorization: Bearer $SUNFLOWER_TOKEN" -d '{"name":"qiniu-gpt"
 
 演示中上游连接不稳时，可以当场切到备用渠道。面板标题会显示当前渠道。
 
-### 常驻服务（launchd）
+</details>
+
+<details>
+<summary><b>常驻服务（launchd）</b></summary>
+
 
 ```bash
 python3 -m sunflower.service install      # 装成 launchd 服务：崩溃自动拉起、登录自启
@@ -198,6 +227,8 @@ python3 -m sunflower.service logs
 ```
 
 主机从部署目录 `~/.sunflower/app` 启动，这个目录固定在某个 main 提交上，开发仓切分支不影响正在跑的服务。`scripts/merge.sh` 合入后会自动执行 `deploy --wait 0`：主机忙时跳过，不打断任务。密钥不写进 plist，需要环境变量的渠道用 `--keychain-env VAR=钥匙串服务名` 在启动时从钥匙串注入。
+
+</details>
 
 ## 屏幕：任意浏览器
 
@@ -222,9 +253,14 @@ python3 -m sunflower.service logs
 
 跨机器时设备通过 `SUNFLOWER_HOST_URL` 找到主机；面板在非本机访问时需带 `?t=<SUNFLOWER_TOKEN>`。
 
-## 现场演示
+## 文档
 
-完整话术与真人实测耗时见 [docs/demo-script.md](docs/demo-script.md)。每次彩排前先 `python3 -m sunflower.demo reset`（工作区回到初始状态，Codex 开新会话）。
+| 文档 | 内容 |
+|---|---|
+| [docs/demo-script.md](docs/demo-script.md) | 现场演示话术与真人实测耗时；彩排前先跑 `python3 -m sunflower.demo reset` |
+| [docs/hardware/](docs/hardware/README.md) | 两种型号的设计说明、关键决定与依据、尺寸来源、改图方法 |
+| [docs/business/](docs/business/README.md) | 初期商业可行性评估：成本、渠道费用、盈亏平衡、外壳做法与众筹回本、众筹先例、软件费率、竞品对比；口径与数据缺口 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | issue → 分支 → PR → 门禁合入的流程，以及「规格」写法 |
 
 ## 项目结构
 
@@ -242,21 +278,21 @@ profiles/           部署形态：硬件差异只放在这里
 demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
 scripts/            门禁 / 合入 / 发版（gate · merge · release），树莓派整备与密钥下发
 tests/              离线单测（fake_codex 回放事件流，不连云）
-docs/hardware/      太阳花硬件：形象图 / 结构图 / 解构图（draw.py 生成 SVG）
-docs/business/      两种型号的 BOM、软件费率、ROI 与竞品价格（CSV + cost_model.py）
+docs/hardware/      硬件概念设计：形象图 / 结构图 / 解构图（draw.py 生成）
+docs/business/      成本、费率、盈亏平衡与竞品（CSV + cost_model.py 生成表格）
 ```
 
 ## 测试
 
 ```bash
-scripts/gate.sh    # 语法 + 全部单测，最后一行 EXIT=0 为通过；本地与 CI 同一条命令
+scripts/gate.sh    # 语法检查 + 全部单测，最后一行是 EXIT=0 即通过；本地和 CI 跑的是同一条命令
 ```
 
-覆盖派发立即返回、resume、提交/撤销、失败路径、SSE、鉴权、文本脱敏，以及门禁自身的判定逻辑。
+单测覆盖：派发立即返回、resume、提交与撤销、失败路径、SSE、鉴权、文本脱敏、门禁自身的判定逻辑，以及成本表与 CSV 是否一致。
 
 ## 开发流程
 
-需求和调研走 issue，代码走 PR，PR 过门禁才合入，发版只从绿的 main 打 tag。改动 `sunflower/` 的 PR 要写「规格：不变量 → 测试」，门禁会验证点名的测试在旧代码上失败、在新代码上通过。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+需求和调研开 issue，代码走 PR，过了门禁才能合入，发版只从绿的 main 打 tag。改到 `sunflower/` 的 PR 要写「规格：不变量 → 测试」，门禁会验证点名的测试在旧代码上失败、在新代码上通过。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 

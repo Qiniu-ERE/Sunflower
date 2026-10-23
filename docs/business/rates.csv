@@ -7,8 +7,8 @@ fba_fee,6.88,USD/件,报价,https://www.efulfillmentservice.com/?p=266376,Large 
 fba_surcharge,0.035,× FBA 费,报价,https://www.efulfillmentservice.com/?p=266376,2026-04-17 起燃油与物流附加费
 ads_share,0.10,× 售价,假设,,新品牌站内广告
 returns_share,0.05,× 售价,假设,,退货与售后
-price_standard,129,USD,假设,,对标 Stream Deck MK.2 134.99 / Echo Show 5 99.99
-price_screen,169,USD,假设,,对标 Echo Show 8 149.99，低于桌面机器人 249–499 档
+price_standard,299,USD,假设,,不低于亚马逊盈亏平衡价；对标 Vector 2.0 249.99、EMO 329
+price_screen,349,USD,假设,,不低于亚马逊盈亏平衡价；低于 Loona 499
 voice_cny_per_min,0.0333333,CNY/分钟,报价,https://xrobo.qiniu.com/v1/store/products,灵矽 1000 小时资源包 2000 元（账号内接口，2026-10-23）；按标准倍率 1.0 计，所选模型 / 音色的倍率未查到
 tasks_per_day,20,次/天,假设,,
 workdays_per_month,22,天/月,假设,,
@@ -18,3 +18,12 @@ subscription_usd,2.99,USD/月,假设,,附赠期满后的语音服务订阅价
 codex_in_per_m,2.00,USD/百万 token,报价,https://developers.openai.com/api/docs/pricing,OpenAI gpt-6.1-sol 非缓存输入
 codex_cached_per_m,0.10,USD/百万 token,报价,https://developers.openai.com/api/docs/pricing,gpt-6.1-sol 缓存输入
 codex_out_per_m,10.00,USD/百万 token,报价,https://developers.openai.com/api/docs/pricing,gpt-6.1-sol 输出
+cf_platform,0.05,× 筹款额,报价,https://updates.kickstarter.com/kickstarter-fees-a-comprehensive-guide-for-creators/,Kickstarter 平台费，众筹成功才收
+cf_payment,0.03,× 筹款额,报价,https://updates.kickstarter.com/how-crowdfunding-works-a-guide-for-creators/,Stripe 支付处理；官方写约 3–5%，落地页写约 2.9% + 0.30 USD/笔，取 3%
+cf_payment_fixed,0.30,USD/笔,报价,https://launch.kickstarter.com/film,官方落地页：约 2.9% + 0.30 USD/笔
+cf_ads_share,0.20,× 筹款额,假设,,预热与投放
+cf_warranty_share,0.03,× 筹款额,假设,,售后备件
+cf_ship,12,USD/台,假设,,从国内直发美国支持者，约 1.3 kg 包裹
+fdm_shell_usd,10,USD/台,假设,,自己用 FDM 打印整套外壳：PLA 约 20 USD/kg × 约 250 g，按支撑和废品翻倍；不含打印机折旧与机时
+cf_price_standard,249,USD,假设,,早鸟价：不低于众筹盈亏平衡价，再按 precedents.csv 的先例让到能回本的支持者数
+cf_price_screen,289,USD,假设,,同上
