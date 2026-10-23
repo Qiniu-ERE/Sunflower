@@ -119,6 +119,7 @@ class Device:
         self.player = Player(self.dev["audio_out"])
         self.mic = None
         self.mic_task = None
+        self.toggling = False
         self.loop = None
         self.speaking = asyncio.Event()
         self.announcing = set()  # platform echoes text_response back as stt; don't show it as the user
@@ -234,20 +235,36 @@ class Device:
         await self._send({"type": "listen", "state": "detect", "text": "任务回执", "text_response": text})
 
     async def toggle_talk(self):
-        if self.mic is None:
-            await self.ensure()
-            if self.speaking.is_set():
-                await self._send({"type": "abort", "reason": "wake_word_detected"})
-            await self._send({"type": "listen", "state": "start", "mode": "manual"})
-            self.mic = subprocess.Popen(self.dev["audio_in"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-            self.mic_task = asyncio.ensure_future(self._pump_mic(self.mic))
-            log("🎙 录音中…（再按一次结束）")
-        else:
-            mic, self.mic = self.mic, None
-            mic.terminate()
-            await self.mic_task
-            await self._send({"type": "listen", "state": "stop"})
-            log("🎙 结束，识别中…")
+        # presses arriving while we connect / start / stop are dropped, never queued:
+        # a queued press would spawn a second mic and interleave frames
+        if self.toggling:
+            return
+        self.toggling = True
+        try:
+            if self.mic is None:
+                if not (self.ws is not None and self.ws.state.name == "OPEN"):
+                    log("⏳ 连接灵矽中…")
+                await self.ensure()
+                if self.speaking.is_set():
+                    await self._send({"type": "abort", "reason": "wake_word_detected"})
+                await self._send({"type": "listen", "state": "start", "mode": "manual"})
+                self.mic = subprocess.Popen(self.dev["audio_in"], stdout=subprocess.PIPE,
+                                            stderr=subprocess.DEVNULL)
+                self.mic_task = asyncio.ensure_future(self._pump_mic(self.mic))
+                log("🎙 录音中…（再按一次结束）")
+            else:
+                mic, self.mic = self.mic, None
+                mic.terminate()
+                await self.mic_task
+                await self._send({"type": "listen", "state": "stop"})
+                log("🎙 结束，识别中…")
+        except Exception as e:
+            log(f"✘ 说话失败：{type(e).__name__}: {e}")
+            if self.mic is not None:
+                self.mic.terminate()
+                self.mic = None
+        finally:
+            self.toggling = False
 
     async def _pump_mic(self, mic):
         buf = b""

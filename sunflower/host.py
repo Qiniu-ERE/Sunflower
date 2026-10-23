@@ -147,6 +147,15 @@ def make_handler(bus, runner, token):
     return H
 
 
+class QuietServer(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        # clients (panel tabs, screenshot tools, the device) dropping a connection is routine
+        import sys
+        if isinstance(sys.exc_info()[1], (ConnectionResetError, BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="sunflower.host")
     ap.add_argument("--profile", default="dev-single-mac")
@@ -165,8 +174,8 @@ def main(argv=None):
 
     runner = agents.CodexRunner(hcfg["workspace"], emit, base_argv=hcfg.get("agent_argv"),
                                 run_dir=config.HOME / "run")
-    srv = ThreadingHTTPServer((hcfg.get("bind", "127.0.0.1"), int(hcfg.get("port", 8787))),
-                              make_handler(bus, runner, token))
+    srv = QuietServer((hcfg.get("bind", "127.0.0.1"), int(hcfg.get("port", 8787))),
+                      make_handler(bus, runner, token))
     srv.daemon_threads = True
     print(f"sunflower host on http://{srv.server_address[0]}:{srv.server_address[1]}  "
           f"workspace={runner.workspace}  panel=/panel?t=<SUNFLOWER_TOKEN>", flush=True)
