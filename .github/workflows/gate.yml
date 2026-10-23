@@ -21,18 +21,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -r requirements.txt
-      - name: ffmpeg（TG 入口的语音转码 OGG/Opus ↔ PCM）
-        timeout-minutes: 7
-        # runner 默认的 azure 镜像偶尔下载卡死（2026-10-23：同一个包连卡 3 次、每次 120 s）。
-        # 每次限 120 s（timeout 在 sudo 里面，杀的是 apt 本身）；重试前把官方源排到镜像列表最前面
-        run: |
-          for i in 1 2 3; do
-            sudo timeout -k 5 120 sh -c 'apt-get -q update && apt-get install -y -q --no-install-recommends ffmpeg' && exit 0
-            echo "apt 第 $i 次没装上，改用官方源重试"
-            { echo http://archive.ubuntu.com/ubuntu/; cat /etc/apt/apt-mirrors.txt; } | sudo tee /etc/apt/apt-mirrors.txt.new >/dev/null
-            sudo mv /etc/apt/apt-mirrors.txt.new /etc/apt/apt-mirrors.txt
-          done
-          exit 1
+      - name: ffmpeg（TG 入口的语音转码 OGG/Opus ↔ PCM；尽力装）
+        # 有的 runner 网速极慢：2026-10-23 同一时段换官方源也只下到 0.6–12 MB / 120 s，旁边的 job 43 s 跑完。
+        # 装不上就跳过语音往返那一条单测、在这一步标黄；merge.sh 合入前在本机（有 ffmpeg）重跑全量门禁，覆盖不丢
+        timeout-minutes: 3
+        continue-on-error: true
+        run: sudo apt-get -q update && sudo apt-get install -y -q --no-install-recommends ffmpeg
       - name: scripts/gate.sh
         env:
           EVENT: ${{ github.event_name }}
