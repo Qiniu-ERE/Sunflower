@@ -151,6 +151,45 @@ class RunnerTest(unittest.TestCase):
         self.assertIsNone(self.rec.of("state")[-1]["commit"])
 
 
+class ReadOnlyIntentTest(unittest.TestCase):
+    """只问不改：检查 / 看看 / 有没有问题 → 只读沙箱，不会生成 voice: 提交（#15）。"""
+
+    def test_read_only_intent_classifier(self):
+        for text in ("检查一下代码有没有逻辑问题", "看看测试为什么失败", "这个函数是干什么的", "帮我 review 一下"):
+            self.assertTrue(agents.read_only_intent(text), text)
+        for text in ("那就把它修好", "检查一下，有问题就修掉", "给待办清单加一个删除命令", "跑一下测试", "撤销刚才的改动"):
+            self.assertFalse(agents.read_only_intent(text), text)
+
+    def test_check_request_runs_read_only_and_never_commits(self):
+        ws, rec = git_repo(), Recorder()
+        r = agents.CodexRunner(ws, rec, base_argv=FAKE + ["-s", "danger-full-access"], run_dir=tempfile.mkdtemp())
+        r.dispatch("检查一下代码有没有逻辑问题")
+        self.assertTrue(rec.done.wait(10), "no announce")
+        log = subprocess.run(["git", "-C", str(ws), "log", "--oneline"], capture_output=True, text=True).stdout
+        self.assertNotIn("voice:", log)
+        self.assertIsNone(rec.of("state")[-1]["commit"])
+        self.assertTrue(rec.of("state")[0]["read_only"])
+
+
+class CodexHomeTest(unittest.TestCase):
+    def test_isolated_codex_home_keeps_only_channel_config(self):
+        # 演示用的 Codex 不该读到使用者的个人 AGENTS.md / 记忆 / 技能 / MCP（#15）
+        src, dst = pathlib.Path(tempfile.mkdtemp()), pathlib.Path(tempfile.mkdtemp()) / "codex-home"
+        (src / "config.toml").write_text(
+            'model = "x"\nskills.max_context_tokens = 4000\n\n[model_providers.p]\nbase_url = "https://p"\n'
+            '[model_providers.p.auth]\ncommand = "/usr/bin/security"\n\n[mcp_servers.notion]\ncommand = "npx"\n'
+            '[[skills.config]]\npath = "/s/SKILL.md"\n[projects."/h"]\ntrust_level = "trusted"\n', encoding="utf-8")
+        (src / "p.config.toml").write_text('model_provider = "p"\n', encoding="utf-8")
+        (src / "AGENTS.md").write_text("个人约定", encoding="utf-8")
+        (src / "memories").mkdir()
+        home = agents.isolated_codex_home(src, dst)
+        self.assertEqual(sorted(x.name for x in home.iterdir()), ["config.toml", "p.config.toml"])
+        conf = (home / "config.toml").read_text(encoding="utf-8")
+        self.assertIn("[model_providers.p.auth]", conf)
+        for leaked in ("mcp_servers", "skills", "projects", "model = "):
+            self.assertNotIn(leaked, conf)
+
+
 class DemoResetTest(unittest.TestCase):
     def test_reset_copies_template_as_fresh_repo_with_planted_bug(self):
         from sunflower import demo

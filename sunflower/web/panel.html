@@ -97,7 +97,7 @@ function tick() { if (startedAt) $("timer").textContent = Math.floor(Date.now() 
 function setState(d) {
   const p = $("pill");
   if (d.state === "running") {
-    p.className = "pill running"; p.textContent = d.resume ? "继续执行" : "执行中";
+    p.className = "pill running"; p.textContent = (d.resume ? "继续执行" : "执行中") + (d.read_only ? " · 只读" : "");
     $("task").textContent = d.task || ""; startedAt = d.started || Date.now() / 1000;
     clearInterval(timerId); timerId = setInterval(tick, 500); tick();
   } else {

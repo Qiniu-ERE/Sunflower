@@ -8,17 +8,66 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import signal
 import subprocess
 import threading
 import time
 
 VOICE_PREFIX = ("以下需求来自语音识别，可能有同音错字（尤其是英文文件名、函数名），"
-                "请结合仓库实际内容理解并模糊匹配。\n需求：")
+                "请结合仓库实际内容理解并模糊匹配。提问、检查类需求只报告结论，不修改文件。\n需求：")
+READ_ONLY_NOTE = "\n\n（这是只问不改的请求：本次运行在只读沙箱里，只报告发现，不要尝试修改文件。）"
+# 只问不改（#15）：出现查看 / 提问类词、且没有任何动手类词，才走只读沙箱；拿不准时按可写处理
+_READ_RE = re.compile(r"检查|看看|看一下|看下|有没有|是不是|是否|对不对|为什么|怎么回事|什么|哪里|哪些|哪个|"
+                      r"解释|讲讲|说说|分析|评估|审查|review|explain", re.I)
+_WRITE_RE = re.compile(r"修|改|加|增|删|去掉|写|实现|重构|提交|补|优化|换成|替换|更新|升级|新建|创建|生成|撤销|回滚|"
+                       r"调整|处理|搞定|弄好|解决|跑|运行|fix|add|implement|refactor|run", re.I)
 VOICE_SUFFIX = ("\n\n完成后在回复最后单独一行写「语音摘要：」加不超过 30 个字的中文总结"
                 "（改了什么、验证结果如何），不要包含文件路径和代码。")
 _RECONNECT_RE = re.compile(r"Reconnecting\.\.\.\s*(\d+/\d+)")
 _SUMMARY_RE = re.compile(r"语音摘要[:：]\s*(.+)")
+
+def read_only_intent(text):
+    return bool(_READ_RE.search(text or "")) and not _WRITE_RE.search(text or "")
+
+
+def with_sandbox(argv, mode):
+    """把 argv 里的 `-s <模式>` 换成 mode；没有就追加。"""
+    argv = list(argv)
+    if "-s" in argv:
+        argv[argv.index("-s") + 1] = mode
+    else:
+        argv += ["-s", mode]
+    return argv
+
+
+def isolated_codex_home(src, dst):
+    """给主机用的 CODEX_HOME：只放渠道配置（[model_providers.*] 和各渠道的 <名>.config.toml）。
+
+    使用者的 ~/.codex 里还有个人 AGENTS.md、记忆、技能、MCP 服务；演示时 Codex 会去读，
+    既暴露在投屏上又让行为随机器而变（#15）。每次启动重建，渠道改动跟着 ~/.codex 走。"""
+    src, dst = pathlib.Path(src).expanduser(), pathlib.Path(dst)
+    if dst.exists():
+        shutil.rmtree(dst)
+    dst.mkdir(parents=True, mode=0o700)
+    keep, out = False, []
+    for line in (src / "config.toml").read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^\s*\[+\s*([^\]]+?)\s*\]+\s*$", line)
+        if m:
+            keep = m.group(1).startswith("model_providers.")
+        if keep:
+            out.append(line)
+    _write_private(dst / "config.toml", "\n".join(out) + "\n")
+    for f in src.glob("*.config.toml"):
+        _write_private(dst / f.name, f.read_text(encoding="utf-8"))
+    return dst
+
+
+def _write_private(path, text):
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(text)
+
 
 def codex_argv(channel="qiniu-gpt", extra=()):
     """`codex exec` on one model channel: a Codex profile plus that channel's overrides."""
@@ -92,11 +141,13 @@ def _git(repo, *args):
 class CodexRunner:
     """One task at a time, multi-turn via `exec resume <thread_id>`."""
 
-    def __init__(self, workspace, emit, base_argv=None, run_dir=None, channel=None):
+    def __init__(self, workspace, emit, base_argv=None, run_dir=None, channel=None, env=None):
         self.workspace = pathlib.Path(os.path.expanduser(workspace))
         self.emit = emit
         self.base_argv = list(base_argv or CODEX_BASE)
         self.channel = channel
+        self.env = env  # None = 继承主机环境；主机传入隔离的 CODEX_HOME
+        self.read_only = False
         self.run_dir = pathlib.Path(run_dir or self.workspace / ".sunflower")
         self.lock = threading.Lock()
         self.proc = None
@@ -128,8 +179,10 @@ class CodexRunner:
             self.run_dir.mkdir(parents=True, exist_ok=True)
             last_file = self.run_dir / "last.txt"
             last_file.unlink(missing_ok=True)
-            prompt = VOICE_PREFIX + text + VOICE_SUFFIX
-            argv = list(self.base_argv) + ["-C", str(self.workspace)]
+            self.read_only = read_only_intent(text)
+            prompt = VOICE_PREFIX + text + (READ_ONLY_NOTE if self.read_only else "") + VOICE_SUFFIX
+            base = with_sandbox(self.base_argv, "read-only") if self.read_only else self.base_argv
+            argv = list(base) + ["-C", str(self.workspace)]
             if self.thread_id:
                 argv += ["resume", self.thread_id]
             argv += ["--json", "-o", str(last_file), prompt]
@@ -138,9 +191,9 @@ class CodexRunner:
             log = open(self.run_dir / "events.jsonl", "a", encoding="utf-8")
             # stdin 显式关掉：codex exec 见到非终端 stdin 会尝试读取附加输入
             self.proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=log,
-                                         text=True, start_new_session=True, cwd=self.workspace)
+                                         text=True, start_new_session=True, cwd=self.workspace, env=self.env)
             self.emit("state", {"state": "running", "task": text, "started": self.started,
-                                "resume": bool(self.thread_id)})
+                                "resume": bool(self.thread_id), "read_only": self.read_only})
             threading.Thread(target=self._pump, args=(self.proc, last_file, log), daemon=True).start()
             return {"ok": True, "say": "收到，已交给 Codex 开始处理"}
 
@@ -218,7 +271,7 @@ class CodexRunner:
             say = f"任务失败，退出码{code}，请看屏幕"
         else:
             say = voice_summary(last)
-        commit = self._commit() if code == 0 and not self.cancelled else None
+        commit = self._commit() if code == 0 and not self.cancelled and not self.read_only else None
         self.emit("state", {"state": "idle", "task": self.task, "exit": code,
                             "elapsed": int(time.time() - self.started), "commit": commit})
         if last:
