@@ -1,0 +1,12 @@
+{
+  "description": "Telegram 入口：手机私聊 bot（文字 / 语音 / 按钮）→ 灵矽软设备 → 主机；与桌面设备各用一个设备身份",
+  "device": {
+    "mac": "02:CC:72:00:00:04",
+    "state": "linx-tg.json",
+    "audio_in": [],
+    "audio_out": ["true"],
+    "earcons": false,
+    "host_url": "http://127.0.0.1:8787"
+  },
+  "tg": {"voice_reply": true}
+}
