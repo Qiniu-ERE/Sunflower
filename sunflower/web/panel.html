@@ -99,6 +99,7 @@ function setState(d) {
     $("task").textContent = d.task || ""; startedAt = d.started || Date.now() / 1000;
     clearInterval(timerId); timerId = setInterval(tick, 500); tick();
   } else {
+    if (d.reset) { $("log").innerHTML = '<div class="empty">新会话 · 等待任务</div>'; $("voice").innerHTML = '<div class="empty">按下翻页笔，说出你的需求…</div>'; $("diff").textContent = ""; $("say").textContent = ""; $("task").textContent = ""; $("timer").textContent = ""; }
     p.className = "pill idle"; p.textContent = "空闲";
     clearInterval(timerId); startedAt = null;
     if (d.task) { $("task").textContent = (d.exit === 0 ? "✔ " : "✘ ") + d.task; $("timer").textContent = (d.elapsed ?? "") + "s"; }

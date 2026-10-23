@@ -140,6 +140,15 @@ class CodexRunner:
                 pass
             return {"ok": True, "say": "已让 Codex 停下"}
 
+    def new_session(self):
+        with self.lock:
+            if self.busy():
+                return {"ok": False, "say": "任务还在进行，先说取消"}
+            self.thread_id, self.task = None, None
+            self.emit("state", {"state": "idle", "reset": True})
+            self.emit("log", {"kind": "system", "text": "已开启新会话（工作区已重置）"})
+            return {"ok": True, "say": "已开启新会话"}
+
     def undo(self):
         with self.lock:
             if self.busy():

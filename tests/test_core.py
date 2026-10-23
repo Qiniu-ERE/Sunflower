@@ -103,6 +103,29 @@ class RunnerTest(unittest.TestCase):
         self.assertIsNone(self.rec.of("state")[-1]["commit"])
 
 
+class DemoResetTest(unittest.TestCase):
+    def test_reset_copies_template_as_fresh_repo_with_planted_bug(self):
+        from sunflower import demo
+        ws = pathlib.Path(tempfile.mkdtemp()) / "ws"
+        demo.reset(ws)
+        log = subprocess.run(["git", "-C", str(ws), "log", "--format=%s"], capture_output=True, text=True)
+        self.assertEqual(log.stdout.strip(), "init demo workspace")
+        r = subprocess.run([sys.executable, "-m", "unittest"], cwd=ws, capture_output=True, text=True)
+        self.assertNotEqual(r.returncode, 0, "planted bug must make the demo tests fail")
+
+    def test_refuses_workspace_inside_repo(self):
+        from sunflower import config, demo
+        with self.assertRaises(SystemExit):
+            demo.reset(config.ROOT / "demo" / "scratch")
+
+    def test_new_session_forgets_thread(self):
+        rec = Recorder()
+        r = agents.CodexRunner(git_repo(), rec, base_argv=FAKE, run_dir=tempfile.mkdtemp())
+        r.thread_id = "old"
+        self.assertTrue(r.new_session()["ok"])
+        self.assertIsNone(r.thread_id)
+
+
 class HostApiTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

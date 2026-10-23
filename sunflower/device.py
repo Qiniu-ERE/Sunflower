@@ -123,6 +123,11 @@ class Device:
         self.loop = None
         self.speaking = asyncio.Event()
         self.announcing = set()  # platform echoes text_response back as stt; don't show it as the user
+        # we own the session length: close after a quiet spell instead of letting the platform's idle
+        # timeout fire (it speaks a farewell, and billing counts connected seconds)
+        self.idle_close_s = float(self.dev.get("idle_close_s", 20))
+        self.last_activity = 0.0
+        self.pending_tools = 0
 
     # -- connection ------------------------------------------------------
     async def ensure(self):
@@ -148,14 +153,27 @@ class Device:
             await self.ws.send(json.dumps(HELLO))
             asyncio.ensure_future(self._recv(self.ws))
             await asyncio.wait_for(self.ready.wait(), timeout=10)
+            self.last_activity = time.monotonic()
+            asyncio.ensure_future(self._idle_watch(self.ws))
             log("linx session", self.sid)
 
+    async def _idle_watch(self, ws):
+        while ws.state.name == "OPEN":
+            await asyncio.sleep(2)
+            quiet = time.monotonic() - self.last_activity
+            if (self.mic is None and not self.speaking.is_set() and self.pending_tools == 0
+                    and not self.toggling and quiet > self.idle_close_s):
+                log(f"空闲 {int(quiet)}s，断开灵矽会话（按键或播报时自动重连）")
+                await ws.close()
+
     async def _send(self, obj):
+        self.last_activity = time.monotonic()
         await self.ws.send(json.dumps(dict(obj, session_id=self.sid)))
 
     async def _recv(self, ws):
         try:
             async for m in ws:
+                self.last_activity = time.monotonic()
                 if isinstance(m, bytes):
                     self.player.write(m)
                     continue
@@ -204,6 +222,7 @@ class Device:
         name, args = params.get("name"), params.get("arguments") or {}
         log("工具:", name, json.dumps(args, ensure_ascii=False))
         route = TOOL_ROUTES.get(name)
+        self.pending_tools += 1
         try:
             if not route:
                 raise ValueError(f"unknown tool {name}")
@@ -211,6 +230,8 @@ class Device:
             text, err = res.get("say", "好的"), False
         except Exception as e:  # host down / timeout must still answer within the platform budget
             text, err = f"主机连接失败：{type(e).__name__}，请检查电脑上的服务", True
+        finally:
+            self.pending_tools -= 1
         await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {
             "content": [{"type": "text", "text": text}], "isError": err}}})
 

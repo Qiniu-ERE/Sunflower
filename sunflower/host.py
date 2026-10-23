@@ -117,6 +117,8 @@ def make_handler(bus, runner, token):
                 return self._json(200, runner.cancel())
             if path == "/api/undo":
                 return self._json(200, runner.undo())
+            if path == "/api/new-session":
+                return self._json(200, runner.new_session())
             if path == "/api/voice":
                 # device mirrors what it heard / is saying so the screen shows the conversation
                 bus.emit("voice", {"role": body.get("role", "?"), "text": body.get("text", "")})
