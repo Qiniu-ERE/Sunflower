@@ -157,6 +157,17 @@ curl -X POST -H "Authorization: Bearer $SUNFLOWER_TOKEN" -d '{"name":"qiniu-gpt"
 
 演示中上游连接不稳时，可以当场切到备用渠道。面板标题会显示当前渠道。
 
+### 常驻服务（launchd）
+
+```bash
+python3 -m sunflower.service install      # 装成 launchd 服务：崩溃自动拉起、登录自启
+python3 -m sunflower.service status       # 主机 / 部署目录 / origin/main / 设备，四个提交是否一致
+python3 -m sunflower.service deploy       # 部署 origin/main 并重启；主机在执行任务时先等它结束
+python3 -m sunflower.service logs
+```
+
+主机从部署目录 `~/.sunflower/app` 启动，这个目录固定在某个 main 提交上，开发仓切分支不影响正在跑的服务。`scripts/merge.sh` 合入后会自动执行 `deploy --wait 0`：主机忙时跳过，不打断任务。密钥不写进 plist，需要环境变量的渠道用 `--keychain-env VAR=钥匙串服务名` 在启动时从钥匙串注入。
+
 ## 屏幕：任意浏览器
 
 议题里的 AirPlay 只是举例。Sunflower 的屏幕协议是 **HTTP + SSE**：面板是一个零依赖的网页，订阅主机的 `/events` 事件流，所以任何能开浏览器的屏幕都能接入，不需要专门的接收端。
@@ -200,6 +211,7 @@ sunflower/
 ├── host.py         主机：HTTP API + SSE 广播（带回放缓冲），一个端口服务三方
 ├── agents.py       CodexRunner：exec/resume、事件流解析、voice: 提交、撤销、语音摘要
 ├── linx_admin.py   灵矽平台侧：按需建删智能体、预注册设备、OTA 取令牌
+├── service.py      常驻服务：launchd、部署目录、不打断任务的重启、版本漂移检查
 ├── demo.py         演示工作区重置（拒绝落在比赛仓内）
 ├── config.py       .env / profile / 运行态（~/.sunflower，600 权限）
 └── web/panel.html  进展面板（1080p 投屏 / 7 寸屏自适应，零依赖）

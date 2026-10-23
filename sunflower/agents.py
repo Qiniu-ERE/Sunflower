@@ -136,8 +136,9 @@ class CodexRunner:
             self.task, self.started, self.files, self.cancelled = text, time.time(), [], False
             self.last_event = None
             log = open(self.run_dir / "events.jsonl", "a", encoding="utf-8")
-            self.proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=log, text=True,
-                                         start_new_session=True, cwd=self.workspace)
+            # stdin 显式关掉：codex exec 见到非终端 stdin 会尝试读取附加输入
+            self.proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=log,
+                                         text=True, start_new_session=True, cwd=self.workspace)
             self.emit("state", {"state": "running", "task": text, "started": self.started,
                                 "resume": bool(self.thread_id)})
             threading.Thread(target=self._pump, args=(self.proc, last_file, log), daemon=True).start()

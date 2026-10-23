@@ -47,3 +47,8 @@ gh pr merge "$n" --merge --match-head-commit "$sha" --delete-branch \
   --subject "合并 #${n}：${title}" --body "$receipt"
 git switch -q main && git pull -q --ff-only origin main
 echo "✔ 已合入 #$n → main $(git rev-parse --short HEAD)"
+
+# 主机服务已安装时，合入即部署；主机正在执行任务就跳过（不打断），status 会提示漂移
+if [ -f "$HOME/Library/LaunchAgents/com.sunflower.host.plist" ]; then
+  python3 -m sunflower.service deploy --wait 0 || echo "⚠ 未部署：主机忙或启动失败，稍后执行 python3 -m sunflower.service deploy"
+fi

@@ -2,9 +2,19 @@
 import json
 import os
 import pathlib
+import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 HOME = pathlib.Path(os.environ.get("SUNFLOWER_HOME", pathlib.Path.home() / ".sunflower"))
+
+
+def code_commit(root=None):
+    """本进程所跑代码的提交（启动时取一次）；不在 git 仓里时返回 None。"""
+    try:
+        return subprocess.run(["git", "-C", str(root or ROOT), "rev-parse", "HEAD"], capture_output=True,
+                              text=True, timeout=5, check=True).stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        return None
 
 
 def load_env(path=None):
