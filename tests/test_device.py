@@ -1,8 +1,10 @@
 import asyncio
+import gc
 import struct
 import sys
 import time
 import unittest
+import warnings
 
 from sunflower import device
 
@@ -43,6 +45,7 @@ class PumpTest(unittest.TestCase):
             t_ready = time.monotonic()
             ready.set()
             await task
+            await d._reap(mic)
             return d.ws.frames, t_ready
         frames, t_ready = asyncio.run(go())
         self.assertEqual(len(frames), FRAMES)
@@ -69,6 +72,25 @@ class TalkTest(unittest.TestCase):
         states = [__import__("json").loads(m).get("state") for _, m in d.ws.json]
         self.assertEqual(states, ["start", "stop"])
         self.assertEqual(len(d.ws.frames), FRAMES)
+
+
+class ReapTest(unittest.TestCase):
+    def test_mic_process_reaped_after_stop(self):
+        async def go():
+            d = make_device()
+            d.ensure = lambda: asyncio.sleep(0)
+            await d.toggle_talk()
+            mic = d.mic
+            await asyncio.sleep(0.1)
+            await d.toggle_talk()
+            return mic
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            mic = asyncio.run(go())
+            gc.collect()
+        self.assertIsNotNone(mic.returncode, "mic process not reaped")
+        self.assertTrue(mic.stdout.closed)
+        self.assertEqual([x for x in w if issubclass(x.category, ResourceWarning)], [])
 
 
 class EarconTest(unittest.TestCase):

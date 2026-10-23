@@ -295,14 +295,15 @@ class Device:
                 mic, self.mic = self.mic, None
                 mic.terminate()
                 await self.mic_task
+                await self._reap(mic)
                 await self._send({"type": "listen", "state": "stop"})
                 self._earcon(EARCON_STOP)
                 log("🎙 结束，识别中…")
         except Exception as e:
             log(f"✘ 说话失败：{type(e).__name__}: {e}")
             if self.mic is not None:
-                self.mic.terminate()
-                self.mic = None
+                mic, self.mic = self.mic, None
+                await self._reap(mic)
         finally:
             self.toggling = False
 
@@ -325,6 +326,13 @@ class Device:
                 return
         if ready.is_set():
             await self._flush(pending)
+
+    @staticmethod
+    async def _reap(mic):
+        """Collect the mic process so stopped recorders never linger as zombies."""
+        mic.terminate()
+        await asyncio.to_thread(mic.wait)
+        mic.stdout.close()
 
     async def _flush(self, frames):
         try:
