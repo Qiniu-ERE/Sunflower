@@ -71,6 +71,25 @@ class DescribeTest(unittest.TestCase):
         self.assertEqual((kind, out), ("msg", "问题在 todo.py 第 37 行，另见 ~/ws"))
 
 
+class ChannelTest(unittest.TestCase):
+    def test_codex_argv_selects_channel_profile_and_overrides(self):
+        argv = agents.codex_argv("icodeeasy", ["-c", "model_providers.icodeeasy.supports_websockets=false"])
+        i = argv.index("--profile")
+        self.assertEqual(argv[i + 1], "icodeeasy")
+        self.assertIn("model_providers.icodeeasy.supports_websockets=false", argv)
+        self.assertNotIn("qiniu-gpt", argv)
+        self.assertEqual(agents.CODEX_BASE[agents.CODEX_BASE.index("--profile") + 1], "qiniu-gpt")
+
+    def test_resolve_channel_accepts_configured_or_existing_profile(self):
+        home = pathlib.Path(tempfile.mkdtemp())
+        (home / "openai.config.toml").write_text("model = 'x'\n")
+        hcfg = {"codex_channels": {"icodeeasy": ["-c", "a=1"]}}
+        self.assertIn("a=1", host.resolve_channel(hcfg, "icodeeasy", codex_home=home))
+        self.assertIn("openai", host.resolve_channel(hcfg, "openai", codex_home=home))
+        with self.assertRaises(ValueError):
+            host.resolve_channel(hcfg, "nope", codex_home=home)
+
+
 class RunnerTest(unittest.TestCase):
     def setUp(self):
         self.ws = git_repo()
@@ -143,7 +162,11 @@ class HostApiTest(unittest.TestCase):
     def setUpClass(cls):
         cls.bus = host.Bus()
         cls.runner = agents.CodexRunner(git_repo(), cls.bus.emit, base_argv=FAKE, run_dir=tempfile.mkdtemp())
-        cls.srv = ThreadingHTTPServer(("127.0.0.1", 0), host.make_handler(cls.bus, cls.runner, "tok"))
+        def resolve(name):
+            if name != "alt":
+                raise ValueError(name)
+            return list(FAKE)
+        cls.srv = ThreadingHTTPServer(("127.0.0.1", 0), host.make_handler(cls.bus, cls.runner, "tok", resolve))
         cls.srv.daemon_threads = True
         threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
         cls.base = f"http://127.0.0.1:{cls.srv.server_address[1]}"
@@ -175,6 +198,14 @@ class HostApiTest(unittest.TestCase):
                     break
         self.assertIn("log", seen)
         self.assertIn("announce", seen)
+
+    def test_channel_switch_api(self):
+        res = self.post("/api/channel", {"name": "alt"})
+        self.assertTrue(res["ok"])
+        self.assertEqual(self.runner.channel, "alt")
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self.post("/api/channel", {"name": "nope"})
+        self.assertEqual(cm.exception.code, 400)
 
     def test_empty_dispatch_asks_again(self):
         with self.assertRaises(urllib.error.HTTPError) as cm:

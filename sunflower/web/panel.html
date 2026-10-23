@@ -56,7 +56,7 @@
 </header>
 <main>
   <section class="voice"><h2>🎙 对话</h2><div id="voice" class="scroll"><div class="empty">按下翻页笔，说出你的需求…</div></div></section>
-  <section><h2>⚙️ 执行流 · Codex</h2><div id="log" class="scroll"><div class="empty">等待任务</div></div></section>
+  <section><h2>⚙️ 执行流 · Codex<span id="channel"></span></h2><div id="log" class="scroll"><div class="empty">等待任务</div></div></section>
 </main>
 <footer>
   <pre id="diff" class="diff"></pre>
@@ -109,7 +109,7 @@ function setState(d) {
 }
 function connect() {
   const es = new EventSource(token ? "/events?t=" + encodeURIComponent(token) : "/events");
-  es.addEventListener("state", (e) => setState(JSON.parse(e.data)));
+  es.addEventListener("state", (e) => { const d = JSON.parse(e.data); if (d.channel) $("channel").textContent = " · " + d.channel; setState(d); });
   es.addEventListener("log", (e) => { const d = JSON.parse(e.data); if (d.text) addRow(d.kind, d.text); });
   es.addEventListener("voice", (e) => { const d = JSON.parse(e.data); if (d.text) addBubble(d.role, d.text, d.ts); });
   es.addEventListener("diff", (e) => { $("diff").textContent = JSON.parse(e.data).stat || ""; });
