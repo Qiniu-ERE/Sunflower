@@ -148,7 +148,18 @@ class RunnerTest(unittest.TestCase):
     def test_failure_is_announced_not_committed(self):
         self.run_task("FAIL")
         self.assertIn("失败", self.rec.of("announce")[-1]["text"])
+        self.assertIn("可以说", self.rec.of("announce")[-1]["text"])  # 出错带下一步（#10）
         self.assertIsNone(self.rec.of("state")[-1]["commit"])
+
+
+class LinxPromptTest(unittest.TestCase):
+    def test_prompt_maps_single_words_to_tools(self):
+        # 说话费力时只说一两个字也要路由对（#10）
+        from sunflower import linx_admin
+        p = linx_admin.SYSTEM_PROMPT
+        for word, tool in (("「停」", "cancel"), ("「撤」", "undo"), ("「进度」", "status"), ("「修」", "dispatch")):
+            line = next((l for l in p.splitlines() if word in l), "")
+            self.assertIn(tool, line, word)
 
 
 class DemoResetTest(unittest.TestCase):
