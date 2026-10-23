@@ -1,7 +1,7 @@
 """Host: one process, one port, three consumers.
 
     device  --POST /api/*-->  host  --codex exec-->  agent
-    device  <--SSE /events--  host  --SSE /events-->  panel (AirPlay screen / kiosk)
+    device  <--SSE /events--  host  --SSE /events-->  panel (any browser: big screen / kiosk / AirPlay mirror)
 
     python3 -m sunflower.host --profile dev-single-mac
 """
@@ -101,7 +101,7 @@ def make_handler(bus, runner, token, resolve=None):
                 self.end_headers()
                 return self.wfile.write(body)
             if path == "/events":
-                # read-only stream: loopback (the AirPlay-cast panel window on this Mac) needs no token
+                # read-only stream: loopback (the panel window on this machine) needs no token
                 if not (self._loopback() or self._authed()):
                     return self._json(401, {"error": "token required"})
                 return self._sse(replay=parse_qs(urlparse(self.path).query).get("replay", ["1"])[0] == "1")
