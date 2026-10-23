@@ -67,6 +67,9 @@ def make_handler(bus, runner, token):
                 got = (parse_qs(urlparse(self.path).query).get("t") or [""])[0]
             return bool(token) and hmac.compare_digest(got, token)
 
+        def _loopback(self):
+            return self.client_address[0] in ("127.0.0.1", "::1")
+
         def _json(self, code, obj):
             body = json.dumps(obj, ensure_ascii=False).encode()
             self.send_response(code)
@@ -87,7 +90,8 @@ def make_handler(bus, runner, token):
                 self.end_headers()
                 return self.wfile.write(body)
             if path == "/events":
-                if not self._authed():
+                # read-only stream: loopback (the AirPlay-cast panel window on this Mac) needs no token
+                if not (self._loopback() or self._authed()):
                     return self._json(401, {"error": "token required"})
                 return self._sse(replay=parse_qs(urlparse(self.path).query).get("replay", ["1"])[0] == "1")
             self._json(404, {"error": "not found"})

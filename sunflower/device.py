@@ -121,6 +121,7 @@ class Device:
         self.mic_task = None
         self.loop = None
         self.speaking = asyncio.Event()
+        self.announcing = set()  # platform echoes text_response back as stt; don't show it as the user
 
     # -- connection ------------------------------------------------------
     async def ensure(self):
@@ -164,8 +165,12 @@ class Device:
                 elif t == "mcp":
                     await self._mcp(d["payload"])
                 elif t == "stt":
-                    log("听到:", d.get("text"))
-                    self._mirror("user", d.get("text", ""))
+                    text = d.get("text", "")
+                    if text in self.announcing:
+                        self.announcing.discard(text)
+                        continue
+                    log("听到:", text)
+                    self._mirror("user", text)
                 elif t == "tts":
                     s = d.get("state")
                     if s == "start":
@@ -225,6 +230,7 @@ class Device:
 
     async def announce(self, text):
         await self.ensure()
+        self.announcing.add(text)
         await self._send({"type": "listen", "state": "detect", "text": "任务回执", "text_response": text})
 
     async def toggle_talk(self):

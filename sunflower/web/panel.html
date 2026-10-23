@@ -39,6 +39,7 @@
   .row.cmd .t { color: var(--info); } .row.cmd_ok .t { color: var(--ok); } .row.cmd_fail .t { color: var(--bad); }
   .row.file .t { color: var(--sun); } .row.warn .t { color: var(--warn); } .row.system .t, .row.think .t { color: var(--dim); }
   .row.user .t { color: #9ecbff; font-weight: 600; }
+  .row.user { margin-top: .8em; border-top: 2px solid #284566; border-bottom: none; padding-top: .7em; }
   footer { display: grid; grid-template-columns: 1fr auto; gap: 1.2vw; align-items: end; }
   pre.diff { margin: 0; font-family: var(--mono); font-size: .7em; color: var(--dim); white-space: pre-wrap; max-height: 16vh; overflow: hidden; }
   .say { font-size: .95em; color: var(--sun); text-align: right; }
@@ -104,7 +105,7 @@ function setState(d) {
   }
 }
 function connect() {
-  const es = new EventSource("/events?t=" + encodeURIComponent(token));
+  const es = new EventSource(token ? "/events?t=" + encodeURIComponent(token) : "/events");
   es.addEventListener("state", (e) => setState(JSON.parse(e.data)));
   es.addEventListener("log", (e) => { const d = JSON.parse(e.data); if (d.text) addRow(d.kind, d.text); });
   es.addEventListener("voice", (e) => { const d = JSON.parse(e.data); if (d.text) addBubble(d.role, d.text); });
@@ -113,7 +114,7 @@ function connect() {
   es.onerror = () => { $("pill").className = "pill offline"; $("pill").textContent = "重连中"; };
   es.onopen = () => { if ($("pill").classList.contains("offline")) { $("pill").className = "pill idle"; $("pill").textContent = "空闲"; } };
 }
-if (!token) { $("pill").textContent = "缺少 ?t= 令牌"; } else { connect(); }
+connect();
 </script>
 </body>
 </html>

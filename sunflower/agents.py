@@ -63,9 +63,12 @@ def describe(ev):
     return None
 
 
+_HOME = os.path.expanduser("~")
+
+
 def _short_cmd(cmd):
-    m = re.match(r"^/bin/(?:ba|z)sh -lc '(.*)'$", cmd, re.S)
-    cmd = m.group(1) if m else cmd
+    m = re.match(r"^/bin/(?:ba|z)sh -lc (['\"])(.*)\1$", cmd, re.S)
+    cmd = (m.group(2) if m else cmd).replace(_HOME, "~")
     return cmd if len(cmd) <= 120 else cmd[:117] + "..."
 
 
