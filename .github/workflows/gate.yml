@@ -9,6 +9,7 @@ on:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15   # 默认 6 小时：apt 源卡住时整个 PR 会被挂半天
     strategy:
       matrix:
         python: ["3.9", "3.12"]
@@ -20,7 +21,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -r requirements.txt
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg   # TG 入口的语音转码（OGG/Opus ↔ PCM）
+      - name: ffmpeg（TG 入口的语音转码 OGG/Opus ↔ PCM；尽力装）
+        # 有的 runner 网速极慢：2026-10-23 同一时段换官方源也只下到 0.6–12 MB / 120 s，旁边的 job 43 s 跑完。
+        # 装不上就跳过语音往返那一条单测、在这一步标黄；merge.sh 合入前在本机（有 ffmpeg）重跑全量门禁，覆盖不丢
+        timeout-minutes: 3
+        continue-on-error: true
+        run: sudo apt-get -q update && sudo apt-get install -y -q --no-install-recommends ffmpeg
       - name: scripts/gate.sh
         env:
           EVENT: ${{ github.event_name }}
