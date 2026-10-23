@@ -222,14 +222,15 @@ python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/�
 ```bash
 # .env 里填 SUNFLOWER_TG_TOKEN（@BotFather 给的）和 SUNFLOWER_TG_ALLOW（允许的 user_id，逗号分隔）
 python3 -m sunflower.linx_admin up --profile tg-bridge   # 第一次：给 TG 入口登记一个软设备（占一个设备名额）
-python3 -m sunflower.tg                                  # 只出站：getUpdates 长轮询，不需要公网地址
+python3 -m sunflower.service tg-install                  # 常驻：launchd 看护，开机自启，每次部署自动换代
+# 临时试用也可以前台跑：python3 -m sunflower.tg（只出站：getUpdates 长轮询，不需要公网地址）
 ```
 
 - **文字**：照原话交给灵矽，和对着设备说话一样。
 - **语音消息**：转成 16 kHz PCM，当作按一次说话送上去。灵矽的回话转回 OGG/Opus，作为语音消息发回来，附带文字。
 - **按钮**：检查 / 修复 / 进度 / 停下 / 撤销，对应设备上的 1–5 号快捷指令。
-- **进度卡片**：每个任务一张卡片，原地编辑。内容不变就不调接口，两次编辑至少隔 3 s（Telegram 对同一聊天约 1 条/秒）；结束时立即刷新，显示结果和提交。
-- **安全**：只理 `SUNFLOWER_TG_ALLOW` 里的 user_id，其他人的消息一律不回复、不派发（主机是以 `danger-full-access` 跑 Codex 的）。报错信息里不带 bot token。
+- **进度卡片**：每个任务一张卡片，执行中原地编辑。内容不变就不调接口，两次编辑至少隔 3 s（Telegram 对同一聊天约 1 条/秒）；结束时删掉进度卡，在底部发结果和提交——编辑旧消息手机不推通知。
+- **安全**：只理 `SUNFLOWER_TG_ALLOW` 里的 user_id 的私聊，群里和其他人的消息一律不回复、不派发（主机是以 `danger-full-access` 跑 Codex 的）。报错信息里不带 bot token。重启时离线期间攒下的消息不执行，会提示重发。
 
 </details>
 

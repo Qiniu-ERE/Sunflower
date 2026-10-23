@@ -43,8 +43,11 @@ echo "$log"
 receipt=$(printf '%s\n' "门禁回执 · ${sha:0:7}" "" "CI：" "$(echo "$checks" | sed 's/^/- /')" "" \
   "本地（main 上的 scripts/gate.sh，干净检出）：" '```' "$(echo "$log" | grep -vE '^\s*$')" '```')
 gh pr comment "$n" --body "$receipt" >/dev/null
+# 判合入看 PR 状态，不看退出码：分支被某个 worktree 检出时 gh 删本地分支失败会非 0，曾让后面的部署被跳过（#33）
 gh pr merge "$n" --merge --match-head-commit "$sha" --delete-branch \
-  --subject "合并 #${n}：${title}" --body "$receipt"
+  --subject "合并 #${n}：${title}" --body "$receipt" \
+  || echo "⚠ gh pr merge 非 0 退出（常见：分支在 worktree 里，删不掉本地分支），按 PR 状态判定"
+[ "$(gh pr view "$n" --json state -q .state)" = MERGED ] || die "合入失败：PR #$n 未处于 MERGED"
 git switch -q main && git pull -q --ff-only origin main
 echo "✔ 已合入 #$n → main $(git rev-parse --short HEAD)"
 

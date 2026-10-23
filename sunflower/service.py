@@ -7,6 +7,7 @@
     python3 -m sunflower.service device  [--profile dev-single-mac]   # 在终端里从部署目录启动设备
     python3 -m sunflower.service logs [-n 50]
     python3 -m sunflower.service uninstall
+    python3 -m sunflower.service tg-install | tg-uninstall          # TG 入口（#5）常驻，随 deploy 换代
 
 主机从部署目录 ~/.sunflower/app（开发仓的 detached worktree）启动，开发仓切分支不影响在跑的服务。
 密钥不进 plist：`run` 在启动时从钥匙串取，再 exec 主机。
@@ -29,6 +30,8 @@ APP = config.APP
 LOGS = config.HOME / "logs"
 CONF = "service.json"
 PLIST = pathlib.Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
+TG_LABEL = "com.sunflower.tg"
+TG_PLIST = PLIST.with_name(f"{TG_LABEL}.plist")
 LOG_LIMIT = 5 * 1024 * 1024
 BASE_PATH = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
 
@@ -57,6 +60,15 @@ def plist(python, app, logs, path_env):
         "EnvironmentVariables": {"PATH": path_env, "PYTHONUNBUFFERED": "1",
                                  "SUNFLOWER_HOME": str(config.HOME)},
     }
+
+
+def tg_plist(python, app, logs, path_env, profile="tg-bridge"):
+    """TG 入口只出站、没有麦克风，可以交给 launchd 看护；token 由它自己从 .env 读，plist 里没有密钥。"""
+    p = plist(python, app, logs, path_env)
+    log = str(pathlib.Path(logs) / "tg.log")
+    p.update(Label=TG_LABEL, ProgramArguments=[python, "-u", "-m", "sunflower.tg", "--profile", profile],
+             StandardOutPath=log, StandardErrorPath=log)
+    return p
 
 
 def keychain(svc):
@@ -154,9 +166,18 @@ def _port(conf):
     return int(config.load_profile(conf.get("profile", "dev-single-mac"))["host"].get("port", 8787))
 
 
-def _loaded():
-    return subprocess.run(["launchctl", "print", f"{_uid_target()}/{LABEL}"],
+def _loaded(label=LABEL):
+    return subprocess.run(["launchctl", "print", f"{_uid_target()}/{label}"],
                           capture_output=True, text=True).returncode == 0
+
+
+def restart_tg(loaded=_loaded, run=subprocess.run):
+    """部署后让 TG 入口换代（装了才动）。它不持有任务状态，直接重启；重启期间来的消息会提示用户重发。"""
+    if not loaded(TG_LABEL):
+        return False
+    run(["launchctl", "kickstart", "-k", f"{_uid_target()}/{TG_LABEL}"], check=True)
+    print("✔ TG 入口已重启")
+    return True
 
 
 def checkout(ref):
@@ -213,6 +234,7 @@ def status(conf):
     print(f"主机      {'无响应' if not h else ('执行中' if h.get('busy') else '空闲')}"
           f"  pid={(h or {}).get('pid')}  渠道={(h or {}).get('channel')}  提交={((h or {}).get('commit') or '?')[:7]}")
     print(f"部署目录  {APP}  提交={(deployed or '?')[:7]}；origin/main={(main or '?')[:7]}")
+    print(f"TG 入口   {'已加载，随部署换代' if _loaded(TG_LABEL) else '未安装（service tg-install）'}（{TG_LABEL}）")
     if dev:
         ago = int(time.time() - dev.get("seen", 0))
         print(f"设备      提交={dev.get('commit', '?')[:7]}  最近连接 {ago} s 前"
@@ -243,6 +265,35 @@ def install(conf):
     raise SystemExit("✘ 安装后 20 s 内主机没有起来")
 
 
+def tg_install():
+    if not (APP / ".git").exists():
+        raise SystemExit(f"部署目录 {APP} 不存在：先 python3 -m sunflower.service install")
+    env = config.load_env(APP / ".env")
+    if not env.get("SUNFLOWER_TG_TOKEN") or not env.get("SUNFLOWER_TG_ALLOW"):
+        raise SystemExit("SUNFLOWER_TG_TOKEN / SUNFLOWER_TG_ALLOW 未配置（.env），见 README「Telegram 入口」")
+    LOGS.mkdir(parents=True, exist_ok=True)
+    log = LOGS / "tg.log"
+    start = log.stat().st_size if log.exists() else 0
+    TG_PLIST.write_bytes(plistlib.dumps(tg_plist(sys.executable, APP, LOGS, service_path())))
+    subprocess.run(["launchctl", "bootout", f"{_uid_target()}/{TG_LABEL}"], capture_output=True)
+    subprocess.run(["launchctl", "bootstrap", _uid_target(), str(TG_PLIST)], check=True)
+    for _ in range(40):
+        new = log.read_bytes()[start:].decode(errors="replace") if log.exists() else ""
+        if "入口就绪" in new:
+            print(f"✔ TG 入口已常驻：{TG_PLIST}；日志 {log}")
+            return
+        time.sleep(0.5)
+    print(new[-2000:] or "（无日志）")
+    raise SystemExit("✘ 20 s 内 TG 入口没有就绪")
+
+
+def tg_uninstall():
+    subprocess.run(["launchctl", "bootout", f"{_uid_target()}/{TG_LABEL}"], capture_output=True)
+    if TG_PLIST.exists():
+        TG_PLIST.unlink()
+    print(f"已卸载 {TG_LABEL}")
+
+
 def uninstall():
     subprocess.run(["launchctl", "bootout", f"{_uid_target()}/{LABEL}"], capture_output=True)
     if PLIST.exists():
@@ -269,6 +320,8 @@ def main(argv=None):
     p.add_argument("--profile", default=None, help="默认与主机同一个 profile")
     sub.add_parser("run")
     sub.add_parser("uninstall")
+    sub.add_parser("tg-install")
+    sub.add_parser("tg-uninstall")
     p = sub.add_parser("logs")
     p.add_argument("-n", type=int, default=50)
     a = ap.parse_args(argv)
@@ -282,6 +335,10 @@ def main(argv=None):
         return install({"profile": a.profile, "channel": a.channel, "keychain_env": kenv, "ref": a.ref})
     if a.cmd == "uninstall":
         return uninstall()
+    if a.cmd == "tg-install":
+        return tg_install()
+    if a.cmd == "tg-uninstall":
+        return tg_uninstall()
     if a.cmd == "logs":
         return logs(a.n)
     conf = _conf()
@@ -296,6 +353,7 @@ def main(argv=None):
             sys.exit(1)
         sha = checkout(a.ref)
         print(f"部署目录 → {sha[:7]}")
+        restart_tg()
         sys.exit(0 if restart(conf, force=True) else 1)
     sys.exit(0 if restart(conf, wait=a.wait, force=a.force) else 1)
 

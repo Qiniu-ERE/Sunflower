@@ -91,6 +91,28 @@ class DriftTest(unittest.TestCase):
 
 
 class DeviceLaunchTest(unittest.TestCase):
+    def test_tg_plist_runs_bridge_from_deploy_dir_without_secrets(self):
+        p = service.tg_plist("/usr/bin/python3", pathlib.Path("/h/.sunflower/app"),
+                             pathlib.Path("/h/.sunflower/logs"), "/usr/bin")
+        self.assertEqual(p["Label"], service.TG_LABEL)
+        self.assertNotEqual(p["Label"], service.LABEL)
+        self.assertTrue(p["KeepAlive"])
+        self.assertEqual(p["ProgramArguments"], ["/usr/bin/python3", "-u", "-m", "sunflower.tg", "--profile", "tg-bridge"])
+        self.assertEqual(p["WorkingDirectory"], "/h/.sunflower/app")
+        self.assertTrue(p["StandardOutPath"].endswith("logs/tg.log"))
+        # token 由入口自己从 .env 读；plist 不带密钥，也不带代理（直连实测可达，不依赖本机代理进程）
+        self.assertEqual(set(p["EnvironmentVariables"]), {"PATH", "PYTHONUNBUFFERED", "SUNFLOWER_HOME"})
+
+    def test_deploy_restarts_tg_bridge_only_when_installed(self):
+        for installed in (True, False):
+            runs = []
+            done = service.restart_tg(loaded=lambda label: installed and label == service.TG_LABEL,
+                                      run=lambda argv, **kw: runs.append(argv))
+            self.assertEqual(done, installed)
+            self.assertEqual([a[:3] for a in runs], [["launchctl", "kickstart", "-k"]] if installed else [])
+            if installed:
+                self.assertTrue(runs[0][3].endswith("/" + service.TG_LABEL))
+
     def test_service_device_execs_from_deploy_dir(self):
         calls = {}
         with tempfile.TemporaryDirectory() as d:
