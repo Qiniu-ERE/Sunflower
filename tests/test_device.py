@@ -234,6 +234,53 @@ class HandsFreeTest(unittest.TestCase):
         self.assertFalse(d.toggle_mute())
 
 
+class SecondFrontendTest(unittest.TestCase):
+    """TG 入口（#5）复用 Device：整段语音送上去、跟随听到 / 回话、自己的令牌文件。"""
+
+    def test_say_audio_sends_one_manual_listen_turn(self):
+        async def go():
+            d = make_device()
+            d.ensure = lambda: asyncio.sleep(0)
+            await d.say_audio(b"x" * (device.FRAME_BYTES * 3 + 7), pace=0)
+            return d
+        d = asyncio.run(go())
+        states = [__import__("json").loads(m).get("state") for _, m in d.ws.json]
+        self.assertEqual(states, ["start", "stop"])
+        self.assertEqual(len(d.ws.frames), 3)
+        self.assertEqual(d.pending_tools, 0)
+
+    def test_device_reports_heard_and_said_text_to_other_frontends(self):
+        class Stream:
+            def __init__(self, msgs):
+                self.msgs = msgs
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if not self.msgs:
+                    raise StopAsyncIteration
+                return self.msgs.pop(0)
+        J = __import__("json").dumps
+
+        async def go():
+            d = make_device()
+            seen = []
+            d.on_event = lambda k, t: seen.append((k, t))
+            d.host = type("H", (), {"post": lambda *a, **k: None})()
+            await d._recv(Stream([J({"type": "stt", "text": "进度"}),
+                                  J({"type": "tts", "state": "sentence_start", "text": "目前空闲"})]))
+            return seen
+        self.assertEqual(asyncio.run(go()), [("stt", "进度"), ("say", "目前空闲")])
+
+    def test_each_device_profile_keeps_its_own_token_file(self):
+        async def go():  # Python 3.9：Device 里的 asyncio.Lock 要在事件循环里建
+            d = device.Device({"device": {"mac": "02:00:00:00:00:09", "audio_out": ["true"],
+                                          "state": "linx-tg.json"}}, host=None)
+            return d.state, make_device().state
+        self.assertEqual(asyncio.run(go()), ("linx-tg.json", "linx.json"))
+
+
 class EarconTest(unittest.TestCase):
     def test_tone_is_short_audible_pcm_with_soft_edges(self):
         pcm = device.tone(880, 90)

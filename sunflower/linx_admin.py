@@ -131,13 +131,15 @@ def ota(mac, client_id):
     return ws["url"], ws["token"]
 
 
-def refresh_token(mac):
-    """Device-side: (re)fetch the WS token via OTA. Needs no API key."""
-    st = config.read_state(STATE)
+def refresh_token(mac, state=STATE):
+    """Device-side: (re)fetch the WS token via OTA. Needs no API key.
+
+    每个设备身份一个状态文件（profile 的 device.state）：同机跑两个设备（终端 + TG 入口）时不互相覆盖令牌。"""
+    st = config.read_state(state)
     st.setdefault("client_id", str(uuid.uuid4()))
     st["mac"] = mac
     st["ws_url"], st["ws_token"] = ota(mac, st["client_id"])
-    config.write_state(STATE, st)
+    config.write_state(state, st)
     return st
 
 
@@ -157,8 +159,9 @@ def main(argv=None):
         st["agent_id"] = ensure_agent(key, st)
         config.write_state(STATE, st)
         ensure_device(key, st["agent_id"], mac)
-        st = refresh_token(mac)
-        print(f"ready: agent={st['agent_id']} mac={mac} ws_token=<{len(st['ws_token'])} chars>")
+        agent_id = st["agent_id"]
+        st = refresh_token(mac, prof["device"].get("state", STATE))
+        print(f"ready: agent={agent_id} mac={mac} ws_token=<{len(st['ws_token'])} chars>")
     elif a.cmd == "status":
         agent = find_agent(key)
         print(json.dumps({"agent": agent and {k: agent.get(k) for k in

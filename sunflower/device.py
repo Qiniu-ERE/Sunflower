@@ -144,6 +144,8 @@ class Device:
         self.earcons = self.dev.get("earcons", True)
         self.quick = dict(QUICK, **self.dev.get("quick", {}))
         self.muted = bool(self.dev.get("mute", False))
+        self.state = self.dev.get("state", linx_admin.STATE)
+        self.on_event = None  # (kind, text)：其他前端（TG 入口）跟随灵矽的「听到 / 回话」
         self.loop = None
         self.speaking = asyncio.Event()
         self.announcing = set()  # platform echoes text_response back as stt; don't show it as the user
@@ -196,9 +198,9 @@ class Device:
         async with self.lock:
             if self.ws is not None and self.ws.state.name == "OPEN" and self.ready.is_set():
                 return
-            st = config.read_state(linx_admin.STATE)
+            st = config.read_state(self.state)
             if not st.get("ws_token") or st.get("mac") != self.dev["mac"]:
-                st = await asyncio.to_thread(linx_admin.refresh_token, self.dev["mac"])
+                st = await asyncio.to_thread(linx_admin.refresh_token, self.dev["mac"], self.state)
             hdr = {"Authorization": "Bearer " + st["ws_token"], "Protocol-Version": "1",
                    "Device-Id": st["mac"], "Client-Id": st["client_id"]}
             try:
@@ -206,7 +208,7 @@ class Device:
                                                    open_timeout=10)
             except websockets.InvalidStatus as e:
                 if e.response.status_code in (401, 403):  # token rotated: refetch once
-                    st = await asyncio.to_thread(linx_admin.refresh_token, self.dev["mac"])
+                    st = await asyncio.to_thread(linx_admin.refresh_token, self.dev["mac"], self.state)
                     hdr["Authorization"] = "Bearer " + st["ws_token"]
                     self.ws = await websockets.connect(WS_URL, additional_headers=hdr, max_size=None)
                 else:
@@ -253,6 +255,7 @@ class Device:
                         continue
                     log("听到:", text)
                     self._mirror("user", text)
+                    self._notify("stt", text)
                 elif t == "tts":
                     s = d.get("state")
                     if s == "start":
@@ -260,6 +263,7 @@ class Device:
                     elif s == "sentence_start":
                         log("播报:", d.get("text"))
                         self._mirror("assistant", d.get("text", ""))
+                        self._notify("say", d.get("text", ""))
                     elif s == "stop":
                         self.speaking.clear()
                         self.player.close()
@@ -298,6 +302,13 @@ class Device:
         await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {
             "content": [{"type": "text", "text": text}], "isError": err}}})
 
+    def _notify(self, kind, text):
+        if self.on_event:
+            try:
+                self.on_event(kind, text)
+            except Exception as e:  # 前端出错不影响灵矽会话
+                log(f"✘ on_event {kind}: {type(e).__name__}: {e}")
+
     def _mirror(self, role, text):
         if text:
             threading.Thread(target=self._mirror_blocking, args=(role, text), daemon=True).start()
@@ -312,6 +323,24 @@ class Device:
     async def say_text(self, text):
         await self.ensure()
         await self._send({"type": "listen", "state": "detect", "text": text})
+
+    async def say_audio(self, pcm, pace=0.01):
+        """整段录音（如 TG 语音消息）当作按一次说话送上去：listen start → 帧 → listen stop。
+        按 2 倍实时节奏发帧，不一股脑灌给平台 ASR。"""
+        frames = [pcm[i:i + FRAME_BYTES] for i in range(0, len(pcm) - FRAME_BYTES + 1, FRAME_BYTES)]
+        self.pending_tools += 1  # 送语音期间不算空闲（不断开、不换代）
+        try:
+            await self.ensure()
+            if self.speaking.is_set():
+                await self._send({"type": "abort", "reason": "wake_word_detected"})
+            await self._send({"type": "listen", "state": "start", "mode": "manual"})
+            for f in frames:
+                if not await self._flush([f]):
+                    break
+                await asyncio.sleep(pace)
+            await self._send({"type": "listen", "state": "stop"})
+        finally:
+            self.pending_tools -= 1
 
     async def press_quick(self, key):
         text = self.quick.get(key)

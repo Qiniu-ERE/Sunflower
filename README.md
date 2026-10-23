@@ -208,8 +208,28 @@ python3 -m sunflower.device --profile dev-single-mac   # 设备：空格开始/�
 | 静音只上屏 | 按 `m` 切换。完成回执只显示在面板上，平台下行的语音也不放；开始和结束录音的提示音保留。profile 里写 `device.mute: true` 则启动即静音 |
 | 一两个字 | 「修」「查」派给 Codex，「停」取消，「撤」撤销，「进度」查状态。改了提示词以后，要重跑一次 `linx_admin up` 才会推到平台 |
 | 文字 | 按 `t` 打字，或者用 `--text` |
+| 手机 | Telegram 私聊 bot：打字、发语音或点按钮，见下面「Telegram 入口」 |
 
 出错时的播报会带上下一步，例如「任务失败……可以说「再试一次」」。失败的任务不会提交，这时说「撤销」撤掉的是上一次成功的改动，所以播报不会这样建议。
+
+</details>
+
+<details>
+<summary><b>Telegram 入口</b></summary>
+
+手机私聊 bot，就能发文字、发语音、点按钮，走的是同一条链路：TG → 灵矽软设备（意图识别、工具路由）→ 主机 → Codex。灵矽仍然是大脑；TG 入口单独占一个设备身份，和桌面上的设备互不干扰。
+
+```bash
+# .env 里填 SUNFLOWER_TG_TOKEN（@BotFather 给的）和 SUNFLOWER_TG_ALLOW（允许的 user_id，逗号分隔）
+python3 -m sunflower.linx_admin up --profile tg-bridge   # 第一次：给 TG 入口登记一个软设备（占一个设备名额）
+python3 -m sunflower.tg                                  # 只出站：getUpdates 长轮询，不需要公网地址
+```
+
+- **文字**：照原话交给灵矽，和对着设备说话一样。
+- **语音消息**：转成 16 kHz PCM，当作按一次说话送上去。灵矽的回话转回 OGG/Opus，作为语音消息发回来，附带文字。
+- **按钮**：检查 / 修复 / 进度 / 停下 / 撤销，对应设备上的 1–5 号快捷指令。
+- **进度卡片**：每个任务一张卡片，原地编辑。内容不变就不调接口，两次编辑至少隔 3 s（Telegram 对同一聊天约 1 条/秒）；结束时立即刷新，显示结果和提交。
+- **安全**：只理 `SUNFLOWER_TG_ALLOW` 里的 user_id，其他人的消息一律不回复、不派发（主机是以 `danger-full-access` 跑 Codex 的）。报错信息里不带 bot token。
 
 </details>
 
