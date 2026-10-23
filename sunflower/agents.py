@@ -54,7 +54,8 @@ def isolated_codex_home(src, dst):
 
     使用者的 ~/.codex 里还有个人 AGENTS.md、记忆、MCP 服务；演示时 Codex 会去读，
     既暴露在投屏上又让行为随机器而变（#15）。每次启动重建，渠道改动跟着 ~/.codex 走。
-    已知边界：~/.agents/skills 下的个人技能不在 CODEX_HOME 里，仍会被加载（codex 0.164 无开关可关）。"""
+    ~/.agents/skills 下的个人技能不在 CODEX_HOME 里、隔离不掉，改用 skills.include_instructions=false
+    不让技能清单进上下文（0.164 实测：清单为空，技能搜索也搜不到）。"""
     src, dst = pathlib.Path(src).expanduser(), pathlib.Path(dst)
     if dst.exists():
         shutil.rmtree(dst)
@@ -66,6 +67,7 @@ def isolated_codex_home(src, dst):
             keep = m.group(1).startswith("model_providers.")
         if keep:
             out.append(line)
+    out = ["[skills]", "include_instructions = false", ""] + out
     _write_private(dst / "config.toml", "\n".join(out) + "\n")
     for f in src.glob("*.config.toml"):
         _write_private(dst / f.name, f.read_text(encoding="utf-8"))

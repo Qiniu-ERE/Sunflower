@@ -232,8 +232,16 @@ class CodexHomeTest(unittest.TestCase):
         self.assertEqual(sorted(x.name for x in home.iterdir()), ["config.toml", "p.config.toml"])
         conf = (home / "config.toml").read_text(encoding="utf-8")
         self.assertIn("[model_providers.p.auth]", conf)
-        for leaked in ("mcp_servers", "skills", "projects", "model = "):
+        for leaked in ("mcp_servers", "max_context_tokens", "skills.config", "/s/SKILL.md", "projects", "model = "):
             self.assertNotIn(leaked, conf)
+
+    def test_isolated_codex_home_hides_personal_skills(self):
+        # ~/.agents/skills 不在 CODEX_HOME 里，隔离不掉；0.164 的 skills.include_instructions=false
+        # 让技能清单不进上下文，技能搜索也搜不到（2026-10-23 实测，#15）
+        src = pathlib.Path(tempfile.mkdtemp())
+        (src / "config.toml").write_text('[model_providers.p]\nbase_url = "https://p"\n', encoding="utf-8")
+        conf = (agents.isolated_codex_home(src, src / "home") / "config.toml").read_text(encoding="utf-8")
+        self.assertRegex(conf, r"(?m)^\[skills\]\ninclude_instructions = false$")
 
 
 class DemoResetTest(unittest.TestCase):
