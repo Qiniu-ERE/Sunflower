@@ -12,6 +12,7 @@ import json
 import os
 import pathlib
 import queue
+import re
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -55,13 +56,38 @@ class Bus:
                 self.subs.remove(q)
 
 
-def resolve_channel(hcfg, name, codex_home=None):
+def channel_env_key(name, codex_home):
+    """渠道的 provider 若用 env_key 取密钥，返回变量名；用 auth 命令（钥匙串）或查不到时返回 None。
+    只认 Codex 配置里这两行，不引 TOML 库（3.9 无 tomllib）。"""
+    home = pathlib.Path(codex_home)
+    prof = home / f"{name}.config.toml"
+    m = re.search(r'^model_provider\s*=\s*"([^"]+)"', prof.read_text(encoding="utf-8"), re.M) if prof.exists() else None
+    if not m:
+        return None
+    for f in (prof, home / "config.toml"):
+        if not f.exists():
+            continue
+        sec = re.search(r'^\[model_providers\.%s\]\s*$(.*?)(?=^\[)' % re.escape(m.group(1)),
+                        f.read_text(encoding="utf-8") + "\n[", re.M | re.S)
+        if sec:
+            k = re.search(r'^env_key\s*=\s*"([^"]+)"', sec.group(1), re.M)
+            return k.group(1) if k else None
+    return None
+
+
+def resolve_channel(hcfg, name, codex_home=None, environ=None):
     """Channel name -> codex argv. Known if listed in the profile's codex_channels or if a
     Codex profile file of that name exists (then it gets no extra overrides)."""
     chans = hcfg.get("codex_channels") or {}
-    home = pathlib.Path(codex_home or os.environ.get("CODEX_HOME") or "~/.codex").expanduser()
+    env = os.environ if environ is None else environ
+    home = pathlib.Path(codex_home or env.get("CODEX_HOME") or "~/.codex").expanduser()
     if not name or (name not in chans and not (home / f"{name}.config.toml").exists()):
         raise ValueError(f"未知渠道「{name}」：profile 的 codex_channels 里没有，{home}/{name}.config.toml 也不存在")
+    key = channel_env_key(name, home)
+    if key and not env.get(key):
+        raise ValueError(f"渠道「{name}」从环境变量 {key} 取密钥，本进程环境里没有（launchd 服务不继承 shell 变量）："
+                         f"先 security add-generic-password -a $USER -s sunflower-{key} -w，"
+                         f"再 python3 -m sunflower.service install --keychain-env {key}=sunflower-{key}")
     return agents.codex_argv(name, chans.get(name, []))
 
 

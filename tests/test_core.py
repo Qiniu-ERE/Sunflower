@@ -89,6 +89,23 @@ class ChannelTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             host.resolve_channel(hcfg, "nope", codex_home=home)
 
+    def test_resolve_channel_requires_provider_env_key(self):
+        # icodeeasy 的 provider 从环境变量取 key；launchd 服务环境里没有时，切换要当场失败并说清怎么补
+        home = pathlib.Path(tempfile.mkdtemp())
+        (home / "config.toml").write_text(
+            '[model_providers.icodeeasy]\nname = "icodeeasy"\nenv_key = "OPENAI_API_KEY"\n\n'
+            '[model_providers.qiniu-gpt]\nname = "q"\n[model_providers.qiniu-gpt.auth]\ncommand = "/usr/bin/security"\n')
+        (home / "icodeeasy.config.toml").write_text('model = "m"\nmodel_provider = "icodeeasy"\n')
+        (home / "qiniu-gpt.config.toml").write_text('model_provider = "qiniu-gpt"\n')
+        hcfg = {"codex_channels": {"icodeeasy": [], "qiniu-gpt": []}}
+        with self.assertRaises(ValueError) as cm:
+            host.resolve_channel(hcfg, "icodeeasy", codex_home=home, environ={})
+        self.assertIn("OPENAI_API_KEY", str(cm.exception))
+        self.assertIn("--keychain-env", str(cm.exception))
+        self.assertIn("icodeeasy", host.resolve_channel(hcfg, "icodeeasy", codex_home=home,
+                                                        environ={"OPENAI_API_KEY": "x"}))
+        self.assertIn("qiniu-gpt", host.resolve_channel(hcfg, "qiniu-gpt", codex_home=home, environ={}))
+
 
 class RunnerTest(unittest.TestCase):
     def setUp(self):
