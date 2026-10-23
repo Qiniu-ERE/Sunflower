@@ -1,0 +1,16 @@
+{
+  "description": "树莓派 4B 独立运行：设备 + 主机 + Codex 全在板上；USB 会议麦 + HDMI 屏",
+  "device": {
+    "mac": "02:CC:72:00:00:02",
+    "audio_in": ["arecord", "-q", "-D", "plughw:CARD=default", "-f", "S16_LE", "-r", "16000", "-c", "1", "-t", "raw"],
+    "audio_out": ["aplay", "-q", "-D", "plughw:CARD=default", "-f", "S16_LE", "-r", "16000", "-c", "1", "-t", "raw"],
+    "trigger": "evdev",
+    "host_url": "http://127.0.0.1:8787"
+  },
+  "host": {
+    "bind": "0.0.0.0",
+    "port": 8787,
+    "agent": "codex",
+    "workspace": "~/sunflower-demo"
+  }
+}
