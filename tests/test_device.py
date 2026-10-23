@@ -140,9 +140,30 @@ class ReloadTest(unittest.TestCase):
         busy = {"recording": lambda d: setattr(d, "mic", object()),
                 "tool": lambda d: setattr(d, "pending_tools", 1),
                 "speaking": lambda d: d.speaking.set(),
-                "linx open": lambda d: setattr(d, "ws", FakeWs())}
+                "linx open": lambda d: setattr(d, "ws", FakeWs()),
+                "typing": lambda d: setattr(d, "typing", True)}
         for name, make_busy in busy.items():
             self.assertEqual(self.check(make_busy, "f" * 40), (False, []), name)
+
+    def test_failed_reexec_stops_watching_and_stops_claiming_reload(self):
+        async def go():
+            d = make_device()
+            d.ws = None
+            tries = []
+
+            async def broken():
+                tries.append(1)
+                raise OSError("no such interpreter")
+            d.reload_check = broken
+            await asyncio.wait_for(d.reload_watch(), 1)
+            return tries
+        old = device.RELOAD_POLL_S, device.AUTO_RELOAD, device.log
+        device.RELOAD_POLL_S, device.AUTO_RELOAD, device.log = 0, True, lambda *a: None
+        try:
+            self.assertEqual(asyncio.run(go()), [1])
+            self.assertFalse(device.AUTO_RELOAD)
+        finally:
+            device.RELOAD_POLL_S, device.AUTO_RELOAD, device.log = old
 
 
 class EarconTest(unittest.TestCase):

@@ -150,10 +150,12 @@ class Device:
         self.idle_close_s = float(self.dev.get("idle_close_s", 20))
         self.last_activity = 0.0
         self.pending_tools = 0
+        self.typing = False  # 「t」文字输入进行中：exec 会吞掉半行字，剩下的击键还会被当快捷键
 
     # -- self reload (#27) -------------------------------------------------
     def idle(self):
-        return (self.mic is None and not self.toggling and self.pending_tools == 0 and not self.speaking.is_set()
+        return (self.mic is None and not self.toggling and not self.typing and self.pending_tools == 0
+                and not self.speaking.is_set()
                 and not self.lock.locked() and (self.ws is None or self.ws.state.name != "OPEN"))
 
     async def reload_check(self, head=config.code_commit, execv=os.execv):
@@ -162,20 +164,30 @@ class Device:
         if not new or new == COMMIT or not self.idle():
             return False
         log(f"部署已更新 {(COMMIT or '?')[:7]} → {new[:7]}，设备空闲，切到新代码")
+        import termios
+        import tty
         for fd, mode in _tty:
-            import termios
             termios.tcsetattr(fd, termios.TCSADRAIN, mode)
         self.player.close()
-        execv(sys.executable, [sys.executable, "-m", "sunflower.device", *sys.argv[1:]])
+        try:
+            execv(sys.executable, [sys.executable, "-m", "sunflower.device", *sys.argv[1:]])
+        except OSError:
+            for fd, _ in _tty:  # 回到按键模式，旧代码照常可用
+                tty.setcbreak(fd)
+            raise
         return True
 
     async def reload_watch(self):
+        global AUTO_RELOAD
         while True:
             await asyncio.sleep(RELOAD_POLL_S)
             try:
                 await self.reload_check()
-            except Exception as e:  # 换代失败不影响继续用旧代码
-                log(f"✘ 自动换代失败：{type(e).__name__}: {e}")
+            except Exception as e:  # 失败一次就停：不刷屏，也不再向主机报「会自动换代」
+                AUTO_RELOAD = False
+                log(f"✘ 自动换代失败：{type(e).__name__}: {e}；本次运行不再自动换代，"
+                    "Ctrl-C 后用 python3 -m sunflower.service device 重启")
+                return
 
     # -- connection ------------------------------------------------------
     async def ensure(self):
@@ -408,7 +420,11 @@ def stdin_trigger(loop, dev):
                 asyncio.run_coroutine_threadsafe(dev.toggle_talk(), loop)
             elif ch in (b"t", b"T"):
                 termios.tcsetattr(fd, termios.TCSADRAIN, old)
-                text = input("\n文字需求> ").strip()
+                dev.typing = True
+                try:
+                    text = input("\n文字需求> ").strip()
+                finally:
+                    dev.typing = False
                 tty.setcbreak(fd)
                 if text:
                     asyncio.run_coroutine_threadsafe(dev.say_text(text), loop)
