@@ -9,6 +9,7 @@ on:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15   # 默认 6 小时：apt 源卡住时整个 PR 会被挂半天
     strategy:
       matrix:
         python: ["3.9", "3.12"]
@@ -20,7 +21,15 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -r requirements.txt
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg   # TG 入口的语音转码（OGG/Opus ↔ PCM）
+      - name: ffmpeg（TG 入口的语音转码 OGG/Opus ↔ PCM）
+        timeout-minutes: 6
+        # apt 源偶尔卡住不动（2026-10-23 实测 8 分钟无输出）：单次限 100 s，最多 3 次
+        run: |
+          for i in 1 2 3; do
+            timeout 100 sh -c 'sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg' && exit 0
+            echo "apt 第 $i 次没装上，重试"
+          done
+          exit 1
       - name: scripts/gate.sh
         env:
           EVENT: ${{ github.event_name }}
