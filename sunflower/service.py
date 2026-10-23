@@ -4,6 +4,7 @@
     python3 -m sunflower.service deploy  [--ref origin/main] [--wait 600 | --force]
     python3 -m sunflower.service restart [--wait 600 | --force]
     python3 -m sunflower.service status
+    python3 -m sunflower.service device  [--profile dev-single-mac]   # 在终端里从部署目录启动设备
     python3 -m sunflower.service logs [-n 50]
     python3 -m sunflower.service uninstall
 
@@ -24,7 +25,7 @@ import urllib.request
 from . import config
 
 LABEL = "com.sunflower.host"
-APP = config.HOME / "app"
+APP = config.APP
 LOGS = config.HOME / "logs"
 CONF = "service.json"
 PLIST = pathlib.Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
@@ -77,6 +78,16 @@ def run(conf, secret=keychain, execve=os.execve, python=sys.executable, environ=
     execve(python, argv, env)
 
 
+def device(profile, app=APP, chdir=os.chdir, execve=os.execve, python=sys.executable, environ=None):
+    """从部署目录启动设备进程。之后每次部署，它会在空闲时自己 exec 新代码，不用再手动重启（#27）。
+
+    设备必须在终端里跑：麦克风授权记在终端上，launchd 启动会重新弹授权框。"""
+    if not (pathlib.Path(app) / ".git").exists():
+        raise SystemExit(f"部署目录 {app} 不存在：先 python3 -m sunflower.service install")
+    chdir(app)
+    execve(python, [python, "-m", "sunflower.device", "--profile", profile], dict(os.environ if environ is None else environ))
+
+
 def drain(health, wait=600, poll=5, clock=time):
     """等主机空闲。主机没起来也算可以重启；超过 wait 秒仍忙返回 False。"""
     start = clock.time()
@@ -89,15 +100,19 @@ def drain(health, wait=600, poll=5, clock=time):
         clock.sleep(poll)
 
 
-def drift(running, deployed, main, device=None):
-    """比对四个提交，返回需要处理的事项；空列表表示一致。"""
+def drift(running, deployed, main, device=None, device_reload=False):
+    """比对四个提交，返回需要处理的事项；空列表表示一致。device_reload：设备从部署目录启动，会自己换代。"""
     msgs = []
     if running and deployed and not _same(running, deployed):
         msgs.append(f"主机在跑 {running[:7]}，部署目录是 {deployed[:7]}：需要重启（service restart）")
     if deployed and main and not _same(deployed, main):
         msgs.append(f"部署目录 {deployed[:7]} 与 main {main[:7]} 不一致：需要部署（service deploy）")
     if device and deployed and not _same(device, deployed):
-        msgs.append(f"设备进程在跑 {device[:7]}：在设备终端 Ctrl-C 后重新启动")
+        if device_reload:
+            msgs.append(f"设备进程在跑 {device[:7]}：空闲后会自动换到 {deployed[:7]}")
+        else:
+            msgs.append(f"设备进程在跑 {device[:7]}，不是从部署目录启动的，不会自动换代："
+                        "Ctrl-C 后改用 python3 -m sunflower.service device 启动（之后部署自动换代）")
     return msgs
 
 
@@ -199,8 +214,9 @@ def status(conf):
     print(f"部署目录  {APP}  提交={(deployed or '?')[:7]}；origin/main={(main or '?')[:7]}")
     if dev:
         ago = int(time.time() - dev.get("seen", 0))
-        print(f"设备      提交={dev.get('commit', '?')[:7]}  最近连接 {ago} s 前")
-    msgs = drift((h or {}).get("commit"), deployed, main, dev.get("commit"))
+        print(f"设备      提交={dev.get('commit', '?')[:7]}  最近连接 {ago} s 前"
+              f"  {'随部署自动换代' if dev.get('reload') else '不会自动换代'}")
+    msgs = drift((h or {}).get("commit"), deployed, main, dev.get("commit"), dev.get("reload", False))
     print("\n".join("⚠ " + m for m in msgs) if msgs else "✔ 一致")
     return not msgs
 
@@ -248,6 +264,8 @@ def main(argv=None):
         if name == "deploy":
             p.add_argument("--ref", default="origin/main")
     sub.add_parser("status")
+    p = sub.add_parser("device")
+    p.add_argument("--profile", default=None, help="默认与主机同一个 profile")
     sub.add_parser("run")
     sub.add_parser("uninstall")
     p = sub.add_parser("logs")
@@ -256,6 +274,8 @@ def main(argv=None):
 
     if a.cmd == "run":
         return run(_conf())
+    if a.cmd == "device":
+        return device(a.profile or _conf().get("profile", "dev-single-mac"))
     if a.cmd == "install":
         kenv = dict(x.split("=", 1) for x in a.keychain_env)
         return install({"profile": a.profile, "channel": a.channel, "keychain_env": kenv, "ref": a.ref})

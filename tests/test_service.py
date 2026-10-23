@@ -77,8 +77,30 @@ class DriftTest(unittest.TestCase):
         self.assertEqual(len(msgs), 1)
         self.assertIn("设备", msgs[0])
 
+    def test_drift_says_device_will_reload_itself(self):
+        # 从部署目录启动的设备会在空闲时自己换代，不该再叫人去 Ctrl-C（#27）
+        auto = service.drift("new", "new", "new", "old", device_reload=True)
+        self.assertEqual(len(auto), 1)
+        self.assertIn("自动", auto[0])
+        self.assertNotIn("Ctrl-C", auto[0])
+        manual = service.drift("new", "new", "new", "old", device_reload=False)
+        self.assertIn("service device", manual[0])
+
     def test_no_device_seen_is_not_drift(self):
         self.assertEqual(service.drift("abc", "abc", "abc", None), [])
+
+
+class DeviceLaunchTest(unittest.TestCase):
+    def test_service_device_execs_from_deploy_dir(self):
+        calls = {}
+        with tempfile.TemporaryDirectory() as d:
+            app = pathlib.Path(d)
+            (app / ".git").write_text("gitdir: x")
+            service.device("dev-single-mac", app=app, chdir=lambda p: calls.update(cwd=p),
+                           execve=lambda exe, argv, env: calls.update(exe=exe, argv=argv),
+                           python="/usr/bin/python3")
+        self.assertEqual(calls["cwd"], app)
+        self.assertEqual(calls["argv"], ["/usr/bin/python3", "-m", "sunflower.device", "--profile", "dev-single-mac"])
 
 
 class RunTest(unittest.TestCase):

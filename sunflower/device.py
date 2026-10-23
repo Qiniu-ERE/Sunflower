@@ -69,7 +69,8 @@ class Host:
         """Yield (event, data) from the host SSE stream (no replay)."""
         req = urllib.request.Request(self.url + "/events?replay=0",
                                      headers={"Authorization": "Bearer " + self.token,
-                                              "X-Sunflower-Commit": COMMIT or ""})
+                                              "X-Sunflower-Commit": COMMIT or "",
+                                              "X-Sunflower-Reload": "1" if AUTO_RELOAD else "0"})
         with urllib.request.urlopen(req, timeout=HEARTBEAT_TIMEOUT) as r:
             event = None
             for raw in r:
@@ -83,6 +84,10 @@ class Host:
 
 
 COMMIT = config.code_commit()  # 报给主机，service status 据此发现设备在跑旧代码
+# 只有从部署目录启动的设备才随部署换代；开发仓切分支时不该把半成品 exec 进来
+AUTO_RELOAD = config.ROOT.resolve() == config.APP.resolve()
+RELOAD_POLL_S = 5
+_tty = []  # stdin_trigger 改了终端模式；exec 前要还原，否则新进程会把 cbreak 当成原始模式
 HEARTBEAT_TIMEOUT = 75  # host heartbeats every 30s
 
 
@@ -145,6 +150,32 @@ class Device:
         self.idle_close_s = float(self.dev.get("idle_close_s", 20))
         self.last_activity = 0.0
         self.pending_tools = 0
+
+    # -- self reload (#27) -------------------------------------------------
+    def idle(self):
+        return (self.mic is None and not self.toggling and self.pending_tools == 0 and not self.speaking.is_set()
+                and not self.lock.locked() and (self.ws is None or self.ws.state.name != "OPEN"))
+
+    async def reload_check(self, head=config.code_commit, execv=os.execv):
+        """部署目录换了提交且设备空闲 → 原地 exec 新代码。pid 不变，终端给的麦克风授权也不变。"""
+        new = await asyncio.to_thread(head)
+        if not new or new == COMMIT or not self.idle():
+            return False
+        log(f"部署已更新 {(COMMIT or '?')[:7]} → {new[:7]}，设备空闲，切到新代码")
+        for fd, mode in _tty:
+            import termios
+            termios.tcsetattr(fd, termios.TCSADRAIN, mode)
+        self.player.close()
+        execv(sys.executable, [sys.executable, "-m", "sunflower.device", *sys.argv[1:]])
+        return True
+
+    async def reload_watch(self):
+        while True:
+            await asyncio.sleep(RELOAD_POLL_S)
+            try:
+                await self.reload_check()
+            except Exception as e:  # 换代失败不影响继续用旧代码
+                log(f"✘ 自动换代失败：{type(e).__name__}: {e}")
 
     # -- connection ------------------------------------------------------
     async def ensure(self):
@@ -365,6 +396,7 @@ def stdin_trigger(loop, dev):
     import tty
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
+    _tty.append((fd, old))
     try:
         tty.setcbreak(fd)
         while True:
@@ -439,7 +471,10 @@ async def amain(a):
         return
     trig = evdev_trigger if prof["device"].get("trigger") == "evdev" else stdin_trigger
     threading.Thread(target=trig, args=(dev.loop, dev), daemon=True).start()
-    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出")
+    if AUTO_RELOAD:
+        asyncio.ensure_future(dev.reload_watch())
+    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，t 输入文字，q 退出"
+        + (" · 随部署自动换代" if AUTO_RELOAD else ""))
     await asyncio.Event().wait()
 
 
