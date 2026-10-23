@@ -175,15 +175,21 @@ sunflower/
 └── web/panel.html  进展面板（1080p 投屏 / 7 寸屏自适应，零依赖）
 profiles/           部署形态：硬件差异只放在这里
 demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
-scripts/            树莓派整备与密钥下发
+scripts/            门禁 / 合入 / 发版（gate · merge · release），树莓派整备与密钥下发
 tests/              离线单测（fake_codex 回放事件流，不连云）
 ```
 
 ## 测试
 
 ```bash
-python3 -m unittest -q    # 16 项，覆盖派发立即返回、resume、提交/撤销、失败路径、SSE、鉴权、文本脱敏
+scripts/gate.sh    # 语法 + 全部单测，最后一行 EXIT=0 为通过；本地与 CI 同一条命令
 ```
+
+覆盖派发立即返回、resume、提交/撤销、失败路径、SSE、鉴权、文本脱敏，以及门禁自身的判定逻辑。
+
+## 开发流程
+
+需求和调研走 issue，代码走 PR，PR 过门禁才合入，发版只从绿的 main 打 tag。改动 `sunflower/` 的 PR 要写「规格：不变量 → 测试」，门禁会验证点名的测试在旧代码上失败、在新代码上通过。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 

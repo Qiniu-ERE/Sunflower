@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# 不允许直接推 main：合入只走 PR + scripts/merge.sh（由 GitHub 生成合并提交，记录可见）。
+while read -r _lref _lsha rref _rsha; do
+  if [ "$rref" = refs/heads/main ]; then
+    echo "✘ 不允许直接推送 main。开分支 → PR → scripts/merge.sh <PR号>（见 CONTRIBUTING.md）" >&2
+    exit 1
+  fi
+done
+exit 0
