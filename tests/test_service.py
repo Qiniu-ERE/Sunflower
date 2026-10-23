@@ -104,6 +104,21 @@ class DeviceLaunchTest(unittest.TestCase):
 
 
 class RunTest(unittest.TestCase):
+    def test_keychain_lookup_matches_service_regardless_of_account(self):
+        # 用户按自己的习惯存条目，账户名不一定是 $USER（10-23 实测：账户名 = 服务名）
+        calls = []
+
+        class R:
+            returncode, stdout = 0, "v\n"
+        orig = service.subprocess.run
+        service.subprocess.run = lambda argv, **kw: calls.append(argv) or R()
+        try:
+            self.assertEqual(service.keychain("sunflower-X"), "v")
+        finally:
+            service.subprocess.run = orig
+        self.assertNotIn("-a", calls[0])
+        self.assertEqual(calls[0][calls[0].index("-s") + 1], "sunflower-X")
+
     def test_run_injects_keychain_env_and_execs_host(self):
         calls = {}
         conf = {"profile": "dev-single-mac", "channel": "icodeeasy",
