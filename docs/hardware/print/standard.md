@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | [`stl/common/pot_shell.stl`](stl/common/pot_shell.stl) | 1 | 白 | 口沿朝上 | 花盆壳体：口沿 Ø90、腰部 Ø101、高 64；内壁有托格栅的 45° 内沿，底部有 4 个 M2.5 螺柱，背面开 USB-C 孔 |
 | [`stl/common/base_plate.stl`](stl/common/base_plate.stl) | 1 | 白 | 脚朝上 | 底板：4 个沉头孔、扬声器出声孔、4 只 8 mm 脚，为朝下出声留出缝隙 |
-| [`stl/common/deck.stl`](stl/common/deck.stl) | 1 | 深棕 | 土面朝下 | 土面格栅 Ø84.6：六角孔阵，4 个麦克风孔（对角 44 mm），底部有 6801 轴承座 |
+| [`stl/common/deck.stl`](stl/common/deck.stl) | 1 | 深棕 | 土面朝下 | 土面格栅 Ø85.7：六角孔阵，4 个麦克风孔（对角 44 mm），底部有 6801 轴承座 |
 | [`stl/common/stem_collar.stl`](stl/common/stem_collar.stl) | 2 | 绿 | 平放 | 花茎卡圈：一个在轴承下面，一个在上面，让花茎只能转、不能上下窜 |
 | [`stl/common/leaf_collar.stl`](stl/common/leaf_collar.stl) | 1 | 绿 | 竖放 | 叶托：套在花茎上，两侧各有一个 25° 斜插槽 |
 | [`stl/common/leaf_left.stl`](stl/common/leaf_left.stl) | 1 | 浅绿 | 平放 | 左叶 |
@@ -33,7 +33,7 @@
 
 - 花瓣环用半透明耗材，背后的灯才透得出来。
 - 叶片很薄，建议加 3 mm brim。
-- 所有零件的实体体积合计 168 cm³。按 100% 填充的 PLA 算约 209 g，这是用料的上限。
+- 所有零件的实体体积合计 168 cm³。按 100% 填充的 PLA 算约 208 g，这是用料的上限。
 
 ## 外购件
 
@@ -54,11 +54,11 @@
 1. **底座**：用 4 颗螺丝把底板从下往上拧进花盆的 4 个螺柱。装扬声器的话，先把扬声器朝下粘在底板中间。
 2. **格栅**：把 6801 轴承从格栅底面压进轴承座，外圈顶到唇口为止。把格栅土面朝上放进花盆口沿，它会落在内沿上。
 3. **花茎**：
-   - 铝管从上往下穿过轴承，让底端停在土面下 24 mm。
+   - 铝管从上往下穿过轴承，让底端停在土面下 26 mm。
    - 两个卡圈分别贴住轴承内圈的上、下两面，用胶粘在铝管上。
    - 粘好后花茎只能转，不能上下窜。
 4. **叶片**：
-   - 叶托套在铝管上，让底面高出土面 24 mm，粘牢。
+   - 叶托套在铝管上，让底面高出土面 22 mm，粘牢。
    - 两片叶子的插舌各插进一个斜插槽，粘牢。
    - 开关放进右叶的键座，引线穿过键座底部的孔，沿叶背的槽走到叶托。线要穿进铝管的话，自己在管壁上钻一个孔。
    - 瓢虫键帽粘在开关按柱上。
@@ -93,16 +93,17 @@
 
 ## 没覆盖的、待核实的
 
-- **电机和电子件**：云台电机、联轴器、磁编码器、环形麦克风板、主板和配重都没有建模。铝管底端在土面下 24 mm 悬空，留给电机联轴器；原型先手转。
+- **电机和电子件**：云台电机、联轴器、磁编码器、环形麦克风板、主板和配重都没有建模。铝管底端在土面下 26 mm 悬空，留给电机联轴器；原型先手转。
 - **外购件的厚度和按柱尺寸是占位值**：圆屏模块厚度、灯珠板、开关按柱都在 `model.py` 的 `BUY` 里标了 `*`，拿到实物先量一下。
+- **土面边缘有一圈窄缝**：盆口往上收，格栅必须比口沿最窄处小才放得进去，所以土面边缘和盆壁之间有约 0.5 mm 的缝。
 - **整机高度比概念图矮 4 mm**：概念图标的是约 235，这里是 231（花瓣环 Ø105、脸心高 182 mm、上仰 20°，都按概念图）。
 
 ## 改尺寸、重新生成
 
 ```bash
-python3 -m venv .cad && .cad/bin/pip install manifold3d                              # 只有重新生成时需要
-.cad/bin/python docs/hardware/print/model.py docs/hardware/print                     # 写 stl/ 和 check.md
-.cad/bin/python docs/hardware/print/model.py docs/hardware/print --scene /tmp/scene  # 效果图场景
+python3 -m venv .venv && .venv/bin/pip install manifold3d                              # 只有重新生成时需要
+.venv/bin/python docs/hardware/print/model.py docs/hardware/print                     # 写 stl/ 和 check.md
+.venv/bin/python docs/hardware/print/model.py docs/hardware/print --scene /tmp/scene  # 效果图场景
 swift docs/hardware/print/render.swift /tmp/scene/standard /tmp/hero.png hero        # 渲染，仅 macOS
 ```
 

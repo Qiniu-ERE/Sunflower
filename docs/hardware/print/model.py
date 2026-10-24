@@ -1,8 +1,8 @@
 """太阳花 3D 打印原型：生成两种型号的打印件 STL、装配检查报告和效果图场景。单位 mm，1:1。
 
-    python3 -m venv .cad && .cad/bin/pip install manifold3d                      # 只有重新生成时需要
-    .cad/bin/python docs/hardware/print/model.py docs/hardware/print             # 写 stl/ 和 check.md
-    .cad/bin/python docs/hardware/print/model.py docs/hardware/print --scene DIR # 另写效果图场景（render.swift 读）
+    python3 -m venv .venv && .venv/bin/pip install manifold3d                      # 只有重新生成时需要
+    .venv/bin/python docs/hardware/print/model.py docs/hardware/print             # 写 stl/ 和 check.md
+    .venv/bin/python docs/hardware/print/model.py docs/hardware/print --scene DIR # 另写效果图场景（render.swift 读）
 
 世界坐标：Z 向上，原点在桌面、偏航轴上，正面朝 -Y。花头在自己的局部坐标里建模：脸朝 +Z，
 花瓣环前表面 z = 0；装配时绕 X 转 70°（脸朝前并上仰 20°），再平移到脸心高 182。
@@ -18,9 +18,10 @@ from manifold3d import CrossSection, FillRule, Manifold, OpType
 
 TILT, FACE_Z = 20, 182          # 花头上仰角、脸心高
 POT_BOT, POT_TOP, WALL = 11, 75, 2.4  # 花盆壳体底 / 口沿高度（底板 3 + 脚 8 在下面）、壁厚
-DECK_Z = 69                     # 土面格栅底面高度（格栅厚 3，顶面比口沿低 3）
+DECK_Z = 71                     # 土面格栅底面高度（格栅厚 3，顶面比口沿低 1；盆口往上收，格栅放高才贴得住口沿）
 PLATE_Z0, PLATE_Z1 = -9, -4     # 花头前框在局部 z 上的范围（前面贴花瓣环背面）
 LED_R, PIN_R = 39, 36           # 灯珠圆、定位销圆
+DECK_R = 42.85                  # 格栅半径：比口沿最窄处（z = 75，内半径 43.05）小 0.2，从上面放得进去
 C0 = (0.0, -10.0, -20.0)        # 颈座轴线经过的点（花头局部坐标）
 FIT = 0.2                       # 插配单边间隙
 BUY = {  # 外购件尺寸：来源见 ../README.md「尺寸来源」，标 * 的是占位、要按实物核对
@@ -143,7 +144,7 @@ def base_plate():
 
 
 def deck():
-    plate = cyl(42.3, 3, DECK_Z, 160)
+    plate = cyl(DECK_R, 3, DECK_Z, 160)
     boss = cyl(13.5, 4.5, DECK_Z - 4, 96)
     _, od, w = BUY["bearing"]
     pocket = cyl(od / 2 + 0.05, w + 0.15, DECK_Z - 4.1, 96)  # 轴承压入，外圈顶在 2 mm 的唇上

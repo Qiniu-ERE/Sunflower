@@ -4,9 +4,9 @@
 
 | 文件 | 数量 | 打印姿态 | 外形 X×Y×Z mm | 实体体积 cm³ | 连通体 | 悬空斜面 >45° mm² | 水平桥接 mm² |
 |---|---|---|---|---|---|---|---|
-| `stl/common/pot_shell.stl` | 1 | 口沿朝上 | 101×101×64 | 55.9 | 1 | 9 | 31 |
+| `stl/common/pot_shell.stl` | 1 | 口沿朝上 | 101×101×64 | 54.5 | 1 | 9 | 31 |
 | `stl/common/base_plate.stl` | 1 | 脚朝上 | 68×68×11 | 12.7 | 1 | 0 | 0 |
-| `stl/common/deck.stl` | 1 | 土面朝下 | 85×85×7 | 14.1 | 1 | 0 | 0 |
+| `stl/common/deck.stl` | 1 | 土面朝下 | 86×86×7 | 14.5 | 1 | 0 | 0 |
 | `stl/common/stem_collar.stl` | 2 | 平放 | 14×14×2 | 0.1 | 1 | 0 | 0 |
 | `stl/common/leaf_collar.stl` | 1 | 竖放 | 24×24×14 | 4.4 | 1 | 109 | 0 |
 | `stl/common/leaf_left.stl` | 1 | 平放 | 60×24×2 | 2.2 | 1 | 0 | 0 |
@@ -25,9 +25,9 @@
 
 | 文件 | 数量 | 打印姿态 | 外形 X×Y×Z mm | 实体体积 cm³ | 连通体 | 悬空斜面 >45° mm² | 水平桥接 mm² |
 |---|---|---|---|---|---|---|---|
-| `stl/common/pot_shell.stl` | 1 | 口沿朝上 | 101×101×64 | 55.9 | 1 | 9 | 31 |
+| `stl/common/pot_shell.stl` | 1 | 口沿朝上 | 101×101×64 | 54.5 | 1 | 9 | 31 |
 | `stl/common/base_plate.stl` | 1 | 脚朝上 | 68×68×11 | 12.7 | 1 | 0 | 0 |
-| `stl/common/deck.stl` | 1 | 土面朝下 | 85×85×7 | 14.1 | 1 | 0 | 0 |
+| `stl/common/deck.stl` | 1 | 土面朝下 | 86×86×7 | 14.5 | 1 | 0 | 0 |
 | `stl/common/stem_collar.stl` | 2 | 平放 | 14×14×2 | 0.1 | 1 | 0 | 0 |
 | `stl/common/leaf_collar.stl` | 1 | 竖放 | 24×24×14 | 4.4 | 1 | 109 | 0 |
 | `stl/common/leaf_left.stl` | 1 | 平放 | 60×24×2 | 2.2 | 1 | 0 | 0 |
