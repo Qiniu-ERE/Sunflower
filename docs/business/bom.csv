@@ -7,7 +7,7 @@ id,part,variant,qty,unit_1,unit_1k,currency,kind,source,note,cn_1k,cn_source,cn_
 6,DRV8313PWPR FOC 驱动,共用,1,4.4787,2.8644,USD,报价,https://www.lcsc.com/product-detail/C92482.html,,,,
 7,MAX98357AETE+T 功放,共用,1,1.3356,0.8238,USD,报价,https://www.lcsc.com/product-detail/C910544.html,,,,
 8,40 mm 4 Ω 3 W 扬声器（PUI AS04004PR-WR-R）,共用,1,8.28,4.05,USD,报价,https://www.digikey.com.mx/en/products/detail/pui-audio-inc/AS04004PR-WR-R/13165952,,,,
-9,6800ZZ 轴承,共用,1,4.50,4.05,AUD,报价,https://minibearings.com.au/products/10x19x5-bearings-6800zz,1k 无档，取 50 个以上档（上界）,,,
+9,6801ZZ 轴承（12×21×5，配 Ø12 花茎）,共用,1,4.32,4.32,AUD,报价,https://minibearings.com.au/products/12-21-5-bearings-ball-chrome-steel-bearing-6801zzeco,6801-ZZ-ECO 单只价，无阶梯，1k 按零售计（上界）,,,
 10,CH224K USB PD 取电,共用,1,0.4953,0.2666,USD,报价,https://www.lcsc.com/product-detail/C970725.html,查询时库存 0,,,
 11,WS2812B-2020 花瓣灯,共用,16,0.1175,0.0748,USD,报价,https://www.lcsc.com/product-detail/C965555.html,1k 取 500 档；查询时库存 0,,,
 12,TS-1187A 轻触开关（瓢虫键）,共用,2,0.0208,0.0140,USD,报价,https://www.lcsc.com/product-detail/C318884.html,1k 取 600 档,,,

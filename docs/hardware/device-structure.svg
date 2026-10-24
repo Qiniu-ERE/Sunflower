@@ -419,7 +419,7 @@
 <circle cx="51" cy="1005" r="10.5" fill="#3B3227"/>
 <text x="51.0" y="1009.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >9</text>
 <text x="68.0" y="1010.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >轴承</text>
-<text x="190.0" y="1010.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >6800 深沟球 10×19×5，承受花头弯矩</text>
+<text x="190.0" y="1010.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >6801 深沟球 12×21×5，承受花头弯矩</text>
 <circle cx="601" cy="765" r="10.5" fill="#3B3227"/>
 <text x="601.0" y="769.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >10</text>
 <text x="618.0" y="770.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >4 麦环形阵列板</text>

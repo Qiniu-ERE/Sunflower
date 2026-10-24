@@ -57,6 +57,7 @@
 - 1.28″ GC9A01 圆屏：可视区 Ø32.4 mm，外形 Ø37.5 mm（[Waveshare](https://www.waveshare.com/1.28inch-lcd-module.htm)）
 - 2.1″ 480×480 圆屏（ST7701S）：有效区 53.28 × 53.28 mm，外形 58.18 × 60.71 mm（[Newhaven](https://newhavendisplay.com/de/2-1-inch-480x480-round-ips-tft-lcd-display)）
 - reSpeaker Flex XVF3800 Circular-4：直径 73 mm，麦间距 44 mm（[RobotShop](https://www.robotshop.com/products/respeaker-flex-xvf3800-circular-4-microphone-array-w-xiao-esp32s3-for-robotics-embedded-applications)、[The Pi Hut](https://thepihut.com/products/respeaker-flex-xvf3800-circular-with-xiao-esp32s3)）
+- 6801ZZ 轴承：12 × 21 × 5 mm，内径配 Ø12 花茎（[minibearings](https://minibearings.com.au/products/12-21-5-bearings-ball-chrome-steel-bearing-6801zzeco)）。v0.1 初稿写的是 6800，内径 10 mm 装不进 Ø12 花茎，10-24 改正
 - 待核实：现成阵列板中心没有过轴孔，需要定制环形麦克风板；重心和倾覆角要按实物重新实测
 
 ## 改图
