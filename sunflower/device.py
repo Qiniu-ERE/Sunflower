@@ -572,6 +572,13 @@ def evdev_trigger(loop, dev):
                     asyncio.run_coroutine_threadsafe(dev.press_quick(act), loop)
 
 
+def pick_trigger(dev_conf, isatty=None):
+    """按键来源。stdin 模式下没有终端（launchd 常驻，#40）就不读：说话按键由面板经主机转来。"""
+    if dev_conf.get("trigger") == "evdev":
+        return evdev_trigger
+    return stdin_trigger if (isatty or sys.stdin.isatty)() else None
+
+
 async def amain(a):
     prof = config.load_profile(a.profile)
     env = config.load_env()
@@ -590,11 +597,14 @@ async def amain(a):
         await dev.announce(a.announce)
         await asyncio.sleep(8)
         return
-    trig = evdev_trigger if prof["device"].get("trigger") == "evdev" else stdin_trigger
-    threading.Thread(target=trig, args=(dev.loop, dev), daemon=True).start()
+    trig = pick_trigger(prof["device"])
+    if trig:
+        threading.Thread(target=trig, args=(dev.loop, dev), daemon=True).start()
     if AUTO_RELOAD:
         asyncio.ensure_future(dev.reload_watch())
-    log(f"太阳花设备就绪 · profile={prof['name']} · 按空格/翻页笔说话，1–5 快捷指令，t 输入文字，m 静音，q 退出"
+    keys = ("按空格/翻页笔说话，1–5 快捷指令，t 输入文字，m 静音，q 退出" if trig else
+            "没有终端：在面板上按空格/翻页笔或点按钮说话，1–5 快捷指令，m 静音")
+    log(f"太阳花设备就绪 · profile={prof['name']} · {keys}"
         + (" · 随部署自动换代" if AUTO_RELOAD else "") + (" · 🔇 静音" if dev.muted else ""))
     log("快捷指令：" + " / ".join(f"{k} {v}" for k, v in sorted(dev.quick.items())))
     await asyncio.Event().wait()

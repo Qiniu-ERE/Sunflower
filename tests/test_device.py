@@ -329,6 +329,16 @@ class PanelKeyTest(unittest.TestCase):
         self.assertEqual(states, ["recording", "recognizing"])
 
 
+class TriggerPickTest(unittest.TestCase):
+    """launchd 常驻（#40）：没有终端时不读 stdin，说话按键交给面板。"""
+
+    def test_no_terminal_means_panel_keys_only(self):
+        prof = {"trigger": "stdin"}
+        self.assertIs(device.pick_trigger(prof, isatty=lambda: True), device.stdin_trigger)
+        self.assertIsNone(device.pick_trigger(prof, isatty=lambda: False))
+        self.assertIs(device.pick_trigger({"trigger": "evdev"}, isatty=lambda: False), device.evdev_trigger)
+
+
 class EarconTest(unittest.TestCase):
     def test_tone_is_short_audible_pcm_with_soft_edges(self):
         pcm = device.tone(880, 90)

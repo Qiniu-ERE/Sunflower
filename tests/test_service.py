@@ -120,9 +120,32 @@ class DeviceLaunchTest(unittest.TestCase):
             (app / ".git").write_text("gitdir: x")
             service.device("dev-single-mac", app=app, chdir=lambda p: calls.update(cwd=p),
                            execve=lambda exe, argv, env: calls.update(exe=exe, argv=argv),
-                           python="/usr/bin/python3")
+                           python="/usr/bin/python3", loaded=lambda label: False)
         self.assertEqual(calls["cwd"], app)
         self.assertEqual(calls["argv"], ["/usr/bin/python3", "-m", "sunflower.device", "--profile", "dev-single-mac"])
+
+    def test_device_plist_runs_interactive_from_deploy_dir(self):
+        # 不设 Interactive，launchd 会节流：10-23 实测 5 秒只采到 1.5 秒音频（终端 4.3 秒）
+        p = service.device_plist("/usr/bin/python3", pathlib.Path("/h/.sunflower/app"),
+                                 pathlib.Path("/h/.sunflower/logs"), "/usr/bin", "dev-single-mac")
+        self.assertEqual(p["Label"], service.DEVICE_LABEL)
+        self.assertEqual(p["ProcessType"], "Interactive")
+        self.assertTrue(p["KeepAlive"])
+        self.assertEqual(p["ProgramArguments"],
+                         ["/usr/bin/python3", "-u", "-m", "sunflower.device", "--profile", "dev-single-mac"])
+        self.assertEqual(p["WorkingDirectory"], "/h/.sunflower/app")
+        self.assertTrue(p["StandardOutPath"].endswith("logs/device.log"))
+        self.assertEqual(set(p["EnvironmentVariables"]), {"PATH", "PYTHONUNBUFFERED", "SUNFLOWER_HOME"})
+
+    def test_terminal_device_refuses_while_launchd_device_runs(self):
+        # 两台桌面设备同时在线，面板一次按键会被两边各执行一次
+        with tempfile.TemporaryDirectory() as d:
+            app = pathlib.Path(d)
+            (app / ".git").write_text("gitdir: x")
+            with self.assertRaises(SystemExit) as cm:
+                service.device("dev-single-mac", app=app, chdir=lambda p: None, execve=lambda *a: None,
+                               loaded=lambda label: label == service.DEVICE_LABEL)
+        self.assertIn("device-uninstall", str(cm.exception))
 
 
 class RunTest(unittest.TestCase):

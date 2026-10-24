@@ -268,12 +268,13 @@ python3 -m sunflower.service install      # 装成 launchd 服务：崩溃自动
 python3 -m sunflower.service status       # 主机 / 部署目录 / origin/main / 设备，四个提交是否一致
 python3 -m sunflower.service deploy       # 部署 origin/main 并重启；主机在执行任务时先等它结束
 python3 -m sunflower.service logs
-python3 -m sunflower.service device       # 在终端里从部署目录启动设备：之后每次部署，设备空闲时自己换到新代码
+python3 -m sunflower.service device-install  # 桌面设备也常驻：开机自启，说话按键在面板上（空格 / 翻页笔 / 按钮）
+python3 -m sunflower.service device       # 或者在终端里启动设备：终端按键也能用；与常驻设备二选一
 ```
 
 主机从部署目录 `~/.sunflower/app` 启动，这个目录固定在某个 main 提交上，开发仓切分支不影响正在跑的服务。`scripts/merge.sh` 合入后会自动执行 `deploy --wait 0`：主机忙时跳过，不打断任务。密钥不写进 plist，需要环境变量的渠道用 `--keychain-env VAR=钥匙串服务名` 在启动时从钥匙串注入。
 
-设备不能交给 launchd：麦克风授权记在启动它的终端上。用 `service device` 启动的设备每 5 s 看一次部署目录。提交变了，就等空闲时（没在录音、播报，也没有未返回的工具调用）原地 `exec` 新代码。pid 不变，终端的麦克风授权也不变。
+设备从部署目录启动，每 5 s 看一次部署目录。提交变了，就等空闲时（没在录音、播报，也没有未返回的工具调用）原地 `exec` 新代码，pid 不变。常驻的设备没有终端，说话按键由面板经主机转来（#40）。launchd 下麦克风和扬声器都能用，但 plist 必须设 `ProcessType=Interactive`：默认的后台类型会被节流，实测 5 秒只采到 1.5 秒音频。常驻设备和终端设备不能同时开，否则面板按一次键会被执行两次，所以装了常驻后 `service device` 会拒绝启动。
 
 </details>
 

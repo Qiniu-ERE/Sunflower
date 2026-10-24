@@ -5,6 +5,7 @@
     python3 -m sunflower.service restart [--wait 600 | --force]
     python3 -m sunflower.service status
     python3 -m sunflower.service device  [--profile dev-single-mac]   # 在终端里从部署目录启动设备
+    python3 -m sunflower.service device-install | device-uninstall  # 桌面设备常驻（#40），按键在面板
     python3 -m sunflower.service logs [-n 50]
     python3 -m sunflower.service uninstall
     python3 -m sunflower.service tg-install | tg-uninstall          # TG 入口（#5）常驻，随 deploy 换代
@@ -32,6 +33,8 @@ CONF = "service.json"
 PLIST = pathlib.Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 TG_LABEL = "com.sunflower.tg"
 TG_PLIST = PLIST.with_name(f"{TG_LABEL}.plist")
+DEVICE_LABEL = "com.sunflower.device"
+DEVICE_PLIST = PLIST.with_name(f"{DEVICE_LABEL}.plist")
 LOG_LIMIT = 5 * 1024 * 1024
 BASE_PATH = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
 
@@ -71,6 +74,16 @@ def tg_plist(python, app, logs, path_env, profile="tg-bridge"):
     return p
 
 
+def device_plist(python, app, logs, path_env, profile):
+    """桌面设备常驻（#40）：说话按键改由面板经主机转来，不再需要终端。麦克风 / 扬声器在 launchd 下都可用，
+    但必须 Interactive：默认的后台类型会被节流，10-23 实测 5 秒只采到 1.5 秒音频。"""
+    p = plist(python, app, logs, path_env)
+    log = str(pathlib.Path(logs) / "device.log")
+    p.update(Label=DEVICE_LABEL, ProgramArguments=[python, "-u", "-m", "sunflower.device", "--profile", profile],
+             ProcessType="Interactive", StandardOutPath=log, StandardErrorPath=log)
+    return p
+
+
 def keychain(svc):
     # 只按服务名找：账户名随用户怎么存都行（服务名带 sunflower- 前缀，足够唯一）
     r = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", svc, "-w"],
@@ -91,10 +104,12 @@ def run(conf, secret=keychain, execve=os.execve, python=sys.executable, environ=
     execve(python, argv, env)
 
 
-def device(profile, app=APP, chdir=os.chdir, execve=os.execve, python=sys.executable, environ=None):
-    """从部署目录启动设备进程。之后每次部署，它会在空闲时自己 exec 新代码，不用再手动重启（#27）。
-
-    设备必须在终端里跑：麦克风授权记在终端上，launchd 启动会重新弹授权框。"""
+def device(profile, app=APP, chdir=os.chdir, execve=os.execve, python=sys.executable, environ=None, loaded=None):
+    """在终端里从部署目录启动设备进程（终端按键可用）。之后每次部署，它会在空闲时自己 exec 新代码（#27）。
+    常驻的设备见 device-install；两台同时在线时，面板一次按键会被各执行一次，所以这里拒绝。"""
+    if (loaded or _loaded)(DEVICE_LABEL):
+        raise SystemExit(f"设备已由 launchd 常驻（{DEVICE_LABEL}，日志 {LOGS / 'device.log'}），在面板上按键即可；"
+                         "要改回终端：python3 -m sunflower.service device-uninstall")
     if not (pathlib.Path(app) / ".git").exists():
         raise SystemExit(f"部署目录 {app} 不存在：先 python3 -m sunflower.service install")
     chdir(app)
@@ -235,6 +250,8 @@ def status(conf):
           f"  pid={(h or {}).get('pid')}  渠道={(h or {}).get('channel')}  提交={((h or {}).get('commit') or '?')[:7]}")
     print(f"部署目录  {APP}  提交={(deployed or '?')[:7]}；origin/main={(main or '?')[:7]}")
     print(f"TG 入口   {'已加载，随部署换代' if _loaded(TG_LABEL) else '未安装（service tg-install）'}（{TG_LABEL}）")
+    print(f"设备常驻  {'已加载，按键在面板' if _loaded(DEVICE_LABEL) else '未安装（service device-install；或在终端 service device）'}"
+          f"（{DEVICE_LABEL}）")
     if dev:
         ago = int(time.time() - dev.get("seen", 0))
         print(f"设备      提交={dev.get('commit', '?')[:7]}  最近连接 {ago} s 前"
@@ -287,6 +304,33 @@ def tg_install():
     raise SystemExit("✘ 20 s 内 TG 入口没有就绪")
 
 
+def device_install(profile):
+    if not (APP / ".git").exists():
+        raise SystemExit(f"部署目录 {APP} 不存在：先 python3 -m sunflower.service install")
+    LOGS.mkdir(parents=True, exist_ok=True)
+    log = LOGS / "device.log"
+    rotate(log)
+    start = log.stat().st_size if log.exists() else 0
+    DEVICE_PLIST.write_bytes(plistlib.dumps(device_plist(sys.executable, APP, LOGS, service_path(), profile)))
+    subprocess.run(["launchctl", "bootout", f"{_uid_target()}/{DEVICE_LABEL}"], capture_output=True)
+    subprocess.run(["launchctl", "bootstrap", _uid_target(), str(DEVICE_PLIST)], check=True)
+    for _ in range(40):
+        new = log.read_bytes()[start:].decode(errors="replace") if log.exists() else ""
+        if "设备就绪" in new:
+            print(f"✔ 桌面设备已常驻：{DEVICE_PLIST}；在面板上按空格或点按钮说话；日志 {log}")
+            return
+        time.sleep(0.5)
+    print(new[-2000:] or "（无日志）")
+    raise SystemExit("✘ 20 s 内设备没有就绪")
+
+
+def device_uninstall():
+    subprocess.run(["launchctl", "bootout", f"{_uid_target()}/{DEVICE_LABEL}"], capture_output=True)
+    if DEVICE_PLIST.exists():
+        DEVICE_PLIST.unlink()
+    print(f"已卸载 {DEVICE_LABEL}；终端里启动：python3 -m sunflower.service device")
+
+
 def tg_uninstall():
     subprocess.run(["launchctl", "bootout", f"{_uid_target()}/{TG_LABEL}"], capture_output=True)
     if TG_PLIST.exists():
@@ -321,6 +365,9 @@ def main(argv=None):
     sub.add_parser("run")
     sub.add_parser("uninstall")
     sub.add_parser("tg-install")
+    p = sub.add_parser("device-install")
+    p.add_argument("--profile", default=None, help="默认与主机同一个 profile")
+    sub.add_parser("device-uninstall")
     sub.add_parser("tg-uninstall")
     p = sub.add_parser("logs")
     p.add_argument("-n", type=int, default=50)
@@ -339,6 +386,10 @@ def main(argv=None):
         return tg_install()
     if a.cmd == "tg-uninstall":
         return tg_uninstall()
+    if a.cmd == "device-install":
+        return device_install(a.profile or _conf().get("profile", "dev-single-mac"))
+    if a.cmd == "device-uninstall":
+        return device_uninstall()
     if a.cmd == "logs":
         return logs(a.n)
     conf = _conf()
