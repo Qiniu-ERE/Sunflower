@@ -159,6 +159,8 @@ class Device:
         self.last_activity = 0.0
         self.pending_tools = 0
         self.typing = False  # 「t」文字输入进行中：exec 会吞掉半行字，剩下的击键还会被当快捷键
+        self.turn = None  # 试音这一轮（#40）：{"id", "hyp", "tool", "args"}；有它时工具调用只记录、不执行
+        self.tryout_wait = (12.0, 6.0)  # 松键后等识别结果 / 识别后等工具调用的秒数
 
     # -- self reload (#27) -------------------------------------------------
     def idle(self):
@@ -257,8 +259,7 @@ class Device:
                     if text in self.announcing:
                         self.announcing.discard(text)
                         continue
-                    log("听到:", text)
-                    self._report("idle")
+                    self._heard(text)
                     self._mirror("user", text)
                     self._notify("stt", text)
                 elif t == "tts":
@@ -290,16 +291,27 @@ class Device:
         elif meth == "tools/call":
             asyncio.ensure_future(self._tool(rid, p.get("params") or {}))
 
+    def _heard(self, text):
+        log("听到:", text)
+        self._report("idle")
+        if self.turn is not None and self.turn["hyp"] is None:
+            self.turn["hyp"] = text
+
     async def _tool(self, rid, params):
         name, args = params.get("name"), params.get("arguments") or {}
         log("工具:", name, json.dumps(args, ensure_ascii=False))
         route = TOOL_ROUTES.get(name)
         self.pending_tools += 1
         try:
-            if not route:
+            if self.turn is not None:  # 试音：记下会调什么，不交给主机执行
+                if self.turn["tool"] is None:
+                    self.turn.update(tool=name, args=args)
+                text, err = "试音模式：已记下，没有执行", False
+            elif not route:
                 raise ValueError(f"unknown tool {name}")
-            res = await asyncio.to_thread(self.host.post, route, args)
-            text, err = res.get("say", "好的"), False
+            else:
+                res = await asyncio.to_thread(self.host.post, route, args)
+                text, err = res.get("say", "好的"), False
         except Exception as e:  # host down / timeout must still answer within the platform budget
             text, err = f"主机连接失败：{type(e).__name__}，请检查电脑上的服务", True
         finally:
@@ -386,7 +398,7 @@ class Device:
         self.announcing.add(text)
         await self._send({"type": "listen", "state": "detect", "text": "任务回执", "text_response": text})
 
-    async def toggle_talk(self):
+    async def toggle_talk(self, tryout=None):
         # presses arriving while we connect / start / stop are dropped, never queued:
         # a queued press would spawn a second mic and interleave frames
         if self.toggling:
@@ -394,6 +406,8 @@ class Device:
         self.toggling = True
         try:
             if self.mic is None:
+                # 试音只跟着这一轮走：开口时带编号才算，结束后清掉，不会留下「一直不执行」的状态
+                self.turn = {"id": tryout, "hyp": None, "tool": None, "args": None} if tryout else None
                 # 先开麦再连灵矽：连接要 ~3 s，期间的话先攒着，listen start 之后补发
                 connected = self.ws is not None and self.ws.state.name == "OPEN"
                 ready = asyncio.Event()
@@ -417,6 +431,8 @@ class Device:
                 self._earcon(EARCON_STOP)
                 self._report("recognizing")
                 log("🎙 结束，识别中…")
+                if self.turn is not None:
+                    asyncio.ensure_future(self._finish_tryout(self.turn))
         except Exception as e:
             log(f"✘ 说话失败：{type(e).__name__}: {e}")
             self._report("idle")
@@ -425,6 +441,28 @@ class Device:
                 await self._reap(mic)
         finally:
             self.toggling = False
+
+    async def _finish_tryout(self, turn):
+        """等识别结果和工具调用（各有上限），回报主机，然后断开：下一句用新会话，不被上一句的上下文带偏。"""
+        for key, limit in zip(("hyp", "tool"), self.tryout_wait):
+            t0 = time.monotonic()
+            while turn[key] is None and time.monotonic() - t0 < limit:
+                await asyncio.sleep(0.1)
+            if turn["hyp"] is None:
+                break
+        await asyncio.sleep(0.5)  # 让平台把工具结果念完一句
+        if self.turn is turn:
+            self.turn = None
+        body = {"id": turn["id"], "hyp": turn["hyp"], "tool": turn["tool"], "args": turn["args"]}
+        threading.Thread(target=self._post_quiet, args=("/api/tryout", body), daemon=True).start()
+        if self.ws is not None:
+            await self.ws.close()
+
+    def _post_quiet(self, path, body):
+        try:
+            self.host.post(path, body, timeout=5)
+        except Exception as e:
+            log(f"✘ 回报 {path} 失败：{type(e).__name__}")
 
     def _earcon(self, pcm):
         if self.earcons:
@@ -471,7 +509,7 @@ class Device:
         if event == "key":
             key = data.get("key")
             if key == "talk":
-                return self.toggle_talk()
+                return self.toggle_talk(tryout=data.get("tryout"))
             if key == "mute":
                 self.toggle_mute()
             elif key in self.quick:

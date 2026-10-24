@@ -289,7 +289,7 @@ class PanelKeyTest(unittest.TestCase):
             d = make_device()
             done = []
 
-            async def talk():
+            async def talk(tryout=None):
                 done.append("talk")
 
             async def quick(k):
@@ -337,6 +337,54 @@ class TriggerPickTest(unittest.TestCase):
         self.assertIs(device.pick_trigger(prof, isatty=lambda: True), device.stdin_trigger)
         self.assertIsNone(device.pick_trigger(prof, isatty=lambda: False))
         self.assertIs(device.pick_trigger({"trigger": "evdev"}, isatty=lambda: False), device.evdev_trigger)
+
+
+class TryoutTurnTest(unittest.TestCase):
+    """试音（#40）：带试音编号的那一轮只记下听到的话和工具调用，不执行；记完断开，下一句用新会话。"""
+
+    def test_tryout_turn_records_tool_without_executing(self):
+        class H:
+            def __init__(self):
+                self.posts = []
+
+            def post(self, path, body=None, timeout=12):
+                self.posts.append((path, body))
+                return {"ok": True, "say": "好的"}
+
+        class Ws(FakeWs):
+            closed = False
+
+            async def close(self):
+                self.closed = True
+
+        J = __import__("json")
+
+        async def go():
+            d = make_device()
+            d.host, d.ws = H(), Ws()
+            d.ensure = lambda: asyncio.sleep(0)
+            await d.toggle_talk(tryout="t1")
+            await asyncio.sleep(0.05)
+            await d.toggle_talk()
+            d._heard("嗯，停下。")
+            await d._tool(7, {"name": "self.code.cancel", "arguments": {}})
+            for _ in range(60):
+                if any(p == "/api/tryout" for p, _ in d.host.posts):
+                    break
+                await asyncio.sleep(0.05)
+            reply = J.loads(d.ws.json[-1][1])["payload"]["result"]["content"][0]["text"]
+            ws, d.ws = d.ws, Ws()
+            await d._tool(8, {"name": "self.code.status", "arguments": {}})  # 试音那轮结束后照常执行
+            return d, ws, reply
+        d, ws, reply = asyncio.run(go())
+        paths = [p for p, _ in d.host.posts]
+        self.assertNotIn("/api/cancel", paths)
+        self.assertIn("/api/status", paths)
+        body = next(b for p, b in d.host.posts if p == "/api/tryout")
+        self.assertEqual((body["id"], body["hyp"], body["tool"]), ("t1", "嗯，停下。", "self.code.cancel"))
+        self.assertIn("没有执行", reply)
+        self.assertTrue(ws.closed)
+        self.assertIsNone(d.turn)
 
 
 class EarconTest(unittest.TestCase):

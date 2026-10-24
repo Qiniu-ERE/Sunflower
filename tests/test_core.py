@@ -335,13 +335,27 @@ class HostApiTest(unittest.TestCase):
         self.assertEqual(cm.exception.code, 400)
 
 
+class TryoutScoreTest(unittest.TestCase):
+    """试音打分（#40）：按「实际会发生什么」判对错，听错成同音字但主机兜底叫停也算对。"""
+
+    def test_scores_by_what_would_actually_happen(self):
+        from sunflower import tryout
+        r = tryout.score("quiet", 5, "嗯，听下。", "self.code.dispatch", {"text": "听下"})
+        self.assertEqual((r["tool"], r["ok"], r["exact"], r["heard"]), ("cancel", True, False, True))
+        r = tryout.score("breathy", 4, None, None, None)
+        self.assertEqual((r["heard"], r["ok"], r["cer"]), (False, False, 1.0))
+        r = tryout.score("normal", 2, "撤销刚才的改动。", "self.code.undo", {})
+        self.assertEqual((r["exact"], r["ok"], r["cer"]), (True, True, 0.0))
+
+
 class PanelKeyApiTest(unittest.TestCase):
     """面板接管说话按键（#40）：按键经主机只到桌面设备；TG 入口不冒充设备。"""
 
     def setUp(self):
         self.bus = host.Bus()
         runner = agents.CodexRunner(git_repo(), self.bus.emit, base_argv=FAKE, run_dir=tempfile.mkdtemp())
-        self.srv = ThreadingHTTPServer(("127.0.0.1", 0), host.make_handler(self.bus, runner, "tok"))
+        self.log = pathlib.Path(tempfile.mkdtemp()) / "tryout.jsonl"
+        self.srv = ThreadingHTTPServer(("127.0.0.1", 0), host.make_handler(self.bus, runner, "tok", tryout_log=self.log))
         self.srv.daemon_threads = True
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
         self.base = f"http://127.0.0.1:{self.srv.server_address[1]}"
@@ -415,6 +429,19 @@ class PanelKeyApiTest(unittest.TestCase):
         self.assertEqual(self.wait(got, "device")[0]["state"], "recording")
         self.assertTrue(self.post("/api/device", {"muted": True})["ok"])
         self.assertEqual(self.post("/api/device", {"state": "boom"})["code"], 400)
+
+    def test_tryout_turn_is_recorded_not_executed(self):
+        got = self.stream("device")
+        self.assertEqual(self.post("/api/key", {"key": "talk", "tryout": {"cond": "quiet", "idx": 99}})["code"], 400)
+        self.assertTrue(self.post("/api/key", {"key": "talk", "tryout": {"cond": "quiet", "idx": 5}})["ok"])
+        tid = self.wait(got, "key")[0]["tryout"]
+        res = self.post("/api/tryout", {"id": tid, "hyp": "嗯，听下。", "tool": "self.code.dispatch",
+                                        "args": {"text": "听下"}})
+        self.assertTrue(res["ok"])
+        row = json.loads(self.log.read_text().splitlines()[0])
+        self.assertEqual((row["cond"], row["ref"], row["tool"], row["ok"]), ("quiet", "停下", "cancel", True))
+        self.assertEqual(self.wait(got, "tryout")[0]["ref"], "停下")
+        self.assertEqual(self.post("/api/tryout", {"id": tid, "hyp": "x"})["code"], 404)  # 一轮只记一次
 
 
 if __name__ == "__main__":

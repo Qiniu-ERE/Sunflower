@@ -16,10 +16,11 @@ import queue
 import re
 import threading
 import time
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import agents, config
+from . import agents, config, tryout
 
 WEB = pathlib.Path(__file__).resolve().parent / "web"
 HEARTBEAT_S = 30
@@ -94,8 +95,10 @@ def resolve_channel(hcfg, name, codex_home=None, environ=None):
     return agents.codex_argv(name, chans.get(name, []))
 
 
-def make_handler(bus, runner, token, resolve=None):
+def make_handler(bus, runner, token, resolve=None, tryout_log=None):
     commit, pid, started = config.code_commit(), os.getpid(), time.time()
+    tryout_log = pathlib.Path(tryout_log or config.HOME / "tryout.jsonl")
+    turns = {}  # 试音轮次：编号 → (条件, 第几句)；设备回报一次即销账
     device = {}  # 最近一次连上 /events 的桌面设备所报告的代码提交
     desks = []  # 正连着 /events 的桌面设备（TG 入口不算）；面板按键只发给它们
 
@@ -136,8 +139,11 @@ def make_handler(bus, runner, token, resolve=None):
                 return self._json(200, {"ok": True, "busy": runner.busy(), "channel": runner.channel,
                                         "commit": commit, "pid": pid, "started": int(started),
                                         "device": dict(device) or None})
-            if path in ("/", "/panel"):
-                body = (WEB / "panel.html").read_bytes()
+            if path == "/api/tryout/phrases":  # 公开的固定句子，不含密钥
+                return self._json(200, {"phrases": [{"text": t, "expect": e} for t, e in tryout.PHRASES],
+                                        "conds": [{"id": c, "name": n, "hint": h} for c, n, h in tryout.CONDS]})
+            if path in ("/", "/panel", "/tryout"):
+                body = (WEB / ("tryout.html" if path == "/tryout" else "panel.html")).read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
@@ -195,9 +201,25 @@ def make_handler(bus, runner, token, resolve=None):
                 key = body.get("key")
                 if key not in PANEL_KEYS:
                     return self._json(400, {"ok": False, "say": f"不认识的按键：{key}"})
+                t = body.get("tryout")
+                if t is not None and (key != "talk" or t.get("cond") not in {c[0] for c in tryout.CONDS}
+                                      or t.get("idx") not in range(len(tryout.PHRASES))):
+                    return self._json(400, {"ok": False, "say": f"试音参数不对：{t}"})
                 if not desks:
                     return self._json(409, {"ok": False, "say": "桌面设备没在线：终端跑 python3 -m sunflower.service status 看「设备」一行"})
-                bus.emit("key", {"key": key})
+                ev = {"key": key}
+                if t is not None:
+                    ev["tryout"] = uuid.uuid4().hex[:8]
+                    turns[ev["tryout"]] = (t["cond"], t["idx"])
+                bus.emit("key", ev)
+                return self._json(200, {"ok": True})
+            if path == "/api/tryout":
+                turn = turns.pop(body.get("id"), None)
+                if turn is None:
+                    return self._json(404, {"ok": False, "say": "没有这一轮试音"})
+                row = tryout.score(*turn, body.get("hyp"), body.get("tool"), body.get("args"))
+                tryout.append(tryout_log, row)
+                bus.emit("tryout", row)
                 return self._json(200, {"ok": True})
             if path == "/api/device":
                 state, muted = body.get("state"), body.get("muted")
@@ -283,7 +305,7 @@ def main(argv=None):
     srv.daemon_threads = True
     print(f"sunflower host on http://{srv.server_address[0]}:{srv.server_address[1]}  "
           f"workspace={runner.workspace}  channel={channel or '(pinned argv)'}  "
-          f"panel=/panel（本机不用令牌；别的机器加 ?t=<SUNFLOWER_TOKEN>）", flush=True)
+          f"panel=/panel  tryout=/tryout（本机不用令牌；别的机器加 ?t=<SUNFLOWER_TOKEN>）", flush=True)
     emit("state", {"state": "idle", "channel": channel})
     try:
         srv.serve_forever()
