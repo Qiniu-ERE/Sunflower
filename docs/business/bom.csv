@@ -16,7 +16,6 @@ id,part,variant,qty,unit_1,unit_1k,currency,kind,source,note,cn_1k,cn_source,cn_
 15,铝管、配重钢环、线材、螺丝、脚垫,共用,1,8,2.50,USD,假设,,估计,,,
 16,包装（彩盒、内衬、说明书）,共用,1,0,2.00,USD,假设,,样机不计,,,
 17,组装与测试人工,共用,1,0,3.00,USD,假设,,约 15 min/台 × 12 USD/h,,,
-18,GC9A01 1.28″ 圆屏模块,标准版,1,14.59,14.31,USD,报价,https://www.waveshare.com/1.28inch-lcd-module.htm,模块价（非裸屏），1k 取 50–99 档（上界）,28.42,https://www.buydisplay.com/chinese/1-28-inch-tft-lcd-display-240x240-round-circle-screen-for-smart-watch,buydisplay 中文站 100 片档，不含税；裸屏还是模块未核实
 19,2.1″ 480×480 圆屏 ST7701S（Orient AFI480480A0R）,屏显版,1,19.23,14.61,USD,报价,https://orientdisplay.com/products/2-1-sunlight-readable-round-ips-480x480-600-nits/,1k 取 50 片以上档（上界）,,,
 20,ESP32-S3-WROOM-1-N8R8 花头主控,屏显版,1,5.0796,3.5366,USD,报价,https://www.lcsc.com/product-detail/C2913201.html,1k 取 650 档；查询时库存 0,,,
 21,花头板 PCB + 被动件 + 透明面罩,屏显版,1,15,2.50,USD,假设,,估计,,,
