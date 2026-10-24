@@ -2,7 +2,7 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#7A6E5D"/></marker><marker id="arrI" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#3B3227"/></marker><marker id="arrO" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#D9801A"/></marker><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#FFFDF7"/><line x1="0" y1="0" x2="0" y2="6" stroke="#CFC6B4" stroke-width="1.6"/></pattern><pattern id="hatchD" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#8A8F96"/><line x1="0" y1="0" x2="0" y2="5" stroke="#5E636A" stroke-width="1.5"/></pattern><pattern id="grille" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#5D4E44"/><circle cx="3.5" cy="3.5" r="1.4" fill="#2E2621"/></pattern><radialGradient id="face" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#FFC56B"/><stop offset="1" stop-color="#F29A2E"/></radialGradient><linearGradient id="potg" x1="0" x2="1"><stop offset="0" stop-color="#F1EBDD"/><stop offset=".35" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E9E2D2"/></linearGradient></defs>
 <rect width="1800" height="1200" fill="#FBF8F0"/>
 <text x="40.0" y="52.0" font-size="30" fill="#3B3227" text-anchor="start" font-weight="800" >太阳花 Sunflower · 实体设备结构设计图</text>
-<text x="40.0" y="82.0" font-size="15" fill="#7A6E5D" text-anchor="start" font-weight="400" >桌面语音编程伙伴：听声转向（4 麦阵列定位 + 单轴偏航）· 表情屏 · 花瓣状态灯 · 瓢虫说话键 —— 单位 mm，三视图 1 mm = 2 px</text>
+<text x="40.0" y="82.0" font-size="15" fill="#7A6E5D" text-anchor="start" font-weight="400" >桌面语音编程伙伴：听声转向（4 麦阵列定位 + 单轴偏航）· 笑脸花芯 · 花瓣状态灯 · 瓢虫说话键 —— 单位 mm，三视图 1 mm = 2 px</text>
 <text x="1760.0" y="52.0" font-size="15" fill="#7A6E5D" text-anchor="end" font-weight="600" >v0.1 概念结构</text>
 <text x="1760.0" y="76.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-23</text>
 <line x1="40" y1="100" x2="1760" y2="100" stroke="#B9AE9A"/>
@@ -71,7 +71,6 @@
 <ellipse cx="272.1" cy="208.6" rx="16" ry="26" fill="#FFD54F" stroke="#D9A400" stroke-width="1.2" transform="rotate(337.50 272.1 208.6)"/>
 <ellipse cx="263.9" cy="203.5" rx="4" ry="8" fill="#FFF3C4" opacity=".7" transform="rotate(337.50 263.9 203.5)"/>
 <circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="1.5"/>
-<circle cx="300" cy="276" r="33" fill="none" stroke="#E2882A" stroke-width="1.2" stroke-dasharray="3 3"/>
 <circle cx="286" cy="268" r="5" fill="#6D2C1F"/><circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="287.5" cy="266.5" r="1.5" fill="#fff"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
 <path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 <ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity=".42"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity=".42"/>
@@ -93,16 +92,11 @@
 <g stroke="#7A6E5D" stroke-width="1"><line x1="104" y1="276" x2="104" y2="640" marker-start="url(#arr)" marker-end="url(#arr)"/></g>
 <rect x="94" y="425.0" width="20" height="66" fill="#FBF8F0"/>
 <text x="104.0" y="463.0" font-size="13.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" transform="rotate(-90 104 458.0)">脸心 182</text>
-<polyline points="436,214 348,246" fill="none" stroke="#3B3227" stroke-width="1"/>
+<polyline points="436,232 348,246" fill="none" stroke="#3B3227" stroke-width="1"/>
 <circle cx="348" cy="246" r="2.6" fill="#3B3227"/>
-<circle cx="450" cy="214" r="11" fill="#3B3227"/>
-<text x="450.0" y="218.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
-<text x="467.0" y="219.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >脸盖 Ø56</text>
-<polyline points="436,250 326,294" fill="none" stroke="#3B3227" stroke-width="1"/>
-<circle cx="326" cy="294" r="2.6" fill="#3B3227"/>
-<circle cx="450" cy="250" r="11" fill="#3B3227"/>
-<text x="450.0" y="254.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >2</text>
-<text x="467.0" y="255.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >圆屏 Ø32.4</text>
+<circle cx="450" cy="232" r="11" fill="#3B3227"/>
+<text x="450.0" y="236.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
+<text x="467.0" y="237.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >脸盖 Ø56（固定笑脸）</text>
 <polyline points="436,392 386,418" fill="none" stroke="#3B3227" stroke-width="1"/>
 <circle cx="386" cy="418" r="2.6" fill="#3B3227"/>
 <circle cx="450" cy="392" r="11" fill="#3B3227"/>
@@ -154,27 +148,21 @@
 <rect x="858" y="171" width="44" height="53" rx="20" fill="#FFD54F" fill-opacity=".85" stroke="#D9A400"/>
 <rect x="858" y="328" width="44" height="53" rx="20" fill="#FFD54F" fill-opacity=".85" stroke="#D9A400"/>
 <rect x="864" y="214" width="44" height="124" rx="10" fill="url(#hatch)" stroke="#CFC6B4" stroke-width="1.4"/><rect x="868" y="222" width="34" height="108" rx="6" fill="#F3EEE3"/>
-<path d="M852,220 h8 v23 h-8 z M852,309 h8 v23 h-8 z" fill="#F6A33A" stroke="#D9801A"/><rect x="852" y="243" width="3" height="66" fill="#CFE8FF" opacity=".8"/>
-<rect x="858" y="238" width="8" height="76" fill="#1F2A44" stroke="#111"/><rect x="866" y="250" width="5" height="52" fill="#2E7D4F"/>
+<path d="M852,220 h8 v112 h-8 z" fill="#F6A33A" stroke="#D9801A"/>
 <rect x="866" y="192" width="8" height="8" fill="#FFB300" stroke="#C77800"/><rect x="874" y="190" width="3" height="12" fill="#2E7D4F"/>
 <rect x="866" y="352" width="8" height="8" fill="#FFB300" stroke="#C77800"/><rect x="874" y="350" width="3" height="12" fill="#2E7D4F"/>
-<path d="M871,276 C882,290 888,320 888,338" fill="none" stroke="#F6A33A" stroke-width="2"/>
+<path d="M877,196 C890,230 892,300 888,338" fill="none" stroke="#F6A33A" stroke-width="2"/>
 </g>
 <path d="M868,350 L892,350 L874.3,335.0 L854.3,327.0 Z" fill="#B9BFC7" stroke="#6E747C"/>
 <line x1="853.7" y1="266.4" x2="740.9" y2="225.4" stroke="#D9801A" stroke-width="1.3" marker-end="url(#arrO)"/>
 <line x1="853.7" y1="266.4" x2="728.7" y2="266.4" stroke="#D9801A" stroke-width="1" stroke-dasharray="4 3"/>
 <path d="M763.7,266.4 A90 90 0 0 1 769.1,235.6" fill="none" stroke="#D9801A"/>
 <text x="755.7" y="254.4" font-size="13.5" fill="#D9801A" text-anchor="end" font-weight="700" >仰 20°</text>
-<polyline points="704,330 871,221" fill="none" stroke="#3B3227" stroke-width="1"/>
-<circle cx="871" cy="221" r="2.6" fill="#3B3227"/>
-<circle cx="690" cy="330" r="11" fill="#3B3227"/>
-<text x="690.0" y="334.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
-<text x="673.0" y="335.0" font-size="14" fill="#3B3227" text-anchor="end" font-weight="400" >脸盖</text>
-<polyline points="704,362 854,292" fill="none" stroke="#3B3227" stroke-width="1"/>
-<circle cx="854" cy="292" r="2.6" fill="#3B3227"/>
-<circle cx="690" cy="362" r="11" fill="#3B3227"/>
-<text x="690.0" y="366.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >2</text>
-<text x="673.0" y="367.0" font-size="14" fill="#3B3227" text-anchor="end" font-weight="400" >圆屏</text>
+<polyline points="704,346 860,251" fill="none" stroke="#3B3227" stroke-width="1"/>
+<circle cx="860" cy="251" r="2.6" fill="#3B3227"/>
+<circle cx="690" cy="346" r="11" fill="#3B3227"/>
+<text x="690.0" y="350.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
+<text x="673.0" y="351.0" font-size="14" fill="#3B3227" text-anchor="end" font-weight="400" >脸盖（实心）</text>
 <polyline points="996,200 897,197" fill="none" stroke="#3B3227" stroke-width="1"/>
 <circle cx="897" cy="197" r="2.6" fill="#3B3227"/>
 <circle cx="1010" cy="200" r="11" fill="#3B3227"/>
@@ -352,110 +340,106 @@
 <text x="1612.0" y="790.0" font-size="12.5" fill="#3B3227" text-anchor="start" font-weight="400" >本仓现有主机/面板</text>
 <text x="1612.0" y="812.0" font-size="12.5" fill="#3B3227" text-anchor="start" font-weight="400" >代码不改，设备只</text>
 <text x="1612.0" y="834.0" font-size="12.5" fill="#3B3227" text-anchor="start" font-weight="400" >替换 Mac 上的软设备</text>
-<text x="1150.0" y="900.0" font-size="19" fill="#3B3227" text-anchor="start" font-weight="700" >E　状态 → 表情 / 灯 / 动作</text>
-<text x="1150.0" y="922.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >对应主机 state 事件</text>
+<text x="1150.0" y="900.0" font-size="19" fill="#3B3227" text-anchor="start" font-weight="700" >E　状态 → 灯 / 花芯 / 动作</text>
+<text x="1150.0" y="922.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >对应主机 state 事件；标准版脸是固定笑脸，状态只看花瓣灯</text>
 <rect x="1150" y="942" width="610" height="26" fill="#EFE7D6"/>
 <text x="1158.0" y="960.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >状态</text>
-<text x="1258.0" y="960.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >② 圆屏表情</text>
-<text x="1408.0" y="960.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >③ 花瓣灯</text>
+<text x="1258.0" y="960.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >标准版：③ 花瓣灯</text>
+<text x="1408.0" y="960.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >屏显版：⑲ 花芯</text>
 <text x="1568.0" y="960.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >动作</text>
 <text x="1158.0" y="988.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >待机</text>
-<text x="1258.0" y="988.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >微笑、慢眨眼</text>
-<text x="1408.0" y="988.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >暖白呼吸 10%</text>
+<text x="1258.0" y="988.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >暖白呼吸 10%</text>
+<text x="1408.0" y="988.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >微笑、慢眨眼</text>
 <text x="1568.0" y="988.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >朝向上一位说话人</text>
 <rect x="1150" y="998" width="610" height="30" fill="#F6F0E4"/>
 <text x="1158.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >聆听</text>
-<text x="1258.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >眼睛睁大</text>
-<text x="1408.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >黄色常亮</text>
+<text x="1258.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >黄色常亮</text>
+<text x="1408.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >睁眼 + 听写回显</text>
 <text x="1568.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >按 θ 转向</text>
 <text x="1158.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >执行中</text>
-<text x="1258.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >思考眼 + 进度点</text>
-<text x="1408.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >顺时针流水</text>
+<text x="1258.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >顺时针流水</text>
+<text x="1408.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >进度环 + 当前步骤</text>
 <text x="1568.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >保持不动</text>
 <rect x="1150" y="1058" width="610" height="30" fill="#F6F0E4"/>
 <text x="1158.0" y="1078.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >完成</text>
-<text x="1258.0" y="1078.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >眯眼笑 + 腮红</text>
-<text x="1408.0" y="1078.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >绿色闪 2 次</text>
+<text x="1258.0" y="1078.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >绿色闪 2 次</text>
+<text x="1408.0" y="1078.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >结果 + 提交号</text>
 <text x="1568.0" y="1078.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >播报结果、点头</text>
 <text x="1158.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >出错</text>
-<text x="1258.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >皱眉</text>
-<text x="1408.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >橙红常亮</text>
+<text x="1258.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >橙红常亮</text>
+<text x="1408.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >失败数 + 下一步</text>
 <text x="1568.0" y="1108.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >播报下一步建议</text>
-<text x="1150.0" y="1140.0" font-size="12.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >「点头」= 偏航 ±8° 往复一次（单轴实现，无需俯仰电机）</text>
+<text x="1150.0" y="1140.0" font-size="12.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >屏显版花瓣灯同标准版；「点头」= 偏航 ±8° 往复一次（单轴实现，无需俯仰电机）</text>
 <text x="40.0" y="720.0" font-size="19" fill="#3B3227" text-anchor="start" font-weight="700" >零件表（标准版）</text>
-<text x="40.0" y="742.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >屏显版只换花头（⑲–㉒），见解构图；外购件尺寸取自供应商页面，以实物 / 规格书为准</text>
+<text x="40.0" y="742.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >② 空缺：标准版花芯不通电、无屏；屏显版只换花头（⑲–㉒），见解构图；外购件尺寸取自供应商页面，以实物 / 规格书为准</text>
 <circle cx="51" cy="765" r="10.5" fill="#3B3227"/>
 <text x="51.0" y="769.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
 <text x="68.0" y="770.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >脸盖</text>
-<text x="190.0" y="770.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >橙色 PC，圆窗 Ø33，腮红移印</text>
+<text x="190.0" y="770.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >橙色 PC 实心无开窗，固定笑脸 + 腮红移印（不通电）</text>
 <circle cx="51" cy="795" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="799.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >2</text>
-<text x="68.0" y="800.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >圆屏</text>
-<text x="190.0" y="800.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >1.28″ GC9A01 240×240，可视 Ø32.4 / 外形 Ø37.5</text>
+<text x="51.0" y="799.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >3</text>
+<text x="68.0" y="800.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >花瓣灯环</text>
+<text x="190.0" y="800.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >16 × WS2812B-2020，半透黄 PC 花瓣导光</text>
 <circle cx="51" cy="825" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="829.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >3</text>
-<text x="68.0" y="830.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >花瓣灯环</text>
-<text x="190.0" y="830.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >16 × WS2812B-2020，半透黄 PC 花瓣导光</text>
+<text x="51.0" y="829.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >4</text>
+<text x="68.0" y="830.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >头壳</text>
+<text x="190.0" y="830.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >ABS，与颈座固定 20° 仰角</text>
 <circle cx="51" cy="855" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="859.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >4</text>
-<text x="68.0" y="860.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >头壳</text>
-<text x="190.0" y="860.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >ABS，与颈座固定 20° 仰角</text>
+<text x="51.0" y="859.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >5</text>
+<text x="68.0" y="860.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >花茎管</text>
+<text x="190.0" y="860.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >Ø12 / Ø8 铝管，5 芯 AWG30：灯 DIN、按键 ×2、电源 ×2</text>
 <circle cx="51" cy="885" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="889.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >5</text>
-<text x="68.0" y="890.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >花茎管</text>
-<text x="190.0" y="890.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >Ø12 / Ø8 铝管，内走 10 芯 AWG30（屏 SPI + 灯 + 按键）</text>
+<text x="51.0" y="889.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >6</text>
+<text x="68.0" y="890.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >叶片 ×2</text>
+<text x="190.0" y="890.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >随花头一起转</text>
 <circle cx="51" cy="915" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="919.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >6</text>
-<text x="68.0" y="920.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >叶片 ×2</text>
-<text x="190.0" y="920.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >随花头一起转</text>
+<text x="51.0" y="919.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >7</text>
+<text x="68.0" y="920.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >瓢虫说话键</text>
+<text x="190.0" y="920.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >轻触开关、竖直按压（不产生偏航力矩）</text>
 <circle cx="51" cy="945" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="949.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >7</text>
-<text x="68.0" y="950.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >瓢虫说话键</text>
-<text x="190.0" y="950.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >轻触开关、竖直按压（不产生偏航力矩）</text>
+<text x="51.0" y="949.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >8</text>
+<text x="68.0" y="950.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >声学格栅（土面）</text>
+<text x="190.0" y="950.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >Ø78 冲孔盖，麦克风与出线孔</text>
 <circle cx="51" cy="975" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="979.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >8</text>
-<text x="68.0" y="980.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >声学格栅（土面）</text>
-<text x="190.0" y="980.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >Ø78 冲孔盖，麦克风与出线孔</text>
+<text x="51.0" y="979.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >9</text>
+<text x="68.0" y="980.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >轴承</text>
+<text x="190.0" y="980.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >6801 深沟球 12×21×5，承受花头弯矩</text>
 <circle cx="51" cy="1005" r="10.5" fill="#3B3227"/>
-<text x="51.0" y="1009.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >9</text>
-<text x="68.0" y="1010.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >轴承</text>
-<text x="190.0" y="1010.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >6801 深沟球 12×21×5，承受花头弯矩</text>
+<text x="51.0" y="1009.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >10</text>
+<text x="68.0" y="1010.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >4 麦环形阵列板</text>
+<text x="190.0" y="1010.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >麦间距 44 mm，中心过轴孔；XVF3800：DOA / AEC / 降噪</text>
 <circle cx="601" cy="765" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="769.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >10</text>
-<text x="618.0" y="770.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >4 麦环形阵列板</text>
-<text x="740.0" y="770.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >麦间距 44 mm，中心过轴孔；XVF3800：DOA / AEC / 降噪</text>
+<text x="601.0" y="769.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >11</text>
+<text x="618.0" y="770.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >线缆盘绕 + 挡销</text>
+<text x="740.0" y="770.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >±170° 限位，不用滑环</text>
 <circle cx="601" cy="795" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="799.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >11</text>
-<text x="618.0" y="800.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >线缆盘绕 + 挡销</text>
-<text x="740.0" y="800.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >±170° 限位，不用滑环</text>
+<text x="601.0" y="799.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >12</text>
+<text x="618.0" y="800.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >云台无刷电机</text>
+<text x="740.0" y="800.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >2804 级，FOC 低噪声，避免步进噪声进麦</text>
 <circle cx="601" cy="825" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="829.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >12</text>
-<text x="618.0" y="830.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >云台无刷电机</text>
-<text x="740.0" y="830.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >2804 级，FOC 低噪声，避免步进噪声进麦</text>
+<text x="601.0" y="829.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >13</text>
+<text x="618.0" y="830.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >磁编码器</text>
+<text x="740.0" y="830.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >AS5600 + 径向磁铁，绝对角度</text>
 <circle cx="601" cy="855" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="859.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >13</text>
-<text x="618.0" y="860.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >磁编码器</text>
-<text x="740.0" y="860.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >AS5600 + 径向磁铁，绝对角度</text>
+<text x="601.0" y="859.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >14</text>
+<text x="618.0" y="860.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >主板</text>
+<text x="740.0" y="860.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >ESP32-S3-N16R8 + MAX98357A 功放 + DRV8313 FOC 驱动</text>
 <circle cx="601" cy="885" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="889.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >14</text>
-<text x="618.0" y="890.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >主板</text>
-<text x="740.0" y="890.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >ESP32-S3-N16R8 + MAX98357A 功放 + DRV8313 FOC 驱动</text>
+<text x="601.0" y="889.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >15</text>
+<text x="618.0" y="890.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >扬声器</text>
+<text x="740.0" y="890.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >Ø40 4 Ω 3 W，朝下出声，脚垫留 8 mm 出声缝</text>
 <circle cx="601" cy="915" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="919.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >15</text>
-<text x="618.0" y="920.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >扬声器</text>
-<text x="740.0" y="920.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >Ø40 4 Ω 3 W，朝下出声，脚垫留 8 mm 出声缝</text>
+<text x="601.0" y="919.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >16</text>
+<text x="618.0" y="920.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >配重 + 防滑垫</text>
+<text x="740.0" y="920.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >钢环约 150 g，硅胶脚垫</text>
 <circle cx="601" cy="945" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="949.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >16</text>
-<text x="618.0" y="950.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >配重 + 防滑垫</text>
-<text x="740.0" y="950.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >钢环约 150 g，硅胶脚垫</text>
+<text x="601.0" y="949.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >17</text>
+<text x="618.0" y="950.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >USB-C 供电</text>
+<text x="740.0" y="950.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >PD 取 12 V 给电机；DC-DC 降 5 V / 3.3 V</text>
 <circle cx="601" cy="975" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="979.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >17</text>
-<text x="618.0" y="980.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >USB-C 供电</text>
-<text x="740.0" y="980.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >PD 取 12 V 给电机；DC-DC 降 5 V / 3.3 V</text>
-<circle cx="601" cy="1005" r="10.5" fill="#3B3227"/>
-<text x="601.0" y="1009.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >18</text>
-<text x="618.0" y="1010.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >花盆壳体</text>
-<text x="740.0" y="1010.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >ABS 哑光白，Ø100 × 75，底部 4 颗螺丝开盖检修</text>
+<text x="601.0" y="979.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >18</text>
+<text x="618.0" y="980.0" font-size="13.5" fill="#3B3227" text-anchor="start" font-weight="700" >花盆壳体</text>
+<text x="740.0" y="980.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >ABS 哑光白，Ø100 × 75，底部 4 颗螺丝开盖检修</text>
 <rect x="40" y="1038" width="1090" height="96" rx="8" fill="#FFFFFF" stroke="#B9AE9A"/>
 <text x="56.0" y="1062.0" font-size="14.5" fill="#3B3227" text-anchor="start" font-weight="700" >关键数字（估算）</text>
 <text x="56.0" y="1090.0" font-size="12.8" fill="#3B3227" text-anchor="start" font-weight="400" >· 仰角 20°：用户眼高 400、距离 600、脸心 182 → atan(218/600) ≈ 20°</text>

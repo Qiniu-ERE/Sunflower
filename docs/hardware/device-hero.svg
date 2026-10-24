@@ -68,9 +68,9 @@
 <ellipse cx="263.9" cy="203.5" rx="4" ry="8" fill="#FFF3C4" opacity=".7" transform="rotate(337.50 263.9 203.5)"/>
 <circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="1.5"/>
 <ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/>
-<circle cx="286" cy="267" r="7.5" fill="#6D2C1F"/><circle cx="288.5" cy="264" r="2.6" fill="#fff"/>
-<circle cx="314" cy="267" r="7.5" fill="#6D2C1F"/><circle cx="316.5" cy="264" r="2.6" fill="#fff"/>
-<ellipse cx="300" cy="289" rx="5" ry="6" fill="#6D2C1F"/>
+<circle cx="286" cy="268" r="5" fill="#6D2C1F"/><circle cx="287.5" cy="266.5" r="1.5" fill="#fff"/>
+<circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
+<path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 </g>
 <g transform="translate(690,301.0) scale(1.1) translate(-300,-150)">
 <ellipse cx="300" cy="645" rx="140" ry="11" fill="#E6D9BE"/>
@@ -142,7 +142,7 @@
 </g>
 <rect x="135" y="868" width="210" height="34" rx="17" fill="#3B3227"/>
 <text x="240.0" y="891.0" font-size="17" fill="#FFF8E5" text-anchor="middle" font-weight="700" >标准版</text>
-<text x="240.0" y="928.0" font-size="14" fill="#7A6E5D" text-anchor="middle" font-weight="400" >1.28″ 花芯只显示表情 · 进展投到任意浏览器 / 大屏</text>
+<text x="240.0" y="928.0" font-size="14" fill="#7A6E5D" text-anchor="middle" font-weight="400" >固定笑脸花芯，状态看花瓣灯 · 进展投到任意浏览器 / 大屏</text>
 <rect x="585" y="868" width="210" height="34" rx="17" fill="#3B3227"/>
 <text x="690.0" y="891.0" font-size="17" fill="#FFF8E5" text-anchor="middle" font-weight="700" >屏显版</text>
 <text x="690.0" y="928.0" font-size="14" fill="#7A6E5D" text-anchor="middle" font-weight="400" >2.1″ 圆屏花芯 · 平时是脸，执行和完成时回显进展</text>
@@ -153,9 +153,9 @@
 <text x="1032.0" y="230.0" font-size="14.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >花面 0.8 s 内转过去，范围 ±170°</text>
 <rect x="1390" y="136" width="360" height="122" rx="14" fill="#FFFFFF" stroke="#EADFC8"/>
 <rect x="1390" y="136" width="6" height="122" rx="3" fill="#F6A33A"/>
-<text x="1412.0" y="172.0" font-size="20" fill="#3B3227" text-anchor="start" font-weight="800" >表情 + 花瓣灯</text>
-<text x="1412.0" y="204.0" font-size="14.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >花瓣里藏 16 颗灯，脸上有五种表情</text>
-<text x="1412.0" y="230.0" font-size="14.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >Codex 在听、在做、做完、出错，一眼可知</text>
+<text x="1412.0" y="172.0" font-size="20" fill="#3B3227" text-anchor="start" font-weight="800" >花瓣状态灯</text>
+<text x="1412.0" y="204.0" font-size="14.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >花瓣里藏 16 颗灯，五种灯效对应五种状态</text>
+<text x="1412.0" y="230.0" font-size="14.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >标准版看灯；屏显版另有表情和回显</text>
 <rect x="1010" y="276" width="360" height="122" rx="14" fill="#FFFFFF" stroke="#EADFC8"/>
 <rect x="1010" y="276" width="6" height="122" rx="3" fill="#F6A33A"/>
 <text x="1032.0" y="312.0" font-size="20" fill="#3B3227" text-anchor="start" font-weight="800" >瓢虫说话键</text>
@@ -408,8 +408,8 @@
 <path d="M1530,552 l20,0" stroke="#7A6E5D" stroke-width="1.6" marker-end="url(#arrI)"/>
 <text x="1648.0" y="640.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >完成</text>
 <text x="1648.0" y="660.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >结果 + 提交号，5 s 后回到花芯</text>
-<text x="1010.0" y="712.0" font-size="18" fill="#3B3227" text-anchor="start" font-weight="800" >五种状态：表情 × 花瓣灯（两种型号相同）</text>
-<g transform="translate(1080,800) scale(.44) translate(-300,-276)">
+<text x="1010.0" y="712.0" font-size="18" fill="#3B3227" text-anchor="start" font-weight="800" >五种状态：标准版笑脸不变，只看花瓣灯</text>
+<g transform="translate(1080,794) scale(.44) translate(-300,-276)">
 <circle cx="300" cy="276" r="150" fill="url(#glowW)"/>
 <ellipse cx="314.8" cy="201.5" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(11.25 314.8 201.5)"/>
 <ellipse cx="342.2" cy="212.8" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(33.75 342.2 212.8)"/>
@@ -465,9 +465,10 @@
 <circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
 <path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 </g>
-<text x="1080.0" y="878.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >待机</text>
-<text x="1080.0" y="898.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >暖白呼吸</text>
-<g transform="translate(1230,800) scale(.44) translate(-300,-276)">
+<text x="1080.0" y="868.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >待机</text>
+<text x="1080.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >暖白呼吸</text>
+<text x="1080.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：微笑</text>
+<g transform="translate(1230,794) scale(.44) translate(-300,-276)">
 <circle cx="300" cy="276" r="150" fill="url(#glowY)"/>
 <ellipse cx="314.8" cy="201.5" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(11.25 314.8 201.5)"/>
 <ellipse cx="342.2" cy="212.8" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(33.75 342.2 212.8)"/>
@@ -519,13 +520,14 @@
 <ellipse cx="263.9" cy="203.5" rx="4" ry="8" fill="#FFF3C4" opacity=".7" transform="rotate(337.50 263.9 203.5)"/>
 <circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="1.5"/>
 <ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/>
-<circle cx="286" cy="267" r="7.5" fill="#6D2C1F"/><circle cx="288.5" cy="264" r="2.6" fill="#fff"/>
-<circle cx="314" cy="267" r="7.5" fill="#6D2C1F"/><circle cx="316.5" cy="264" r="2.6" fill="#fff"/>
-<ellipse cx="300" cy="289" rx="5" ry="6" fill="#6D2C1F"/>
+<circle cx="286" cy="268" r="5" fill="#6D2C1F"/><circle cx="287.5" cy="266.5" r="1.5" fill="#fff"/>
+<circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
+<path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 </g>
-<text x="1230.0" y="878.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >聆听</text>
-<text x="1230.0" y="898.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >黄色常亮</text>
-<g transform="translate(1380,800) scale(.44) translate(-300,-276)">
+<text x="1230.0" y="868.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >聆听</text>
+<text x="1230.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >黄色常亮</text>
+<text x="1230.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：听写回显</text>
+<g transform="translate(1380,794) scale(.44) translate(-300,-276)">
 <circle cx="300" cy="276" r="150" fill="url(#glowB)"/>
 <ellipse cx="314.8" cy="201.5" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(11.25 314.8 201.5)"/>
 <ellipse cx="342.2" cy="212.8" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(33.75 342.2 212.8)"/>
@@ -577,16 +579,14 @@
 <ellipse cx="263.9" cy="203.5" rx="4" ry="8" fill="#FFF3C4" opacity=".7" transform="rotate(337.50 263.9 203.5)"/>
 <circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="1.5"/>
 <ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/>
-<circle cx="289" cy="264" r="5" fill="#6D2C1F"/><circle cx="290.5" cy="262.5" r="1.5" fill="#fff"/>
-<circle cx="317" cy="264" r="5" fill="#6D2C1F"/><circle cx="318.5" cy="262.5" r="1.5" fill="#fff"/>
-<path d="M293,286 L307,286" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
-<circle cx="290" cy="300" r="2.8" fill="#6D2C1F" opacity="1"/>
-<circle cx="300" cy="300" r="2.8" fill="#6D2C1F" opacity="0.6"/>
-<circle cx="310" cy="300" r="2.8" fill="#6D2C1F" opacity="0.3"/>
+<circle cx="286" cy="268" r="5" fill="#6D2C1F"/><circle cx="287.5" cy="266.5" r="1.5" fill="#fff"/>
+<circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
+<path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 </g>
-<text x="1380.0" y="878.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >执行中</text>
-<text x="1380.0" y="898.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >琥珀流水</text>
-<g transform="translate(1530,800) scale(.44) translate(-300,-276)">
+<text x="1380.0" y="868.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >执行中</text>
+<text x="1380.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >琥珀流水</text>
+<text x="1380.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：进度环</text>
+<g transform="translate(1530,794) scale(.44) translate(-300,-276)">
 <circle cx="300" cy="276" r="150" fill="url(#glowG)"/>
 <ellipse cx="314.8" cy="201.5" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(11.25 314.8 201.5)"/>
 <ellipse cx="342.2" cy="212.8" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(33.75 342.2 212.8)"/>
@@ -637,14 +637,15 @@
 <ellipse cx="272.1" cy="208.6" rx="16" ry="26" fill="#FFD54F" stroke="#D9A400" stroke-width="1.2" transform="rotate(337.50 272.1 208.6)"/>
 <ellipse cx="263.9" cy="203.5" rx="4" ry="8" fill="#FFF3C4" opacity=".7" transform="rotate(337.50 263.9 203.5)"/>
 <circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="1.5"/>
-<ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.7"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.7"/>
-<path d="M280,270 Q286,261 292,270" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
-<path d="M308,270 Q314,261 320,270" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
-<path d="M287,282 Q300,298 313,282 Z" fill="#6D2C1F"/>
+<ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/>
+<circle cx="286" cy="268" r="5" fill="#6D2C1F"/><circle cx="287.5" cy="266.5" r="1.5" fill="#fff"/>
+<circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
+<path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 </g>
-<text x="1530.0" y="878.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >完成</text>
-<text x="1530.0" y="898.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >绿色闪烁</text>
-<g transform="translate(1680,800) scale(.44) translate(-300,-276)">
+<text x="1530.0" y="868.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >完成</text>
+<text x="1530.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >绿色闪烁</text>
+<text x="1530.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：结果 + 提交号</text>
+<g transform="translate(1680,794) scale(.44) translate(-300,-276)">
 <circle cx="300" cy="276" r="150" fill="url(#glowR)"/>
 <ellipse cx="314.8" cy="201.5" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(11.25 314.8 201.5)"/>
 <ellipse cx="342.2" cy="212.8" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(33.75 342.2 212.8)"/>
@@ -695,13 +696,14 @@
 <ellipse cx="272.1" cy="208.6" rx="16" ry="26" fill="#FFD54F" stroke="#D9A400" stroke-width="1.2" transform="rotate(337.50 272.1 208.6)"/>
 <ellipse cx="263.9" cy="203.5" rx="4" ry="8" fill="#FFF3C4" opacity=".7" transform="rotate(337.50 263.9 203.5)"/>
 <circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="1.5"/>
-<ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.2"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.2"/>
-<circle cx="286" cy="270" r="4.5" fill="#6D2C1F"/><path d="M279,256 L292,261" stroke="#6D2C1F" stroke-width="2.6" stroke-linecap="round"/>
-<circle cx="314" cy="270" r="4.5" fill="#6D2C1F"/><path d="M321,256 L308,261" stroke="#6D2C1F" stroke-width="2.6" stroke-linecap="round"/>
-<path d="M290,291 Q300,283 310,291" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
+<ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/>
+<circle cx="286" cy="268" r="5" fill="#6D2C1F"/><circle cx="287.5" cy="266.5" r="1.5" fill="#fff"/>
+<circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
+<path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 </g>
-<text x="1680.0" y="878.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >出错</text>
-<text x="1680.0" y="898.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >橙红常亮</text>
+<text x="1680.0" y="868.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >出错</text>
+<text x="1680.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >橙红常亮</text>
+<text x="1680.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：失败 + 建议</text>
 <text x="1010.0" y="948.0" font-size="13.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >语音识别与合成由灵矽提供；编程交给 Codex（可切换渠道）；主机与面板代码两种型号通用。</text>
-<text x="1010.0" y="970.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >外购件：GC9A01 1.28″ / ST7701S 2.1″ 圆屏 · XVF3800 4 麦阵列 · 2804 云台无刷电机 · ESP32-S3</text>
+<text x="1010.0" y="970.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >外购件：ST7701S 2.1″ 圆屏（屏显版）· XVF3800 4 麦阵列 · 2804 云台无刷电机 · ESP32-S3</text>
 </svg>
