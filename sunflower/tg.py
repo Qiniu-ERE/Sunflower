@@ -343,7 +343,7 @@ class Bridge:
 def watch_host(host, bridge):
     while True:
         try:
-            for event, data in host.events():
+            for event, data in host.events(role="tg"):
                 bridge.on_host(event, data)
         except Exception as e:
             log("host events reconnect:", type(e).__name__)

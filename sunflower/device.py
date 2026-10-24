@@ -65,13 +65,17 @@ class Host:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read())
 
-    def events(self):
-        """Yield (event, data) from the host SSE stream (no replay)."""
+    def events(self, role="device", on_open=None):
+        """Yield (event, data) from the host SSE stream (no replay). role: device = 桌面设备（收面板按键、
+        进 service status）；tg = TG 入口。"""
         req = urllib.request.Request(self.url + "/events?replay=0",
                                      headers={"Authorization": "Bearer " + self.token,
                                               "X-Sunflower-Commit": COMMIT or "",
-                                              "X-Sunflower-Reload": "1" if AUTO_RELOAD else "0"})
+                                              "X-Sunflower-Reload": "1" if AUTO_RELOAD else "0",
+                                              "X-Sunflower-Role": role})
         with urllib.request.urlopen(req, timeout=HEARTBEAT_TIMEOUT) as r:
+            if on_open:
+                on_open()
             event = None
             for raw in r:
                 line = raw.decode("utf-8").rstrip("\n")
@@ -254,6 +258,7 @@ class Device:
                         self.announcing.discard(text)
                         continue
                     log("听到:", text)
+                    self._report("idle")
                     self._mirror("user", text)
                     self._notify("stt", text)
                 elif t == "tts":
@@ -319,6 +324,19 @@ class Device:
         except Exception:
             pass
 
+    def _report(self, state=None, muted=None):
+        """录音 / 静音状态告诉面板（#40）：终端不在眼前时，「看到录音中再开口」靠面板。"""
+        body = {k: v for k, v in (("state", state), ("muted", muted)) if v is not None}
+        threading.Thread(target=self._report_blocking, args=(body,), daemon=True).start()
+
+    def _report_blocking(self, body):
+        if self.host is None:
+            return
+        try:
+            self.host.post("/api/device", body, timeout=3)
+        except Exception:
+            pass
+
     # -- user actions ----------------------------------------------------
     async def say_text(self, text):
         await self.ensure()
@@ -358,6 +376,7 @@ class Device:
     def toggle_mute(self):
         self.muted = not self.muted
         log("🔇 静音：回执只上屏，不播报" if self.muted else "🔊 已恢复播报")
+        self._report(muted=self.muted)
         return self.muted
 
     async def announce(self, text):
@@ -382,6 +401,7 @@ class Device:
                                             stderr=subprocess.DEVNULL)
                 self.mic_task = asyncio.ensure_future(self._pump_mic(self.mic, ready))
                 self._earcon(EARCON_START)
+                self._report("recording")
                 log("🎙 录音中…（再按一次结束）" if connected else "🎙 录音中…（连接灵矽中，可以直接说；说完再按一次结束）")
                 await self.ensure()
                 if self.speaking.is_set():
@@ -395,9 +415,11 @@ class Device:
                 await self._reap(mic)
                 await self._send({"type": "listen", "state": "stop"})
                 self._earcon(EARCON_STOP)
+                self._report("recognizing")
                 log("🎙 结束，识别中…")
         except Exception as e:
             log(f"✘ 说话失败：{type(e).__name__}: {e}")
+            self._report("idle")
             if self.mic is not None:
                 mic, self.mic = self.mic, None
                 await self._reap(mic)
@@ -441,13 +463,28 @@ class Device:
         return True
 
     # -- host announcements ----------------------------------------------
+    def on_host(self, event, data):
+        """主机事件 → 设备动作；要在事件循环里跑的返回协程。面板按键（#40）与终端按键同一组动作。"""
+        if event == "announce" and data.get("text"):
+            log("回执:", data["text"])
+            return self.announce(data["text"])
+        if event == "key":
+            key = data.get("key")
+            if key == "talk":
+                return self.toggle_talk()
+            if key == "mute":
+                self.toggle_mute()
+            elif key in self.quick:
+                return self.press_quick(key)
+        return None
+
     def watch_host(self):
         while True:
             try:
                 for event, data in self.host.events():
-                    if event == "announce" and data.get("text"):
-                        log("回执:", data["text"])
-                        asyncio.run_coroutine_threadsafe(self.announce(data["text"]), self.loop)
+                    job = self.on_host(event, data)
+                    if job is not None:
+                        asyncio.run_coroutine_threadsafe(job, self.loop)
             except Exception as e:
                 log("host events reconnect:", type(e).__name__)
                 time.sleep(2)

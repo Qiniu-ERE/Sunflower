@@ -24,6 +24,11 @@
   @keyframes pulse { 50% { opacity: .65; } }
   .task { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
   .timer { font-family: var(--mono); color: var(--dim); }
+  .talk { font: inherit; font-weight: 600; padding: .45em 1.1em; border-radius: 999px; border: 2px solid var(--sun); background: transparent; color: var(--sun); cursor: pointer; white-space: nowrap; }
+  .talk:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
+  .talk.recording { background: var(--bad); border-color: var(--bad); color: #fff; animation: pulse 1.2s ease-in-out infinite; }
+  .talk.recognizing { border-color: var(--info); color: var(--info); }
+  .talk.offline { border-color: var(--line); color: var(--dim); }
   main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 1.2vw; min-height: 0; }
   section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.4vh 1.2vw; display: flex; flex-direction: column; min-height: 0; }
   h2 { margin: 0 0 1vh; font-size: .75em; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .12em; }
@@ -53,9 +58,10 @@
   <span id="pill" class="pill offline">连接中</span>
   <div id="task" class="task"></div>
   <div id="timer" class="timer"></div>
+  <button id="talk" class="talk" type="button" aria-live="polite">🎙 空格 / 点这里说话</button>
 </header>
 <main>
-  <section class="voice"><h2>🎙 对话</h2><div id="voice" class="scroll"><div class="empty">按下翻页笔，说出你的需求…</div></div></section>
+  <section class="voice"><h2>🎙 对话</h2><div id="voice" class="scroll"><div class="empty">按空格、翻页笔或右上角按钮，说出你的需求…</div></div></section>
   <section><h2>⚙️ 执行流 · Codex<span id="channel"></span></h2><div id="log" class="scroll"><div class="empty">等待任务</div></div></section>
 </main>
 <footer>
@@ -101,18 +107,56 @@ function setState(d) {
     $("task").textContent = d.task || ""; startedAt = d.started || Date.now() / 1000;
     clearInterval(timerId); timerId = setInterval(tick, 500); tick();
   } else {
-    if (d.reset) { $("log").innerHTML = '<div class="empty">新会话 · 等待任务</div>'; $("voice").innerHTML = '<div class="empty">按下翻页笔，说出你的需求…</div>'; $("diff").textContent = ""; $("say").textContent = ""; $("task").textContent = ""; $("timer").textContent = ""; }
+    if (d.reset) { $("log").innerHTML = '<div class="empty">新会话 · 等待任务</div>'; $("voice").innerHTML = '<div class="empty">按空格、翻页笔或右上角按钮，说出你的需求…</div>'; $("diff").textContent = ""; $("say").textContent = ""; $("task").textContent = ""; $("timer").textContent = ""; }
     p.className = "pill idle"; p.textContent = "空闲";
     clearInterval(timerId); startedAt = null;
     if (d.task) { $("task").textContent = (d.exit === 0 ? "✔ " : "✘ ") + d.task; $("timer").textContent = (d.elapsed ?? "") + "s"; }
   }
 }
+// 说话按键（#40）：面板就是屏幕上的窗口，按键落在这里；经主机转给桌面设备，设备录音并回报状态
+const TALK_KEYS = new Set([" ", "Enter", "PageUp", "PageDown", "ArrowLeft", "ArrowRight", "b", "B", "F5"]);  // 翻页笔常见键
+const TALK_TEXT = { idle: "🎙 空格 / 点这里说话", recording: "● 录音中 · 说完再按一次", recognizing: "识别中…" };
+let mic = "idle", muted = false, ackTimer = null, backTimer = null;
+function showTalk(state, text) {
+  const b = $("talk"); b.className = "talk " + state;
+  b.textContent = (text || TALK_TEXT[state] || TALK_TEXT.idle) + (muted && state === "idle" ? " · 🔇" : "");
+}
+function setMic(d) {
+  if (typeof d.muted === "boolean") muted = d.muted;
+  if (d.state) { mic = d.state; clearTimeout(ackTimer); }
+  clearTimeout(backTimer);
+  if (mic === "recognizing") backTimer = setTimeout(() => { mic = "idle"; showTalk("idle"); }, 10000);  // 没识别出字也回到可说
+  showTalk(mic);
+}
+function flash(text) { showTalk("offline", text); clearTimeout(backTimer); backTimer = setTimeout(() => showTalk(mic), 4000); }
+async function press(key) {
+  if (!token) return flash("面板地址缺少 ?t= 令牌");
+  if (key === "talk") { clearTimeout(ackTimer); ackTimer = setTimeout(() => flash("设备没响应"), 3000); }
+  try {
+    const r = await fetch("/api/key", { method: "POST", headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ key }) });
+    const d = await r.json();
+    if (!d.ok) { clearTimeout(ackTimer); flash(d.say || "按键没送到"); }
+  } catch (e) { clearTimeout(ackTimer); flash("主机连不上"); }
+}
+document.addEventListener("keydown", (e) => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  let key = null;
+  if (TALK_KEYS.has(e.key)) key = "talk";
+  else if ("12345".includes(e.key) && e.key.length === 1) key = e.key;
+  else if (e.key === "m" || e.key === "M") key = "mute";
+  if (!key) return;
+  e.preventDefault();  // 空格不滚动、F5 不刷新、回车不重复点按钮
+  press(key);
+});
+$("talk").addEventListener("click", (e) => { if (e.detail > 0) press("talk"); });  // 键盘触发的 click 已由 keydown 处理
+
 function connect() {
   const es = new EventSource(token ? "/events?t=" + encodeURIComponent(token) : "/events");
   es.addEventListener("state", (e) => { const d = JSON.parse(e.data); if (d.channel) $("channel").textContent = " · " + d.channel; setState(d); });
   es.addEventListener("log", (e) => { const d = JSON.parse(e.data); if (d.text) addRow(d.kind, d.text); });
   es.addEventListener("voice", (e) => { const d = JSON.parse(e.data); if (d.text) addBubble(d.role, d.text, d.ts); });
   es.addEventListener("diff", (e) => { $("diff").textContent = JSON.parse(e.data).stat || ""; });
+  es.addEventListener("device", (e) => setMic(JSON.parse(e.data)));
   es.addEventListener("announce", (e) => { $("say").textContent = "🔊 " + JSON.parse(e.data).text; });
   es.onerror = () => { $("pill").className = "pill offline"; $("pill").textContent = "重连中"; };
   es.onopen = () => { if ($("pill").classList.contains("offline")) { $("pill").className = "pill idle"; $("pill").textContent = "空闲"; } };
