@@ -74,6 +74,27 @@ class TalkTest(unittest.TestCase):
         self.assertEqual(len(d.ws.frames), FRAMES)
 
 
+    def test_stop_press_while_connecting_is_kept(self):
+        # 冷连接要 3~4 s，短句（「停下」）说完就按收口：这一下不能丢，否则设备一直录下去
+        async def go():
+            d = make_device()
+
+            async def slow_ensure():  # 比假麦克风的 0.3 s 短：真麦克风在连接期间不会自己结束
+                await asyncio.sleep(0.2)
+            d.ensure = slow_ensure
+            start = asyncio.ensure_future(d.toggle_talk())
+            await asyncio.sleep(0.1)
+            await d.toggle_talk()             # 还在连接时就按收口
+            await d.toggle_talk()             # 连接期间的第二下多余按键照旧丢掉，不另开一路麦
+            await start
+            await asyncio.sleep(0.2)
+            return d
+        d = asyncio.run(go())
+        states = [__import__("json").loads(m).get("state") for _, m in d.ws.json]
+        self.assertEqual(states, ["start", "stop"])
+        self.assertIsNone(d.mic)
+        self.assertGreater(len(d.ws.frames), 0)  # 连接期间攒下的音频补发了
+
     def test_recording_hint_says_press_again_even_when_connecting(self):
         # 冷连接时也要提示再按一次结束，否则用户说完就等，录音一直开着像卡死（#23）
         async def go(cold):

@@ -145,6 +145,7 @@ class Device:
         self.mic = None
         self.mic_task = None
         self.toggling = False
+        self.stop_queued = False  # 开口还在连接时按下的收口（见 toggle_talk）
         self.earcons = self.dev.get("earcons", True)
         self.quick = dict(QUICK, **self.dev.get("quick", {}))
         self.muted = bool(self.dev.get("mute", False))
@@ -415,8 +416,14 @@ class Device:
 
     async def toggle_talk(self, tryout=None):
         # presses arriving while we connect / start / stop are dropped, never queued:
-        # a queued press would spawn a second mic and interleave frames
+        # a queued press would spawn a second mic and interleave frames.
+        # 例外是开口还在连接时的收口：冷连接要 3~4 s，短句说完就按，丢了设备会一直录下去。
+        # 它只记一下，开口完成后立刻收口，不会另开一路麦
         if self.toggling:
+            if self.mic is not None and not self.stop_queued:
+                self.stop_queued = True
+                self._report("recognizing")
+                log("🎙 收到结束，连上灵矽就收口…")
             return
         self.toggling = True
         try:
@@ -446,16 +453,10 @@ class Device:
                     await self._send({"type": "abort", "reason": "wake_word_detected"})
                 await self._send({"type": "listen", "state": "start", "mode": "manual"})
                 ready.set()
+                if self.stop_queued:  # 连接期间已经按了收口：攒下的音频补发后就收
+                    await self._stop_talk()
             else:
-                mic, self.mic = self.mic, None
-                mic.terminate()
-                await self.mic_task
-                await self._reap(mic)
-                await self._send({"type": "listen", "state": "stop"})
-                self._earcon(EARCON_STOP)
-                self._report("recognizing")
-                self.last_turn = time.monotonic()
-                log("🎙 结束，识别中…")
+                await self._stop_talk()
         except Exception as e:
             log(f"✘ 说话失败：{type(e).__name__}: {e}")
             self._report("idle")
@@ -463,10 +464,21 @@ class Device:
                 mic, self.mic = self.mic, None
                 await self._reap(mic)
         finally:
-            self.toggling = False
+            self.toggling = self.stop_queued = False
             turn = self.tryouts.get(self.ws)  # 这一句说完了（或失败了）：等结果、回报、收掉连接
             if self.mic is None and turn is not None and "finish" not in turn:
                 turn["finish"] = asyncio.ensure_future(self._finish_tryout(self.ws, turn))
+
+    async def _stop_talk(self):
+        mic, self.mic = self.mic, None
+        mic.terminate()
+        await self.mic_task
+        await self._reap(mic)
+        await self._send({"type": "listen", "state": "stop"})
+        self._earcon(EARCON_STOP)
+        self._report("recognizing")
+        self.last_turn = time.monotonic()
+        log("🎙 结束，识别中…")
 
     def _tryout_busy(self):
         """试音这一下现在开口会不会抢走别人的结果：上一句试音还没出结果，或演示那句的工具调用可能还在路上。"""
