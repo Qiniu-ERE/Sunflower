@@ -350,9 +350,10 @@ class PanelKeyApiTest(unittest.TestCase):
         self.srv.shutdown()
         self.srv.server_close()
 
-    def post(self, path, body):
+    def post(self, path, body, **headers):
+        headers = {"Authorization": "Bearer tok", "Content-Type": "application/json", **headers}
         req = urllib.request.Request(self.base + path, data=json.dumps(body).encode(), method="POST",
-                                     headers={"Authorization": "Bearer tok", "Content-Type": "application/json"})
+                                     headers={k: v for k, v in headers.items() if v is not None})
         try:
             with urllib.request.urlopen(req, timeout=5) as r:
                 return json.loads(r.read())
@@ -397,6 +398,16 @@ class PanelKeyApiTest(unittest.TestCase):
         self.assertEqual(self.wait(got, "key")[0]["key"], "talk")
         self.assertEqual(self.post("/api/key", {"key": "rm -rf"})["code"], 400)  # 只认按键表里的键
         self.assertIsNotNone(self.health()["device"])
+
+    def test_local_screen_presses_keys_without_token(self):
+        got = self.stream("device")
+        self.assertTrue(self.post("/api/key", {"key": "talk"}, Authorization=None)["ok"])  # 本机打开 /panel 就能按
+        self.assertEqual(self.wait(got, "key")[0]["key"], "talk")
+        self.assertTrue(self.post("/api/key", {"key": "mute"}, Authorization=None, Origin=self.base)["ok"])
+        # 别的网页（跨源）、DNS 重绑定（Host 不是本机名）、其余写接口仍要令牌
+        self.assertEqual(self.post("/api/key", {"key": "talk"}, Authorization=None, Origin="http://evil.test")["code"], 401)
+        self.assertEqual(self.post("/api/key", {"key": "talk"}, Authorization=None, Host="evil.test:8787")["code"], 401)
+        self.assertEqual(self.post("/api/dispatch", {"text": "hi"}, Authorization=None)["code"], 401)
 
     def test_device_mic_state_reaches_panel(self):
         got = self.stream("device")

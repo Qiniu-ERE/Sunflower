@@ -114,6 +114,14 @@ def make_handler(bus, runner, token, resolve=None):
         def _loopback(self):
             return self.client_address[0] in ("127.0.0.1", "::1")
 
+        def _local_screen(self):
+            """本机浏览器里的面板：来源是回环、Host 是本机名（挡 DNS 重绑定）、Origin 缺省或同源（挡别的网页）。"""
+            host = self.headers.get("Host", "")
+            name = host.rsplit(":", 1)[0] if not host.endswith("]") else host
+            origin = self.headers.get("Origin")
+            return self._loopback() and name in ("127.0.0.1", "localhost", "[::1]") and \
+                origin in (None, "http://" + host)
+
         def _json(self, code, obj):
             body = json.dumps(obj, ensure_ascii=False).encode()
             self.send_response(code)
@@ -150,7 +158,8 @@ def make_handler(bus, runner, token, resolve=None):
             self._json(404, {"error": "not found"})
 
         def do_POST(self):
-            if not self._authed():
+            # 按键是坐在屏幕前的人按的：本机面板不用令牌，和只读事件流一致；其余写接口仍要令牌
+            if not (self._authed() or (urlparse(self.path).path == "/api/key" and self._local_screen())):
                 return self._json(401, {"error": "token required"})
             n = int(self.headers.get("Content-Length") or 0)
             try:
@@ -187,7 +196,7 @@ def make_handler(bus, runner, token, resolve=None):
                 if key not in PANEL_KEYS:
                     return self._json(400, {"ok": False, "say": f"不认识的按键：{key}"})
                 if not desks:
-                    return self._json(409, {"ok": False, "say": "桌面设备没在线：python3 -m sunflower.service device"})
+                    return self._json(409, {"ok": False, "say": "桌面设备没在线：终端跑 python3 -m sunflower.service status 看「设备」一行"})
                 bus.emit("key", {"key": key})
                 return self._json(200, {"ok": True})
             if path == "/api/device":
@@ -274,7 +283,7 @@ def main(argv=None):
     srv.daemon_threads = True
     print(f"sunflower host on http://{srv.server_address[0]}:{srv.server_address[1]}  "
           f"workspace={runner.workspace}  channel={channel or '(pinned argv)'}  "
-          f"panel=/panel?t=<SUNFLOWER_TOKEN>", flush=True)
+          f"panel=/panel（本机不用令牌；别的机器加 ?t=<SUNFLOWER_TOKEN>）", flush=True)
     emit("state", {"state": "idle", "channel": channel})
     try:
         srv.serve_forever()
