@@ -340,51 +340,127 @@ class TriggerPickTest(unittest.TestCase):
 
 
 class TryoutTurnTest(unittest.TestCase):
-    """试音（#40）：带试音编号的那一轮只记下听到的话和工具调用，不执行；记完断开，下一句用新会话。"""
+    """试音（#40）：试音那一轮的连接上，工具调用只记录、不执行；别的交互一开始就收掉这条连接，
+    上一句迟到的调用既不会执行，也掐不断、记不到新一轮头上。"""
+    T = {"cond": "quiet", "idx": 5}
+
+    class H:
+        def __init__(self):
+            self.posts = []
+
+        def post(self, path, body=None, timeout=12):
+            self.posts.append((path, body))
+            return {"ok": True, "say": "好的"}
+
+    class Ws(FakeWs):
+        def __init__(self):
+            super().__init__()
+            self.closed, self.state = False, type("S", (), {"name": "OPEN"})()
+
+        async def send(self, m):
+            if self.closed:
+                raise ConnectionError("closed")
+            await super().send(m)
+
+        async def close(self):
+            self.closed, self.state.name = True, "CLOSED"
+
+    def device(self):
+        d = make_device()
+        d.host, d.ws, d.tryout_wait = self.H(), self.Ws(), (0.3, 0.3)
+
+        async def ensure():
+            if d.ws is None or d.ws.closed:
+                d.ws = self.Ws()
+        d.ensure = ensure
+        return d
+
+    @staticmethod
+    def posted(d, path):
+        return [b for p, b in list(d.host.posts) if p == path]
+
+    async def settle(self, d, path):
+        for _ in range(60):
+            if self.posted(d, path):
+                return
+            await asyncio.sleep(0.05)
 
     def test_tryout_turn_records_tool_without_executing(self):
-        class H:
-            def __init__(self):
-                self.posts = []
-
-            def post(self, path, body=None, timeout=12):
-                self.posts.append((path, body))
-                return {"ok": True, "say": "好的"}
-
-        class Ws(FakeWs):
-            closed = False
-
-            async def close(self):
-                self.closed = True
-
         J = __import__("json")
 
         async def go():
-            d = make_device()
-            d.host, d.ws = H(), Ws()
-            d.ensure = lambda: asyncio.sleep(0)
-            await d.toggle_talk(tryout="t1")
+            d = self.device()
+            await d.toggle_talk(tryout=self.T)
             await asyncio.sleep(0.05)
             await d.toggle_talk()
+            t1 = d.ws
             d._heard("嗯，停下。")
             await d._tool(7, {"name": "self.code.cancel", "arguments": {}})
-            for _ in range(60):
-                if any(p == "/api/tryout" for p, _ in d.host.posts):
-                    break
-                await asyncio.sleep(0.05)
-            reply = J.loads(d.ws.json[-1][1])["payload"]["result"]["content"][0]["text"]
-            ws, d.ws = d.ws, Ws()
-            await d._tool(8, {"name": "self.code.status", "arguments": {}})  # 试音那轮结束后照常执行
-            return d, ws, reply
-        d, ws, reply = asyncio.run(go())
-        paths = [p for p, _ in d.host.posts]
-        self.assertNotIn("/api/cancel", paths)
-        self.assertIn("/api/status", paths)
-        body = next(b for p, b in d.host.posts if p == "/api/tryout")
-        self.assertEqual((body["id"], body["hyp"], body["tool"]), ("t1", "嗯，停下。", "self.code.cancel"))
+            reply = J.loads(t1.json[-1][1])["payload"]["result"]["content"][0]["text"]
+            await self.settle(d, "/api/tryout")
+            await d.say_text("进度怎么样了")  # 试音那轮之后照常执行
+            await d._tool(8, {"name": "self.code.status", "arguments": {}})
+            return d, t1, reply
+        d, t1, reply = asyncio.run(go())
+        self.assertEqual(self.posted(d, "/api/cancel"), [])
+        self.assertTrue(self.posted(d, "/api/status"))
+        body = self.posted(d, "/api/tryout")[0]
+        self.assertEqual((body["cond"], body["idx"], body["hyp"], body["tool"]), ("quiet", 5, "嗯，停下。", "self.code.cancel"))
         self.assertIn("没有执行", reply)
-        self.assertTrue(ws.closed)
-        self.assertIsNone(d.turn)
+        self.assertTrue(t1.closed)  # 下一句用新会话，不被上一句的上下文带偏
+
+    def test_late_tool_call_of_tryout_cannot_execute_or_cut_next_turn(self):
+        async def go():
+            d = self.device()
+            await d.toggle_talk(tryout=self.T)
+            await asyncio.sleep(0.05)
+            await d.toggle_talk()
+            t1 = d.ws
+            d._heard("撤销刚才的改动")
+            await d.toggle_talk()  # 识别完马上在面板上开讲真任务
+            t2 = d.ws
+            await d._tool(9, {"name": "self.code.undo", "arguments": {}}, ws=t1)  # 上一句迟到的工具调用
+            await asyncio.sleep(0.8)  # 超过试音的等待上限
+            during = (t2 is not t1, t2.closed, d.mic is not None)
+            await d.toggle_talk()
+            await d._tool(10, {"name": "self.code.status", "arguments": {}}, ws=t2)
+            return d, during
+        d, during = asyncio.run(go())
+        self.assertEqual(during, (True, False, True))  # 新一轮在新连接上，录音没被掐断
+        self.assertEqual(self.posted(d, "/api/undo"), [])
+        self.assertTrue(self.posted(d, "/api/status"))
+        self.assertEqual([b["tool"] for b in self.posted(d, "/api/tryout")], [None])
+
+    def test_empty_tryout_turn_reports_result_and_idle(self):
+        async def go():
+            d = self.device()
+            await d.toggle_talk(tryout=self.T)
+            await asyncio.sleep(0.05)
+            await d.toggle_talk()  # 小声 / 气声：平台没听出字
+            await self.settle(d, "/api/tryout")
+            await asyncio.sleep(0.1)
+            return d
+        d = asyncio.run(go())
+        self.assertIsNone(self.posted(d, "/api/tryout")[0]["hyp"])
+        self.assertIn({"state": "idle"}, self.posted(d, "/api/device"))  # 面板按钮回到可说
+
+    def test_failed_tryout_turn_leaves_later_requests_real(self):
+        async def go():
+            d = self.device()
+            await d.toggle_talk(tryout=self.T)
+            await asyncio.sleep(0.05)
+
+            async def broken(m):
+                raise ConnectionError("reset")
+            d.ws.send = broken
+            await d.toggle_talk()  # 松键时连接断了：这一轮失败
+            await d.say_text("检查一下代码有没有逻辑问题")  # 之后按快捷键
+            await d._tool(11, {"name": "self.code.dispatch", "arguments": {"text": "检查一下代码"}})
+            await self.settle(d, "/api/tryout")
+            return d
+        d = asyncio.run(go())
+        self.assertTrue(self.posted(d, "/api/dispatch"))
+        self.assertEqual(len(self.posted(d, "/api/tryout")), 1)
 
 
 class EarconTest(unittest.TestCase):

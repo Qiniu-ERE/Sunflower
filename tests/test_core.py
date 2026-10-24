@@ -434,14 +434,14 @@ class PanelKeyApiTest(unittest.TestCase):
         got = self.stream("device")
         self.assertEqual(self.post("/api/key", {"key": "talk", "tryout": {"cond": "quiet", "idx": 99}})["code"], 400)
         self.assertTrue(self.post("/api/key", {"key": "talk", "tryout": {"cond": "quiet", "idx": 5}})["ok"])
-        tid = self.wait(got, "key")[0]["tryout"]
-        res = self.post("/api/tryout", {"id": tid, "hyp": "嗯，听下。", "tool": "self.code.dispatch",
+        self.assertEqual(self.wait(got, "key")[0]["tryout"], {"cond": "quiet", "idx": 5})
+        res = self.post("/api/tryout", {"cond": "quiet", "idx": 5, "hyp": "嗯，听下。", "tool": "self.code.dispatch",
                                         "args": {"text": "听下"}})
         self.assertTrue(res["ok"])
         row = json.loads(self.log.read_text().splitlines()[0])
         self.assertEqual((row["cond"], row["ref"], row["tool"], row["ok"]), ("quiet", "停下", "cancel", True))
         self.assertEqual(self.wait(got, "tryout")[0]["ref"], "停下")
-        self.assertEqual(self.post("/api/tryout", {"id": tid, "hyp": "x"})["code"], 404)  # 一轮只记一次
+        self.assertEqual(self.post("/api/tryout", {"cond": "quiet", "idx": "5", "hyp": "x"})["code"], 400)
 
 
 if __name__ == "__main__":

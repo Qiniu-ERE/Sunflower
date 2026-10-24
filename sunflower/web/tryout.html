@@ -20,6 +20,8 @@
   button { font: inherit; cursor: pointer; border-radius: 999px; padding: .35em .9em; border: 1px solid var(--line); background: transparent; color: var(--fg); }
   button:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
   .conds button.on { border-color: var(--sun); color: var(--sun); font-weight: 600; }
+  .aside { color: var(--dim); font-size: .8em; text-decoration: none; white-space: nowrap; }
+  .aside:hover, .aside:focus-visible { color: var(--fg); text-decoration: underline; }
   .talk { font-weight: 600; border: 2px solid var(--sun); color: var(--sun); white-space: nowrap; }
   .talk.recording { background: var(--bad); border-color: var(--bad); color: #fff; animation: pulse 1.2s ease-in-out infinite; }
   .talk.recognizing { border-color: var(--info); color: var(--info); }
@@ -41,6 +43,7 @@
 <header>
   <div class="brand">🌻 <b>太阳花</b> 试音</div>
   <div id="conds" class="conds"></div>
+  <a id="back" class="aside" href="/panel">回面板</a>
   <button id="talk" class="talk" type="button" aria-live="polite">🎙 空格 / 点这里说话</button>
 </header>
 <div class="card">
@@ -56,7 +59,8 @@
 <script>
 // 试音（#40）：同一个说话按键、同一条链路；这一轮的工具调用由设备拦下，只记录不执行
 const $ = (id) => document.getElementById(id);
-const token = new URLSearchParams(location.search).get("t") || "";
+const token = new URLSearchParams(location.search).get("t") || "";  // 本机打开不用令牌；别的机器带 ?t=
+$("back").href = "/panel" + location.search;
 const TOOL = { dispatch: "派任务", status: "问进度", cancel: "停下", undo: "撤销" };
 const TALK_KEYS = new Set([" ", "Enter", "PageUp", "PageDown", "ArrowLeft", "ArrowRight", "b", "B", "F5"]);
 const TALK_TEXT = { idle: "🎙 空格 / 点这里说话", recording: "● 录音中 · 说完再按一次", recognizing: "识别中…" };
@@ -64,7 +68,7 @@ let phrases = [], conds = [], cond = "normal", idx = 0, mic = "idle", ackTimer =
 const results = [];
 
 function showTalk(state, text) { const b = $("talk"); b.className = "talk " + state; b.textContent = text || TALK_TEXT[state] || TALK_TEXT.idle; }
-function flash(text) { showTalk("offline", text); clearTimeout(backTimer); backTimer = setTimeout(() => showTalk(mic), 4000); }
+function flash(text) { showTalk("offline", text); clearTimeout(backTimer); backTimer = setTimeout(() => setMic({ state: mic }), 4000); }
 function setMic(d) {
   if (!d.state) return;
   mic = d.state; clearTimeout(ackTimer); clearTimeout(backTimer);
@@ -105,13 +109,14 @@ function addRow(r) {
   render();
 }
 async function press(key) {
-  if (!token) return flash("地址缺少 ?t= 令牌");
-  const body = { key };
-  if (key === "talk" && mic === "idle" && idx < phrases.length) body.tryout = { cond, idx };  // 只在开口那一下带试音编号
-  if (key === "talk") { clearTimeout(ackTimer); ackTimer = setTimeout(() => flash("设备没响应"), 3000); }
+  // 这一页按下的每一下都带试音编号（开口还是收口由设备自己判断），所以这里按键永远不会真执行任务
+  if (idx >= phrases.length) return flash("这组念完了：换个条件，或点「上一句」重念");
+  const body = { key, tryout: { cond, idx } };
+  clearTimeout(ackTimer); ackTimer = setTimeout(() => flash("设备没响应"), 3000);
   try {
-    const r = await fetch("/api/key", { method: "POST", headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const r = await fetch("/api/key", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, token && { "Authorization": "Bearer " + token }), body: JSON.stringify(body) });
     const d = await r.json();
+    if (r.status === 401) { clearTimeout(ackTimer); return flash("别的机器打开要带 ?t= 令牌"); }
     if (!d.ok) { clearTimeout(ackTimer); flash(d.say || "按键没送到"); }
   } catch (e) { clearTimeout(ackTimer); flash("主机连不上"); }
 }
@@ -125,7 +130,7 @@ $("skip").onclick = () => { idx = Math.min(phrases.length, idx + 1); render(); }
 
 fetch("/api/tryout/phrases").then((r) => r.json()).then((d) => {
   phrases = d.phrases; conds = d.conds; render();
-  const es = new EventSource("/events?t=" + encodeURIComponent(token));
+  const es = new EventSource(token ? "/events?t=" + encodeURIComponent(token) : "/events");
   es.addEventListener("device", (e) => setMic(JSON.parse(e.data)));
   es.addEventListener("tryout", (e) => addRow(JSON.parse(e.data)));  // 主机重启前的本场结果随回放补齐
 });

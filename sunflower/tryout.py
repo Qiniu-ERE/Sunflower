@@ -20,6 +20,12 @@ TOOLS = {"self.code.dispatch": "dispatch", "self.code.status": "status",
          "self.code.cancel": "cancel", "self.code.undo": "undo"}
 
 
+def valid(t):
+    """试音编号：哪种说法、第几句。"""
+    return isinstance(t, dict) and t.get("cond") in {c[0] for c in CONDS} and \
+        type(t.get("idx")) is int and 0 <= t["idx"] < len(PHRASES)
+
+
 def norm(s):
     return re.sub(r"[\s，。！？、,.!?]", "", s or "")
 

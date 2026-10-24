@@ -159,7 +159,9 @@ class Device:
         self.last_activity = 0.0
         self.pending_tools = 0
         self.typing = False  # 「t」文字输入进行中：exec 会吞掉半行字，剩下的击键还会被当快捷键
-        self.turn = None  # 试音这一轮（#40）：{"id", "hyp", "tool", "args"}；有它时工具调用只记录、不执行
+        # 试音（#40）：连接 → 这一轮 {cond, idx, hyp, tool, args, done}。试音一句占一条连接，这条连接上的
+        # 工具调用只记录、不执行；别的交互开始前先收掉它，迟到的调用落不到新一轮
+        self.tryouts = {}
         self.tryout_wait = (12.0, 6.0)  # 松键后等识别结果 / 识别后等工具调用的秒数
 
     # -- self reload (#27) -------------------------------------------------
@@ -236,9 +238,9 @@ class Device:
                 log(f"空闲 {int(quiet)}s，断开灵矽会话（按键或播报时自动重连）")
                 await ws.close()
 
-    async def _send(self, obj):
+    async def _send(self, obj, ws=None):
         self.last_activity = time.monotonic()
-        await self.ws.send(json.dumps(dict(obj, session_id=self.sid)))
+        await (ws or self.ws).send(json.dumps(dict(obj, session_id=self.sid)))
 
     async def _recv(self, ws):
         try:
@@ -253,13 +255,13 @@ class Device:
                 if t == "hello":
                     self.sid = d.get("session_id")
                 elif t == "mcp":
-                    await self._mcp(d["payload"])
+                    await self._mcp(d["payload"], ws)
                 elif t == "stt":
                     text = d.get("text", "")
                     if text in self.announcing:
                         self.announcing.discard(text)
                         continue
-                    self._heard(text)
+                    self._heard(text, ws)
                     self._mirror("user", text)
                     self._notify("stt", text)
                 elif t == "tts":
@@ -278,8 +280,9 @@ class Device:
         finally:
             self.speaking.clear()
             self.player.close()
+            self.tryouts.pop(ws, None)  # 连接没了就不会再有它的工具调用
 
-    async def _mcp(self, p):
+    async def _mcp(self, p, ws=None):
         meth, rid = p.get("method"), p.get("id")
         if meth == "initialize":
             await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {
@@ -289,23 +292,26 @@ class Device:
             await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {"tools": TOOLS}}})
             self.ready.set()
         elif meth == "tools/call":
-            asyncio.ensure_future(self._tool(rid, p.get("params") or {}))
+            asyncio.ensure_future(self._tool(rid, p.get("params") or {}, ws))
 
-    def _heard(self, text):
+    def _heard(self, text, ws=None):
         log("听到:", text)
         self._report("idle")
-        if self.turn is not None and self.turn["hyp"] is None:
-            self.turn["hyp"] = text
+        turn = self.tryouts.get(ws or self.ws)
+        if turn is not None and turn["hyp"] is None and not turn["done"].is_set():
+            turn["hyp"] = text
 
-    async def _tool(self, rid, params):
+    async def _tool(self, rid, params, ws=None):
+        ws = ws or self.ws
         name, args = params.get("name"), params.get("arguments") or {}
         log("工具:", name, json.dumps(args, ensure_ascii=False))
         route = TOOL_ROUTES.get(name)
+        turn = self.tryouts.get(ws)
         self.pending_tools += 1
         try:
-            if self.turn is not None:  # 试音：记下会调什么，不交给主机执行
-                if self.turn["tool"] is None:
-                    self.turn.update(tool=name, args=args)
+            if turn is not None:  # 试音连接上的调用：记下会调什么（只记这一句的第一个），不交给主机执行
+                if turn["tool"] is None and not turn["done"].is_set():
+                    turn.update(tool=name, args=args)
                 text, err = "试音模式：已记下，没有执行", False
             elif not route:
                 raise ValueError(f"unknown tool {name}")
@@ -316,8 +322,11 @@ class Device:
             text, err = f"主机连接失败：{type(e).__name__}，请检查电脑上的服务", True
         finally:
             self.pending_tools -= 1
-        await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {
-            "content": [{"type": "text", "text": text}], "isError": err}}})
+        try:
+            await self._send({"type": "mcp", "payload": {"jsonrpc": "2.0", "id": rid, "result": {
+                "content": [{"type": "text", "text": text}], "isError": err}}}, ws)
+        except Exception as e:  # 连接已断（如试音那一句已收掉）：平台那边也收不到了
+            log(f"✘ 工具结果没送出：{type(e).__name__}")
 
     def _notify(self, kind, text):
         if self.on_event:
@@ -351,6 +360,7 @@ class Device:
 
     # -- user actions ----------------------------------------------------
     async def say_text(self, text):
+        self._end_tryout()
         await self.ensure()
         await self._send({"type": "listen", "state": "detect", "text": text})
 
@@ -360,6 +370,7 @@ class Device:
         frames = [pcm[i:i + FRAME_BYTES] for i in range(0, len(pcm) - FRAME_BYTES + 1, FRAME_BYTES)]
         self.pending_tools += 1  # 送语音期间不算空闲（不断开、不换代）
         try:
+            self._end_tryout()
             await self.ensure()
             if self.speaking.is_set():
                 await self._send({"type": "abort", "reason": "wake_word_detected"})
@@ -394,6 +405,7 @@ class Device:
     async def announce(self, text):
         if self.muted:  # 面板照常显示回执；不连灵矽，也不占通话时长
             return
+        self._end_tryout()
         await self.ensure()
         self.announcing.add(text)
         await self._send({"type": "listen", "state": "detect", "text": "任务回执", "text_response": text})
@@ -406,8 +418,7 @@ class Device:
         self.toggling = True
         try:
             if self.mic is None:
-                # 试音只跟着这一轮走：开口时带编号才算，结束后清掉，不会留下「一直不执行」的状态
-                self.turn = {"id": tryout, "hyp": None, "tool": None, "args": None} if tryout else None
+                self._end_tryout()
                 # 先开麦再连灵矽：连接要 ~3 s，期间的话先攒着，listen start 之后补发
                 connected = self.ws is not None and self.ws.state.name == "OPEN"
                 ready = asyncio.Event()
@@ -418,6 +429,9 @@ class Device:
                 self._report("recording")
                 log("🎙 录音中…（再按一次结束）" if connected else "🎙 录音中…（连接灵矽中，可以直接说；说完再按一次结束）")
                 await self.ensure()
+                if isinstance(tryout, dict):  # 试音只认开口这一下带的编号，绑在这一句的连接上
+                    self.tryouts[self.ws] = {"cond": tryout.get("cond"), "idx": tryout.get("idx"), "hyp": None,
+                                             "tool": None, "args": None, "done": asyncio.Event()}
                 if self.speaking.is_set():
                     await self._send({"type": "abort", "reason": "wake_word_detected"})
                 await self._send({"type": "listen", "state": "start", "mode": "manual"})
@@ -431,8 +445,6 @@ class Device:
                 self._earcon(EARCON_STOP)
                 self._report("recognizing")
                 log("🎙 结束，识别中…")
-                if self.turn is not None:
-                    asyncio.ensure_future(self._finish_tryout(self.turn))
         except Exception as e:
             log(f"✘ 说话失败：{type(e).__name__}: {e}")
             self._report("idle")
@@ -441,22 +453,41 @@ class Device:
                 await self._reap(mic)
         finally:
             self.toggling = False
+            turn = self.tryouts.get(self.ws)  # 这一句说完了（或失败了）：等结果、回报、收掉连接
+            if self.mic is None and turn is not None and "finish" not in turn:
+                turn["finish"] = asyncio.ensure_future(self._finish_tryout(self.ws, turn))
 
-    async def _finish_tryout(self, turn):
-        """等识别结果和工具调用（各有上限），回报主机，然后断开：下一句用新会话，不被上一句的上下文带偏。"""
+    def _end_tryout(self):
+        """开始别的交互前收掉上一句试音的连接：结果按已收到的回报，这一次用新会话、照常执行。
+        不等关闭握手：ws 置空，ensure() 就会新连。"""
+        ws = self.ws
+        turn = self.tryouts.get(ws)
+        if turn is None or self.mic is not None:  # 试音这句还在录：快捷键等也算进试音，不执行
+            return
+        turn["done"].set()
+        self.ws = None
+        asyncio.ensure_future(ws.close())
+
+    async def _finish_tryout(self, ws, turn):
+        """等识别结果和工具调用（各有上限；别的交互一开始就不再等），回报主机，然后断开这一句的连接：
+        下一句用新会话，不被上一句的上下文带偏。"""
         for key, limit in zip(("hyp", "tool"), self.tryout_wait):
             t0 = time.monotonic()
-            while turn[key] is None and time.monotonic() - t0 < limit:
+            while turn[key] is None and not turn["done"].is_set() and time.monotonic() - t0 < limit:
                 await asyncio.sleep(0.1)
             if turn["hyp"] is None:
                 break
-        await asyncio.sleep(0.5)  # 让平台把工具结果念完一句
-        if self.turn is turn:
-            self.turn = None
-        body = {"id": turn["id"], "hyp": turn["hyp"], "tool": turn["tool"], "args": turn["args"]}
+        if not turn["done"].is_set():
+            await asyncio.sleep(0.5)  # 让平台把工具结果念完一句
+        turn["done"].set()
+        body = {k: turn[k] for k in ("cond", "idx", "hyp", "tool", "args")}
         threading.Thread(target=self._post_quiet, args=("/api/tryout", body), daemon=True).start()
-        if self.ws is not None:
-            await self.ws.close()
+        if self.mic is None and self.ws is ws:
+            self._report("idle")  # 没听出字时不会有 stt：面板按钮靠这一下回到可说
+        try:
+            await ws.close()
+        except Exception:
+            pass
 
     def _post_quiet(self, path, body):
         try:

@@ -16,7 +16,6 @@ import queue
 import re
 import threading
 import time
-import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -98,7 +97,6 @@ def resolve_channel(hcfg, name, codex_home=None, environ=None):
 def make_handler(bus, runner, token, resolve=None, tryout_log=None):
     commit, pid, started = config.code_commit(), os.getpid(), time.time()
     tryout_log = pathlib.Path(tryout_log or config.HOME / "tryout.jsonl")
-    turns = {}  # 试音轮次：编号 → (条件, 第几句)；设备回报一次即销账
     device = {}  # 最近一次连上 /events 的桌面设备所报告的代码提交
     desks = []  # 正连着 /events 的桌面设备（TG 入口不算）；面板按键只发给它们
 
@@ -202,22 +200,19 @@ def make_handler(bus, runner, token, resolve=None, tryout_log=None):
                 if key not in PANEL_KEYS:
                     return self._json(400, {"ok": False, "say": f"不认识的按键：{key}"})
                 t = body.get("tryout")
-                if t is not None and (key != "talk" or t.get("cond") not in {c[0] for c in tryout.CONDS}
-                                      or t.get("idx") not in range(len(tryout.PHRASES))):
+                if t is not None and (key != "talk" or not tryout.valid(t)):
                     return self._json(400, {"ok": False, "say": f"试音参数不对：{t}"})
                 if not desks:
                     return self._json(409, {"ok": False, "say": "桌面设备没在线：终端跑 python3 -m sunflower.service status 看「设备」一行"})
                 ev = {"key": key}
-                if t is not None:
-                    ev["tryout"] = uuid.uuid4().hex[:8]
-                    turns[ev["tryout"]] = (t["cond"], t["idx"])
+                if t is not None:  # 设备只在开口那一下认它，绑到这一句的连接上
+                    ev["tryout"] = {"cond": t["cond"], "idx": t["idx"]}
                 bus.emit("key", ev)
                 return self._json(200, {"ok": True})
             if path == "/api/tryout":
-                turn = turns.pop(body.get("id"), None)
-                if turn is None:
-                    return self._json(404, {"ok": False, "say": "没有这一轮试音"})
-                row = tryout.score(*turn, body.get("hyp"), body.get("tool"), body.get("args"))
+                if not tryout.valid(body):
+                    return self._json(400, {"ok": False, "say": "试音参数不对"})
+                row = tryout.score(body["cond"], body["idx"], body.get("hyp"), body.get("tool"), body.get("args"))
                 tryout.append(tryout_log, row)
                 bus.emit("tryout", row)
                 return self._json(200, {"ok": True})
