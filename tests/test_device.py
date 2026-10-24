@@ -431,6 +431,58 @@ class TryoutTurnTest(unittest.TestCase):
         self.assertTrue(self.posted(d, "/api/status"))
         self.assertEqual([b["tool"] for b in self.posted(d, "/api/tryout")], [None])
 
+    def test_tryout_waits_while_demo_turn_may_still_call_tools(self):
+        async def go():
+            d = self.device()
+            await d.toggle_talk()  # 面板上说一句真命令
+            await asyncio.sleep(0.05)
+            await d.toggle_talk()
+            w0 = d.ws
+            d._heard("把 README 里的错字改掉")
+            await d.toggle_talk(tryout=self.T)  # 工具调用还在路上就切到试音按下
+            refused = (d.mic is None, d.ws is w0, dict(d.tryouts))
+            await d._tool(12, {"name": "self.code.dispatch", "arguments": {"text": "改错字"}}, ws=w0)
+            await asyncio.sleep(0.1)
+            return d, refused
+        d, refused = asyncio.run(go())
+        self.assertEqual(refused, (True, True, {}))  # 不开口、不借演示连接
+        self.assertIn({"state": "busy"}, self.posted(d, "/api/device"))
+        self.assertTrue(self.posted(d, "/api/dispatch"))  # 演示那句照常执行
+
+    def test_quiet_demo_connection_is_not_reused_for_tryout(self):
+        async def go():
+            d = self.device()
+            w0 = d.ws  # 演示那句早已结束、连接还没到空闲断开
+            await d.toggle_talk(tryout=self.T)
+            await asyncio.sleep(0.01)  # 旧连接的关闭不阻塞开口
+            fresh = (d.ws is not w0, w0.closed, d.ws in d.tryouts)
+            await d.toggle_talk()
+            return fresh
+        self.assertEqual(asyncio.run(go()), (True, True, True))  # 试音一句用新会话，不被演示上下文带偏
+
+    def test_next_press_waits_for_pending_tryout_result(self):
+        async def go():
+            d = self.device()
+            d.tryout_wait = (0.5, 0.5)
+            await d.toggle_talk(tryout=self.T)
+            await asyncio.sleep(0.05)
+            await d.toggle_talk()
+            t1 = d.ws
+            d._heard("进度怎么样了")
+            await asyncio.sleep(0.1)
+            early_idle = {"state": "idle"} in self.posted(d, "/api/device")
+            await d.toggle_talk(tryout={"cond": "quiet", "idx": 6})  # 结果还没出就按下一句
+            refused = (d.mic is None, d.ws is t1)
+            await d._tool(13, {"name": "self.code.status", "arguments": {}}, ws=t1)
+            await self.settle(d, "/api/tryout")
+            await asyncio.sleep(0.1)
+            return d, early_idle, refused
+        d, early_idle, refused = asyncio.run(go())
+        self.assertFalse(early_idle)  # 识别出字时按钮还不能回到可说
+        self.assertEqual(refused, (True, True))
+        self.assertEqual([(b["idx"], b["tool"]) for b in self.posted(d, "/api/tryout")], [(5, "self.code.status")])
+        self.assertIn({"state": "idle"}, self.posted(d, "/api/device"))  # 结果出来才回到可说
+
     def test_empty_tryout_turn_reports_result_and_idle(self):
         async def go():
             d = self.device()

@@ -24,7 +24,7 @@ from . import agents, config, tryout
 WEB = pathlib.Path(__file__).resolve().parent / "web"
 HEARTBEAT_S = 30
 PANEL_KEYS = {"talk", "mute", "1", "2", "3", "4", "5"}  # 面板按键（#40）：与设备终端按键同一组动作
-MIC_STATES = {"recording", "recognizing", "idle"}
+MIC_STATES = {"recording", "recognizing", "idle", "busy"}  # busy：这一下没开口（上一句还在出结果）
 
 
 class Bus:

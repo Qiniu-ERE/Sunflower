@@ -126,6 +126,7 @@ function showTalk(state, text) {
   b.textContent = (text || TALK_TEXT[state] || TALK_TEXT.idle) + (muted && state === "idle" ? " · 🔇" : "");
 }
 function setMic(d) {
+  if (d.state === "busy") { clearTimeout(ackTimer); return flash("上一句还在出结果，稍等几秒再按"); }  // 设备没开口
   if (typeof d.muted === "boolean") muted = d.muted;
   if (d.state) { mic = d.state; clearTimeout(ackTimer); }
   clearTimeout(backTimer);

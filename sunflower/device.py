@@ -162,6 +162,7 @@ class Device:
         # 试音（#40）：连接 → 这一轮 {cond, idx, hyp, tool, args, done}。试音一句占一条连接，这条连接上的
         # 工具调用只记录、不执行；别的交互开始前先收掉它，迟到的调用落不到新一轮
         self.tryouts = {}
+        self.last_turn = float("-inf")  # 最近一次收口 / 听到字的时刻：之后几秒内平台可能还会调工具
         self.tryout_wait = (12.0, 6.0)  # 松键后等识别结果 / 识别后等工具调用的秒数
 
     # -- self reload (#27) -------------------------------------------------
@@ -296,8 +297,10 @@ class Device:
 
     def _heard(self, text, ws=None):
         log("听到:", text)
-        self._report("idle")
+        self.last_turn = time.monotonic()
         turn = self.tryouts.get(ws or self.ws)
+        if turn is None:
+            self._report("idle")  # 试音那句要等结果出来（_finish_tryout）才回到可说
         if turn is not None and turn["hyp"] is None and not turn["done"].is_set():
             turn["hyp"] = text
 
@@ -418,7 +421,14 @@ class Device:
         self.toggling = True
         try:
             if self.mic is None:
-                self._end_tryout()
+                if isinstance(tryout, dict) and self._tryout_busy():
+                    log("上一句还在出结果：这一下不算，稍等几秒再按")
+                    self._report("busy")
+                    return
+                self._end_tryout(own=True)
+                if isinstance(tryout, dict) and self.ws is not None and self.ws not in self.tryouts:
+                    old, self.ws = self.ws, None  # 演示那句已经静下来：试音另开新会话，不被它的上下文带偏
+                    asyncio.ensure_future(old.close())
                 # 先开麦再连灵矽：连接要 ~3 s，期间的话先攒着，listen start 之后补发
                 connected = self.ws is not None and self.ws.state.name == "OPEN"
                 ready = asyncio.Event()
@@ -444,6 +454,7 @@ class Device:
                 await self._send({"type": "listen", "state": "stop"})
                 self._earcon(EARCON_STOP)
                 self._report("recognizing")
+                self.last_turn = time.monotonic()
                 log("🎙 结束，识别中…")
         except Exception as e:
             log(f"✘ 说话失败：{type(e).__name__}: {e}")
@@ -457,12 +468,23 @@ class Device:
             if self.mic is None and turn is not None and "finish" not in turn:
                 turn["finish"] = asyncio.ensure_future(self._finish_tryout(self.ws, turn))
 
-    def _end_tryout(self):
+    def _tryout_busy(self):
+        """试音这一下现在开口会不会抢走别人的结果：上一句试音还没出结果，或演示那句的工具调用可能还在路上。"""
+        ws = self.ws
+        if ws is None or ws.state.name != "OPEN":
+            return False
+        turn = self.tryouts.get(ws)
+        if turn is not None:
+            return not turn["done"].is_set()
+        return self.pending_tools > 0 or time.monotonic() - self.last_turn < self.tryout_wait[1] + 0.5
+
+    def _end_tryout(self, own=False):
         """开始别的交互前收掉上一句试音的连接：结果按已收到的回报，这一次用新会话、照常执行。
         不等关闭握手：ws 置空，ensure() 就会新连。"""
         ws = self.ws
         turn = self.tryouts.get(ws)
-        if turn is None or self.mic is not None:  # 试音这句还在录：快捷键等也算进试音，不执行
+        # 试音这句还在录或正在收口（own=开口那一下自己调用）：快捷键、回执等也算进试音，不执行
+        if turn is None or self.mic is not None or (self.toggling and not own):
             return
         turn["done"].set()
         self.ws = None

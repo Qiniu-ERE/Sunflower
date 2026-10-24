@@ -70,6 +70,7 @@ const results = [];
 function showTalk(state, text) { const b = $("talk"); b.className = "talk " + state; b.textContent = text || TALK_TEXT[state] || TALK_TEXT.idle; }
 function flash(text) { showTalk("offline", text); clearTimeout(backTimer); backTimer = setTimeout(() => setMic({ state: mic }), 4000); }
 function setMic(d) {
+  if (d.state === "busy") { clearTimeout(ackTimer); return flash("上一句还在出结果，稍等几秒再按"); }  // 设备没开口
   if (!d.state) return;
   mic = d.state; clearTimeout(ackTimer); clearTimeout(backTimer);
   if (mic === "recognizing") backTimer = setTimeout(() => { mic = "idle"; showTalk("idle"); }, 20000);
@@ -110,8 +111,9 @@ function addRow(r) {
 }
 async function press(key) {
   // 这一页按下的每一下都带试音编号（开口还是收口由设备自己判断），所以这里按键永远不会真执行任务
-  if (idx >= phrases.length) return flash("这组念完了：换个条件，或点「上一句」重念");
-  const body = { key, tryout: { cond, idx } };
+  // 念完了只放行收口（录音中点了「跳过」时）；带最后一句的编号，万一设备其实没在录，开口也仍是试音
+  if (idx >= phrases.length && mic !== "recording") return flash("这组念完了：换个条件，或点「上一句」重念");
+  const body = { key, tryout: { cond, idx: Math.min(idx, phrases.length - 1) } };
   clearTimeout(ackTimer); ackTimer = setTimeout(() => flash("设备没响应"), 3000);
   try {
     const r = await fetch("/api/key", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, token && { "Authorization": "Bearer " + token }), body: JSON.stringify(body) });
