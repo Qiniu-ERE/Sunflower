@@ -4,12 +4,12 @@
 #   scripts/pi-secrets.sh push <prod1|prod2> <codex-钥匙串服务名>
 #   scripts/pi-secrets.sh wipe            # 比赛结束：粉碎板上 .env
 #
-# 灵矽 key 按笔记里的标签（「生产用API key 1/2」）取其后第一条 lx- 行；
+# 灵矽 key 从 SUNFLOWER_NOTES 指向的笔记里取：按标签（「生产用API key 1/2」）取其后第一条 lx- 行；
 # Codex(qiniu-gpt) key 从本机钥匙串取，板上以 QINIU_GPT_API_KEY 提供给 codex（provider env_key）。
 # 板上已有的 SUNFLOWER_TOKEN 保留，没有则在板上生成。
 set -euo pipefail
 PI=${SUNFLOWER_PI:-sunflower-pi}
-NOTES=${SUNFLOWER_NOTES:-"$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/SunYifei/全局TODO/企业bot相关.md"}
+NOTES=${SUNFLOWER_NOTES:-}  # 不设默认值：笔记路径因人而异，不进仓库
 
 fp() { printf %s "$1" | shasum -a 256 | cut -c1-8; }
 
@@ -25,6 +25,7 @@ push)
     *) echo "用法: $0 push <prod1|prod2> <codex-钥匙串服务名>" >&2; exit 2 ;;
   esac
   svc=${3:?缺 codex 钥匙串服务名}
+  [ -f "$NOTES" ] || { echo "先设置 SUNFLOWER_NOTES=<存放灵矽 key 的笔记文件>" >&2; exit 2; }
   linx=$(linx_key "$label")
   [ -n "$linx" ] || { echo "笔记里找不到「${label}」下的 lx- key" >&2; exit 1; }
   codex=$(/usr/bin/security find-generic-password -s "$svc" -w) || { echo "钥匙串里没有服务 $svc" >&2; exit 1; }
