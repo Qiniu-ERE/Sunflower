@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>太阳花 · 试音</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #30363d; --fg: #e6edf3; --dim: #8b949e;
+    --sun: #f5b301; --ok: #3fb950; --bad: #f85149; --info: #58a6ff;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); }
+  body { padding: 2vh 2vw; font-size: clamp(14px, 1.5vw, 22px); }
+  header { display: flex; align-items: center; gap: 1em; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 1.3em; } .brand b { color: var(--sun); }
+  .conds { display: flex; gap: .4em; flex: 1; flex-wrap: wrap; }
+  button { font: inherit; cursor: pointer; border-radius: 999px; padding: .35em .9em; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+  button:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
+  .conds button.on { border-color: var(--sun); color: var(--sun); font-weight: 600; }
+  .aside { color: var(--dim); font-size: .8em; text-decoration: none; white-space: nowrap; }
+  .aside:hover, .aside:focus-visible { color: var(--fg); text-decoration: underline; }
+  .talk { font-weight: 600; border: 2px solid var(--sun); color: var(--sun); white-space: nowrap; }
+  .talk.recording { background: var(--bad); border-color: var(--bad); color: #fff; animation: pulse 1.2s ease-in-out infinite; }
+  .talk.recognizing { border-color: var(--info); color: var(--info); }
+  .talk.offline { border-color: var(--line); color: var(--dim); }
+  @keyframes pulse { 50% { opacity: .65; } }
+  .card { margin: 3vh 0 2vh; padding: 3vh 2vw; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; text-align: center; }
+  .count { color: var(--dim); } .hint { color: var(--dim); margin-top: .6em; }
+  .phrase { font-size: 2.6em; font-weight: 700; margin: .4em 0; }
+  .nav { display: flex; gap: .6em; justify-content: center; margin-top: 1em; }
+  table { width: 100%; border-collapse: collapse; font-size: .85em; }
+  th, td { text-align: left; padding: .4em .5em; border-bottom: 1px solid #21262d; }
+  th { color: var(--dim); font-weight: 600; }
+  .y { color: var(--ok); } .n { color: var(--bad); }
+  .sum { font-family: var(--mono); }
+  .empty { color: var(--dim); font-style: italic; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🌻 <b>太阳花</b> 试音</div>
+  <div id="conds" class="conds"></div>
+  <a id="back" class="aside" href="/panel">回面板</a>
+  <button id="talk" class="talk" type="button" aria-live="polite">🎙 空格 / 点这里说话</button>
+</header>
+<div class="card">
+  <div id="count" class="count"></div>
+  <div id="phrase" class="phrase" aria-live="polite">加载中…</div>
+  <div id="hint" class="hint"></div>
+  <div class="nav"><button id="prev" type="button">上一句</button><button id="skip" type="button">跳过</button></div>
+</div>
+<h3>各条件汇总</h3>
+<table><thead><tr><th>条件</th><th>听到</th><th>字全对</th><th>平均字错率</th><th>会做对的事</th></tr></thead><tbody id="sum"></tbody></table>
+<h3>逐句结果</h3>
+<table><thead><tr><th>条件</th><th>要念的</th><th>听成</th><th>会做</th><th></th></tr></thead><tbody id="rows"><tr><td colspan="5" class="empty">还没有结果：按空格开始念上面那句</td></tr></tbody></table>
+<script>
+// 试音（#40）：同一个说话按键、同一条链路；这一轮的工具调用由设备拦下，只记录不执行
+const $ = (id) => document.getElementById(id);
+const token = new URLSearchParams(location.search).get("t") || "";  // 本机打开不用令牌；别的机器带 ?t=
+$("back").href = "/panel" + location.search;
+const TOOL = { dispatch: "派任务", status: "问进度", cancel: "停下", undo: "撤销" };
+const TALK_KEYS = new Set([" ", "Enter", "PageUp", "PageDown", "ArrowLeft", "ArrowRight", "b", "B", "F5"]);
+const TALK_TEXT = { idle: "🎙 空格 / 点这里说话", recording: "● 录音中 · 说完再按一次", recognizing: "识别中…" };
+let phrases = [], conds = [], cond = "normal", idx = 0, mic = "idle", ackTimer = null, backTimer = null;
+const results = [];
+
+function showTalk(state, text) { const b = $("talk"); b.className = "talk " + state; b.textContent = text || TALK_TEXT[state] || TALK_TEXT.idle; }
+function flash(text) { showTalk("offline", text); clearTimeout(backTimer); backTimer = setTimeout(() => setMic({ state: mic }), 4000); }
+function setMic(d) {
+  if (d.state === "busy") { clearTimeout(ackTimer); return flash("上一句还在出结果，稍等几秒再按"); }  // 设备没开口
+  if (!d.state) return;
+  mic = d.state; clearTimeout(ackTimer); clearTimeout(backTimer);
+  if (mic === "recognizing") backTimer = setTimeout(() => { mic = "idle"; showTalk("idle"); }, 20000);
+  showTalk(mic);
+}
+function render() {
+  const c = conds.find((x) => x.id === cond) || {};
+  $("conds").innerHTML = "";
+  for (const x of conds) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = x.name; b.className = x.id === cond ? "on" : "";
+    b.onclick = () => { cond = x.id; idx = 0; render(); }; $("conds").appendChild(b);
+  }
+  if (idx >= phrases.length) {
+    $("count").textContent = c.name + " · 10 句念完了"; $("phrase").textContent = "✔ 换个条件继续，或看下面的汇总"; $("hint").textContent = "";
+  } else {
+    $("count").textContent = `${c.name} · 第 ${idx + 1} / ${phrases.length} 句`;
+    $("phrase").textContent = phrases[idx].text; $("hint").textContent = c.hint + " · 按空格开始，说完再按一次";
+  }
+  const sum = $("sum"); sum.innerHTML = "";
+  for (const x of conds) {
+    const g = results.filter((r) => r.cond === x.id); if (!g.length) continue;
+    const n = (f) => g.filter(f).length, avg = g.reduce((a, r) => a + r.cer, 0) / g.length;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${x.name}</td><td class="sum">${n((r) => r.heard)}/${g.length}</td><td class="sum">${n((r) => r.exact)}/${g.length}</td><td class="sum">${avg.toFixed(2)}</td><td class="sum">${n((r) => r.ok)}/${g.length}</td>`;
+    sum.appendChild(tr);
+  }
+}
+function addRow(r) {
+  results.push(r);
+  const body = $("rows"); const e = body.querySelector(".empty"); if (e) e.parentElement.remove();
+  const tr = document.createElement("tr"); const name = (conds.find((x) => x.id === r.cond) || {}).name || r.cond;
+  for (const t of [name, r.ref, r.heard ? r.hyp : "（没听到）", r.tool ? TOOL[r.tool] : "（不调工具）", r.ok ? "✔" : "✘ 应为" + TOOL[r.expect]]) {
+    const td = document.createElement("td"); td.textContent = t; tr.appendChild(td);
+  }
+  tr.lastChild.className = r.ok ? "y" : "n"; body.prepend(tr);
+  if (r.cond === cond && r.idx === idx) idx += 1;  // 这一句有结果了，进下一句
+  render();
+}
+async function press(key) {
+  // 这一页按下的每一下都带试音编号（开口还是收口由设备自己判断），所以这里按键永远不会真执行任务
+  // 念完了只放行收口（录音中点了「跳过」时）；带最后一句的编号，万一设备其实没在录，开口也仍是试音
+  if (idx >= phrases.length && mic !== "recording") return flash("这组念完了：换个条件，或点「上一句」重念");
+  const body = { key, tryout: { cond, idx: Math.min(idx, phrases.length - 1) } };
+  clearTimeout(ackTimer); ackTimer = setTimeout(() => flash("设备没响应"), 3000);
+  try {
+    const r = await fetch("/api/key", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, token && { "Authorization": "Bearer " + token }), body: JSON.stringify(body) });
+    const d = await r.json();
+    if (r.status === 401) { clearTimeout(ackTimer); return flash("别的机器打开要带 ?t= 令牌"); }
+    if (!d.ok) { clearTimeout(ackTimer); flash(d.say || "按键没送到"); }
+  } catch (e) { clearTimeout(ackTimer); flash("主机连不上"); }
+}
+document.addEventListener("keydown", (e) => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || !TALK_KEYS.has(e.key)) return;
+  e.preventDefault(); press("talk");
+});
+$("talk").addEventListener("click", (e) => { if (e.detail > 0) press("talk"); });
+$("prev").onclick = () => { idx = Math.max(0, idx - 1); render(); };
+$("skip").onclick = () => { idx = Math.min(phrases.length, idx + 1); render(); };
+
+fetch("/api/tryout/phrases").then((r) => r.json()).then((d) => {
+  phrases = d.phrases; conds = d.conds; render();
+  const es = new EventSource(token ? "/events?t=" + encodeURIComponent(token) : "/events");
+  es.addEventListener("device", (e) => setMic(JSON.parse(e.data)));
+  es.addEventListener("tryout", (e) => addRow(JSON.parse(e.data)));  // 主机重启前的本场结果随回放补齐
+});
+</script>
+</body>
+</html>

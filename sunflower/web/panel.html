@@ -25,6 +25,8 @@
   .task { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
   .timer { font-family: var(--mono); color: var(--dim); }
   .talk { font: inherit; font-weight: 600; padding: .45em 1.1em; border-radius: 999px; border: 2px solid var(--sun); background: transparent; color: var(--sun); cursor: pointer; white-space: nowrap; }
+  .aside { color: var(--dim); font-size: .8em; text-decoration: none; white-space: nowrap; }
+  .aside:hover, .aside:focus-visible { color: var(--fg); text-decoration: underline; }
   .talk:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
   .talk.recording { background: var(--bad); border-color: var(--bad); color: #fff; animation: pulse 1.2s ease-in-out infinite; }
   .talk.recognizing { border-color: var(--info); color: var(--info); }
@@ -58,6 +60,7 @@
   <span id="pill" class="pill offline">连接中</span>
   <div id="task" class="task"></div>
   <div id="timer" class="timer"></div>
+  <a id="tryout" class="aside" href="/tryout">试音</a>
   <button id="talk" class="talk" type="button" aria-live="polite">🎙 空格 / 点这里说话</button>
 </header>
 <main>
@@ -72,6 +75,7 @@
 const $ = (id) => document.getElementById(id);
 const ICON = { user: "🗣", cmd: "▶", cmd_ok: "✔", cmd_fail: "✘", file: "✎", msg: "💬", warn: "⚠", system: "·", think: "…" };
 const token = new URLSearchParams(location.search).get("t") || "";
+$("tryout").href = "/tryout" + location.search;  // 别的机器带着令牌开的面板，试音页也带上
 let startedAt = null, timerId = null;
 
 function clearEmpty(el) { const e = el.querySelector(".empty"); if (e) e.remove(); }
@@ -122,13 +126,14 @@ function showTalk(state, text) {
   b.textContent = (text || TALK_TEXT[state] || TALK_TEXT.idle) + (muted && state === "idle" ? " · 🔇" : "");
 }
 function setMic(d) {
+  if (d.state === "busy") { clearTimeout(ackTimer); return flash("上一句还在出结果，稍等几秒再按"); }  // 设备没开口
   if (typeof d.muted === "boolean") muted = d.muted;
   if (d.state) { mic = d.state; clearTimeout(ackTimer); }
   clearTimeout(backTimer);
   if (mic === "recognizing") backTimer = setTimeout(() => { mic = "idle"; showTalk("idle"); }, 10000);  // 没识别出字也回到可说
   showTalk(mic);
 }
-function flash(text) { showTalk("offline", text); clearTimeout(backTimer); backTimer = setTimeout(() => showTalk(mic), 4000); }
+function flash(text) { showTalk("offline", text); clearTimeout(backTimer); backTimer = setTimeout(() => setMic({ state: mic }), 4000); }
 async function press(key) {
   if (key === "talk") { clearTimeout(ackTimer); ackTimer = setTimeout(() => flash("设备没响应"), 3000); }
   try {
