@@ -18,7 +18,7 @@ SUMMARY = ("<!-- cost_summary:begin -->", "<!-- cost_summary:end -->")  # 根 RE
 COLS = ("unit_1", "unit_1k", "cn_1k")
 SCENARIOS = {"unit_1k": "海外报价", "cn_1k": "国内采购"}
 FEATURES = ("screen", "turns", "coding_agent", "sdk")
-OURS = {"标准版": {"screen": "1.28″ 圆屏（表情）", "turns": "是（4 麦 DOA + 云台电机）", "coding_agent": "是（Codex，可换）",
+OURS = {"标准版": {"screen": "无屏（固定笑脸 + 16 颗花瓣灯）", "turns": "是（4 麦 DOA + 云台电机）", "coding_agent": "是（Codex，可换）",
                 "sdk": "本仓 MIT 开源"},
         "屏显版": {"screen": "2.1″ 圆屏（表情 + 进展回显）", "turns": "是（4 麦 DOA + 云台电机）",
                 "coding_agent": "是（Codex，可换）", "sdk": "本仓 MIT 开源"}}
