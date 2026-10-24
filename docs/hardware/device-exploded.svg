@@ -8,19 +8,18 @@
 <line x1="40" y1="106" x2="1760" y2="106" stroke="#B9AE9A"/>
 <text x="40.0" y="140.0" font-size="17" fill="#3B3227" text-anchor="start" font-weight="800" >花头（沿视线方向，前 → 后）</text>
 <line x1="60" y1="290" x2="520" y2="290" stroke="#D9801A" stroke-dasharray="10 4 2 4"/>
-<g transform="translate(100,290) scale(0.36,.9) translate(-300,-276)">
-<circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="3"/><circle cx="300" cy="276" r="33" fill="#FFF3DA" stroke="#D9801A" stroke-width="3"/><ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity=".45"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity=".45"/>
+<g transform="translate(115,290) scale(0.36,.9) translate(-300,-276)">
+<circle cx="300" cy="276" r="56" fill="url(#face)" stroke="#D9801A" stroke-width="1.5"/>
+<ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/><ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity="0.42"/>
+<circle cx="286" cy="268" r="5" fill="#6D2C1F"/><circle cx="287.5" cy="266.5" r="1.5" fill="#fff"/>
+<circle cx="314" cy="268" r="5" fill="#6D2C1F"/><circle cx="315.5" cy="266.5" r="1.5" fill="#fff"/>
+<path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
+<circle cx="300" cy="276" r="56" fill="none" stroke="#D9801A" stroke-width="3"/>
 </g>
-<circle cx="100" cy="160" r="10.5" fill="#3B3227"/>
-<text x="100.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
-<text x="100.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >脸盖</text>
-<g transform="translate(175,290) scale(0.36,.9) translate(-300,-276)">
-<circle cx="300" cy="276" r="37.5" fill="#1F2A44" stroke="#111" stroke-width="3"/><circle cx="300" cy="276" r="32.4" fill="#22335A"/><circle cx="286" cy="268" r="5" fill="#FFE3B3"/><circle cx="314" cy="268" r="5" fill="#FFE3B3"/><path d="M290,284 Q300,293 310,284" fill="none" stroke="#FFE3B3" stroke-width="3" stroke-linecap="round"/><rect x="292" y="312" width="16" height="40" fill="#C98A2B"/>
-</g>
-<circle cx="175" cy="160" r="10.5" fill="#3B3227"/>
-<text x="175.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >2</text>
-<text x="175.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >圆屏</text>
-<g transform="translate(265,290) scale(0.36,.9) translate(-300,-276)">
+<circle cx="115" cy="160" r="10.5" fill="#3B3227"/>
+<text x="115.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >1</text>
+<text x="115.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >脸盖</text>
+<g transform="translate(220,290) scale(0.36,.9) translate(-300,-276)">
 <ellipse cx="314.8" cy="201.5" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(11.25 314.8 201.5)"/>
 <ellipse cx="342.2" cy="212.8" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(33.75 342.2 212.8)"/>
 <ellipse cx="363.2" cy="233.8" rx="15" ry="27" fill="#F2C230" stroke="#D9A400" stroke-width="1.2" transform="rotate(56.25 363.2 233.8)"/>
@@ -71,10 +70,10 @@
 <ellipse cx="263.9" cy="203.5" rx="4" ry="8" fill="#FFF3C4" opacity=".7" transform="rotate(337.50 263.9 203.5)"/>
 <circle cx="300" cy="276" r="54" fill="#FBF3E2" stroke="#D9A400" stroke-width="2"/>
 </g>
-<circle cx="265" cy="160" r="10.5" fill="#3B3227"/>
-<text x="265.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >3</text>
-<text x="265.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >花瓣罩</text>
-<g transform="translate(352,290) scale(0.36,.9) translate(-300,-276)">
+<circle cx="220" cy="160" r="10.5" fill="#3B3227"/>
+<text x="220.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >3</text>
+<text x="220.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >花瓣罩</text>
+<g transform="translate(325,290) scale(0.36,.9) translate(-300,-276)">
 <circle cx="300" cy="276" r="80" fill="none" stroke="#2E7D4F" stroke-width="16"/>
 <rect x="295.0" y="191.0" width="10" height="10" fill="#FFC21A" stroke="#B37700"/>
 <rect x="325.6" y="197.1" width="10" height="10" fill="#FFC21A" stroke="#B37700"/>
@@ -93,9 +92,9 @@
 <rect x="238.4" y="214.4" width="10" height="10" fill="#FFC21A" stroke="#B37700"/>
 <rect x="264.4" y="197.1" width="10" height="10" fill="#FFC21A" stroke="#B37700"/>
 </g>
-<circle cx="352" cy="160" r="10.5" fill="#3B3227"/>
-<text x="352.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >3</text>
-<text x="352.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >灯环板</text>
+<circle cx="325" cy="160" r="10.5" fill="#3B3227"/>
+<text x="325.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >3</text>
+<text x="325.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >灯环板</text>
 <g transform="translate(430,290) scale(0.36,.9) translate(-300,-276)">
 <circle cx="300" cy="276" r="96" fill="#FFFFFF" stroke="#CFC6B4" stroke-width="3"/><circle cx="300" cy="276" r="84" fill="#F3EEE3" stroke="#CFC6B4" stroke-width="2"/><rect x="286" y="364" width="28" height="30" rx="4" fill="#B9BFC7" stroke="#6E747C" stroke-width="2"/>
 </g>
@@ -157,7 +156,7 @@
 <circle cx="438" cy="440" r="2.6" fill="#3B3227"/>
 <circle cx="660" cy="440" r="11" fill="#3B3227"/>
 <text x="660.0" y="444.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >5</text>
-<text x="677.0" y="445.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >花茎管（内走 10 芯线）</text>
+<text x="677.0" y="445.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >花茎管（内走 5 芯线）</text>
 <polyline points="646,524 500,524" fill="none" stroke="#3B3227" stroke-width="1"/>
 <circle cx="500" cy="524" r="2.6" fill="#3B3227"/>
 <circle cx="660" cy="524" r="11" fill="#3B3227"/>
@@ -336,19 +335,15 @@
 <circle cx="1610" cy="160" r="10.5" fill="#3B3227"/>
 <text x="1610.0" y="164.5" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700" >4</text>
 <text x="1610.0" y="186.0" font-size="13.5" fill="#3B3227" text-anchor="middle" font-weight="700" >头壳</text>
-<text x="1040.0" y="430.0" font-size="16" fill="#3B3227" text-anchor="start" font-weight="800" >过关节走线：屏显版反而更少</text>
-<text x="1040.0" y="476.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >标准版 10 芯</text>
+<text x="1040.0" y="430.0" font-size="16" fill="#3B3227" text-anchor="start" font-weight="800" >过关节走线：标准版 5 芯，屏显版 4 芯</text>
+<text x="1040.0" y="476.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >标准版 5 芯</text>
 <rect x="1170" y="460" width="84" height="24" rx="12" fill="#FFFFFF" stroke="#B9AE9A"/>
-<text x="1212.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >SPI × 4</text>
+<text x="1212.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >灯 DIN</text>
 <rect x="1262" y="460" width="84" height="24" rx="12" fill="#FFFFFF" stroke="#B9AE9A"/>
-<text x="1304.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >背光</text>
+<text x="1304.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >按键 × 2</text>
 <rect x="1354" y="460" width="84" height="24" rx="12" fill="#FFFFFF" stroke="#B9AE9A"/>
-<text x="1396.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >灯 DIN</text>
-<rect x="1446" y="460" width="84" height="24" rx="12" fill="#FFFFFF" stroke="#B9AE9A"/>
-<text x="1488.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >按键 × 2</text>
-<rect x="1538" y="460" width="84" height="24" rx="12" fill="#FFFFFF" stroke="#B9AE9A"/>
-<text x="1580.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >电源 × 2</text>
-<text x="1170.0" y="506.0" font-size="12.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >底座主控直接驱动 1.28″ 屏（CS 接地）</text>
+<text x="1396.0" y="477.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >电源 × 2</text>
+<text x="1170.0" y="506.0" font-size="12.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >脸盖是不通电的固定笑脸，花瓣灯由底座主控驱动</text>
 <text x="1040.0" y="568.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >屏显版 4 芯 ㉒</text>
 <rect x="1170" y="552" width="84" height="24" rx="12" fill="#FFF3E0" stroke="#F6A33A"/>
 <text x="1212.0" y="569.0" font-size="12.5" fill="#3B3227" text-anchor="middle" font-weight="400" >5 V</text>
@@ -392,7 +387,7 @@
 <text x="1152.0" y="992.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >标准版</text>
 <text x="1392.0" y="992.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >屏显版</text>
 <text x="1052.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >花芯</text>
-<text x="1152.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >1.28″ 240×240，只显示表情</text>
+<text x="1152.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >固定笑脸（不通电），看花瓣灯</text>
 <text x="1392.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >2.1″ 480×480：平时是脸，执行和完成时回显</text>
 <rect x="1040" y="1054" width="720" height="40" fill="#F6F0E4"/>
 <text x="1052.0" y="1080.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >进展显示</text>
@@ -403,7 +398,7 @@
 <text x="1392.0" y="1124.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >底座 ESP32-S3 + 花头 ESP32-S3</text>
 <rect x="1040" y="1142" width="720" height="40" fill="#F6F0E4"/>
 <text x="1052.0" y="1168.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >过关节</text>
-<text x="1152.0" y="1168.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >10 芯</text>
+<text x="1152.0" y="1168.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >5 芯</text>
 <text x="1392.0" y="1168.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >4 芯</text>
 <text x="1052.0" y="1212.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >尺寸 / 供电</text>
 <text x="1152.0" y="1212.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >Ø105 × 235 mm · USB-C PD 12 V</text>

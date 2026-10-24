@@ -129,7 +129,7 @@ def structure():
       '</defs>')
     a(f'<rect width="{W}" height="{H}" fill="#FBF8F0"/>')
     text(40, 52, "太阳花 Sunflower · 实体设备结构设计图", 30, INK, "start", 800)
-    text(40, 82, "桌面语音编程伙伴：听声转向（4 麦阵列定位 + 单轴偏航）· 表情屏 · 花瓣状态灯 · 瓢虫说话键 —— 单位 mm，三视图 1 mm = 2 px", 15, SUB)
+    text(40, 82, "桌面语音编程伙伴：听声转向（4 麦阵列定位 + 单轴偏航）· 笑脸花芯 · 花瓣状态灯 · 瓢虫说话键 —— 单位 mm，三视图 1 mm = 2 px", 15, SUB)
     text(1760, 52, "v0.1 概念结构", 15, SUB, "end", 600)
     text(1760, 76, "2026-10-23", 13, SUB, "end")
     a(f'<line x1="40" y1="100" x2="1760" y2="100" stroke="{LINE}"/>')
@@ -163,7 +163,6 @@ def structure():
     # 花头
     petals(cx, cy)
     a(f'<circle cx="{cx}" cy="{cy}" r="56" fill="url(#face)" stroke="{ORAS}" stroke-width="1.5"/>')
-    a(f'<circle cx="{cx}" cy="{cy}" r="33" fill="none" stroke="#E2882A" stroke-width="1.2" stroke-dasharray="3 3"/>')
     a(f'<circle cx="{cx - 14}" cy="{cy - 8}" r="5" fill="#6D2C1F"/><circle cx="{cx + 14}" cy="{cy - 8}" r="5" fill="#6D2C1F"/>'
       f'<circle cx="{cx - 12.5}" cy="{cy - 9.5}" r="1.5" fill="#fff"/><circle cx="{cx + 15.5}" cy="{cy - 9.5}" r="1.5" fill="#fff"/>')
     a(f'<path d="M{cx - 10},{cy + 8} Q{cx},{cy + 17} {cx + 10},{cy + 8}" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>')
@@ -179,8 +178,7 @@ def structure():
     a(f'<line x1="96" y1="{cy}" x2="{cx - 106}" y2="{cy}" stroke="{LINE}" stroke-dasharray="2 3"/>')
     dim_v(104, cy, 640, "脸心 182", -1)
     # 正视图标注
-    callout("1", 450, 214, cx + 48, cy - 30, "脸盖 Ø56", "R")
-    callout("2", 450, 250, cx + 26, cy + 18, "圆屏 Ø32.4", "R")
+    callout("1", 450, 232, cx + 48, cy - 30, "脸盖 Ø56（固定笑脸）", "R")
     callout("7", 450, 392, cx + 86, 418, "说话键", "R")
     callout("8", 450, 520, cx + 52, 496, "声学格栅", "R")
 
@@ -250,14 +248,11 @@ def structure():
         a(f'<rect x="858" y="{y0}" width="44" height="{y1 - y0}" rx="20" fill="{YEL}" fill-opacity=".85" stroke="{YELS}"/>')
     a(f'<rect x="864" y="214" width="44" height="124" rx="10" fill="url(#hatch)" stroke="{POTS}" stroke-width="1.4"/>'
       f'<rect x="868" y="222" width="34" height="108" rx="6" fill="#F3EEE3"/>')
-    a(f'<path d="M852,220 h8 v23 h-8 z M852,309 h8 v23 h-8 z" fill="{ORA}" stroke="{ORAS}"/>'
-      f'<rect x="852" y="243" width="3" height="66" fill="#CFE8FF" opacity=".8"/>')
-    a(f'<rect x="858" y="238" width="8" height="76" fill="#1F2A44" stroke="#111"/>'
-      f'<rect x="866" y="250" width="5" height="52" fill="#2E7D4F"/>')
+    a(f'<path d="M852,220 h8 v112 h-8 z" fill="{ORA}" stroke="{ORAS}"/>')
     for ly in (196, 356):
         a(f'<rect x="866" y="{ly - 4}" width="8" height="8" fill="#FFB300" stroke="#C77800"/>'
           f'<rect x="874" y="{ly - 6}" width="3" height="12" fill="#2E7D4F"/>')
-    a(f'<path d="M871,276 C882,290 888,320 888,338" fill="none" stroke="{ORA}" stroke-width="2"/>')
+    a(f'<path d="M877,196 C890,230 892,300 888,338" fill="none" stroke="{ORA}" stroke-width="2"/>')
     a('</g>')
     # 颈座
     nx, ny = rot(888, 338, C[0], C[1], 20)
@@ -277,9 +272,8 @@ def structure():
 
 
     L, R = 690, 1010
-    p1 = P(853, 228); p2 = P(862, 300); p3 = P(870, 356); p4 = P(905, 300)
-    callout("1", L, 330, int(p1[0]), int(p1[1]), "脸盖", "L")
-    callout("2", L, 362, int(p2[0]), int(p2[1]), "圆屏", "L")
+    p1 = P(853, 260); p4 = P(905, 300)
+    callout("1", L, 346, int(p1[0]), int(p1[1]), "脸盖（实心）", "L")
     callout("3", R, 200, int(P(870, 196)[0]), int(P(870, 196)[1]), "花瓣灯环", "R")
     callout("4", R, 300, int(p4[0]), int(p4[1]), "头壳", "R")
     callout("5", L, 410, X - 12, 410, "花茎管（内走线）", "L")
@@ -404,14 +398,14 @@ def structure():
         text(1612, ly + 24 + i * 22, s, 12.5, INK)
 
     # ---------------------------------------------------------------- E 状态表
-    panel_title(1150, 900, "E　状态 → 表情 / 灯 / 动作", "对应主机 state 事件")
+    panel_title(1150, 900, "E　状态 → 灯 / 花芯 / 动作", "对应主机 state 事件；标准版脸是固定笑脸，状态只看花瓣灯")
     cols = [1150, 1250, 1400, 1560]
-    hdr = ["状态", "② 圆屏表情", "③ 花瓣灯", "动作"]
-    rows = [("待机", "微笑、慢眨眼", "暖白呼吸 10%", "朝向上一位说话人"),
-            ("聆听", "眼睛睁大", "黄色常亮", "按 θ 转向"),
-            ("执行中", "思考眼 + 进度点", "顺时针流水", "保持不动"),
-            ("完成", "眯眼笑 + 腮红", "绿色闪 2 次", "播报结果、点头"),
-            ("出错", "皱眉", "橙红常亮", "播报下一步建议")]
+    hdr = ["状态", "标准版：③ 花瓣灯", "屏显版：⑲ 花芯", "动作"]
+    rows = [("待机", "暖白呼吸 10%", "微笑、慢眨眼", "朝向上一位说话人"),
+            ("聆听", "黄色常亮", "睁眼 + 听写回显", "按 θ 转向"),
+            ("执行中", "顺时针流水", "进度环 + 当前步骤", "保持不动"),
+            ("完成", "绿色闪 2 次", "结果 + 提交号", "播报结果、点头"),
+            ("出错", "橙红常亮", "失败数 + 下一步", "播报下一步建议")]
     y0 = 942
     a(f'<rect x="1150" y="{y0}" width="610" height="26" fill="#EFE7D6"/>')
     for c, h in zip(cols, hdr):
@@ -422,16 +416,15 @@ def structure():
             a(f'<rect x="1150" y="{yy}" width="610" height="30" fill="#F6F0E4"/>')
         for c, v in zip(cols, r):
             text(c + 8, yy + 20, v, 13, INK, "start", 700 if c == cols[0] else 400)
-    text(1150, y0 + 26 + 5 * 30 + 22, "「点头」= 偏航 ±8° 往复一次（单轴实现，无需俯仰电机）", 12.5, SUB)
+    text(1150, y0 + 26 + 5 * 30 + 22, "屏显版花瓣灯同标准版；「点头」= 偏航 ±8° 往复一次（单轴实现，无需俯仰电机）", 12.5, SUB)
 
     # ---------------------------------------------------------------- 零件表 + 关键数字
-    panel_title(40, 720, "零件表（标准版）", "屏显版只换花头（⑲–㉒），见解构图；外购件尺寸取自供应商页面，以实物 / 规格书为准")
+    panel_title(40, 720, "零件表（标准版）", "② 空缺：标准版花芯不通电、无屏；屏显版只换花头（⑲–㉒），见解构图；外购件尺寸取自供应商页面，以实物 / 规格书为准")
     bom = [
-        ("1", "脸盖", "橙色 PC，圆窗 Ø33，腮红移印"),
-        ("2", "圆屏", "1.28″ GC9A01 240×240，可视 Ø32.4 / 外形 Ø37.5"),
+        ("1", "脸盖", "橙色 PC 实心无开窗，固定笑脸 + 腮红移印（不通电）"),
         ("3", "花瓣灯环", "16 × WS2812B-2020，半透黄 PC 花瓣导光"),
         ("4", "头壳", "ABS，与颈座固定 20° 仰角"),
-        ("5", "花茎管", "Ø12 / Ø8 铝管，内走 10 芯 AWG30（屏 SPI + 灯 + 按键）"),
+        ("5", "花茎管", "Ø12 / Ø8 铝管，5 芯 AWG30：灯 DIN、按键 ×2、电源 ×2"),
         ("6", "叶片 ×2", "随花头一起转"),
         ("7", "瓢虫说话键", "轻触开关、竖直按压（不产生偏航力矩）"),
         ("8", "声学格栅（土面）", "Ø78 冲孔盖，麦克风与出线孔"),
@@ -448,7 +441,7 @@ def structure():
     ]
     colx = [40, 590]
     for i, (n, name, spec) in enumerate(bom):
-        cx0 = colx[0] if i < 9 else colx[1]
+        cx0 = colx[0] if i < 9 else colx[1]  # 17 件：左 9 右 8
         yy = 770 + (i if i < 9 else i - 9) * 30
         badge(cx0 + 11, yy - 5, n, 10.5)
         text(cx0 + 28, yy, name, 13.5, INK, "start", 700)
@@ -491,8 +484,9 @@ DEFS = ('<defs>'
                   for k, c in (("W", "#FFF4D6"), ("Y", "#FFD23F"), ("B", "#FFB300"), ("G", "#7BD389"), ("R", "#FF6B4A")))
         + '</defs>')
 
-STATES = [("待机", "smile", "W", "暖白呼吸"), ("聆听", "listen", "Y", "黄色常亮"), ("执行中", "think", "B", "琥珀流水"),
-          ("完成", "done", "G", "绿色闪烁"), ("出错", "error", "R", "橙红常亮")]
+# (状态, 花瓣灯 glow, 灯效, 屏显版花芯)。标准版的脸在任何状态下都是同一张笑脸。
+STATES = [("待机", "W", "暖白呼吸", "微笑"), ("聆听", "Y", "黄色常亮", "听写回显"), ("执行中", "B", "琥珀流水", "进度环"),
+          ("完成", "G", "绿色闪烁", "结果 + 提交号"), ("出错", "R", "橙红常亮", "失败 + 建议")]
 
 
 def face(cx, cy, expr="smile"):
@@ -579,14 +573,15 @@ def screen_face(cx, cy, mode):
 
 
 def device(variant, cx=300, expr="smile", glow=None, mode=None):
-    """整机正视（canonical 坐标，地面 y=640）。两种型号同一个花盆底座，屏显版只换花芯。"""
+    """整机正视（canonical 坐标，地面 y=640）。两种型号同一个花盆底座，屏显版只换花芯。
+    标准版花芯是不通电的固定笑脸，忽略 expr / mode，状态只由 glow（花瓣灯）区分。"""
     stem_leaves(cx)
     pot(cx)
     if glow:
         a(f'<circle cx="{cx}" cy="276" r="150" fill="url(#glow{glow})"/>')
     petals(cx, 276)
     if variant == "std":
-        face(cx, 276, expr)
+        face(cx, 276, "smile")
     else:
         screen_face(cx, 276, mode or expr)
 
@@ -618,19 +613,19 @@ def hero():
           "对着太阳花说一句话，Codex 就开始写代码；花面转向说话人，进展实时上屏，完成后语音播报 —— 两种型号同一个底座，屏显版只把花芯换成圆屏",
           h=1000)
     a('<rect x="40" y="846" width="900" height="6" rx="3" fill="#EADFC8"/>')
-    for x, variant, kw in ((240, "std", {"expr": "listen", "glow": "Y"}), (690, "pro", {"mode": "run", "glow": "B"})):
+    for x, variant, kw in ((240, "std", {"glow": "Y"}), (690, "pro", {"mode": "run", "glow": "B"})):
         a(f'<g transform="translate({x},{840 - 490 * 1.1:.1f}) scale(1.1) translate(-300,-150)">')
         a('<ellipse cx="300" cy="645" rx="140" ry="11" fill="#E6D9BE"/>')
         device(variant, **kw)
         a('</g>')
-    for x, name, sub in ((240, "标准版", "1.28″ 花芯只显示表情 · 进展投到任意浏览器 / 大屏"),
+    for x, name, sub in ((240, "标准版", "固定笑脸花芯，状态看花瓣灯 · 进展投到任意浏览器 / 大屏"),
                          (690, "屏显版", "2.1″ 圆屏花芯 · 平时是脸，执行和完成时回显进展")):
         a(f'<rect x="{x - 105}" y="868" width="210" height="34" rx="17" fill="{INK}"/>')
         text(x, 891, name, 17, "#FFF8E5", "middle", 700)
         text(x, 928, sub, 14, SUB, "middle")
     x0 = 1010
     cards = [("听声转向", ["土面下 4 麦克风阵列定位说话人", "花面 0.8 s 内转过去，范围 ±170°"]),
-             ("表情 + 花瓣灯", ["花瓣里藏 16 颗灯，脸上有五种表情", "Codex 在听、在做、做完、出错，一眼可知"]),
+             ("花瓣状态灯", ["花瓣里藏 16 颗灯，五种灯效对应五种状态", "标准版看灯；屏显版另有表情和回显"]),
              ("瓢虫说话键", ["按一下开始说，再按一下结束", "不靠唤醒词，嘈杂工位也不误触发"]),
              ("花芯回显（屏显版）", ["屏幕跟着花面转，始终朝向你", "只放一眼能看完的：步骤、进度、结果"])]
     for i, (t, lines) in enumerate(cards):
@@ -653,16 +648,17 @@ def hero():
             a(f'<path d="M{sx - 118},552 l20,0" stroke="{SUB}" stroke-width="1.6" marker-end="url(#arrI)"/>')
         text(sx, 640, name, 15, INK, "middle", 700)
         text(sx, 660, sub, 12.5, SUB, "middle")
-    text(x0, 712, "五种状态：表情 × 花瓣灯（两种型号相同）", 18, INK, "start", 800)
-    for i, (name, expr, glow, light) in enumerate(STATES):
+    text(x0, 712, "五种状态：标准版笑脸不变，只看花瓣灯", 18, INK, "start", 800)
+    for i, (name, glow, light, pro) in enumerate(STATES):
         sx = x0 + 70 + i * 150
-        a(f'<g transform="translate({sx},800) scale(.44) translate(-300,-276)">')
-        head(300, 276, expr, glow)
+        a(f'<g transform="translate({sx},794) scale(.44) translate(-300,-276)">')
+        head(300, 276, "smile", glow)
         a('</g>')
-        text(sx, 878, name, 15, INK, "middle", 700)
-        text(sx, 898, light, 12.5, SUB, "middle")
+        text(sx, 868, name, 15, INK, "middle", 700)
+        text(sx, 887, light, 12.5, SUB, "middle")
+        text(sx, 906, "屏显版：" + pro, 12, SUB, "middle")
     text(x0, 948, "语音识别与合成由灵矽提供；编程交给 Codex（可切换渠道）；主机与面板代码两种型号通用。", 13.5, SUB)
-    text(x0, 970, "外购件：GC9A01 1.28″ / ST7701S 2.1″ 圆屏 · XVF3800 4 麦阵列 · 2804 云台无刷电机 · ESP32-S3", 13, SUB)
+    text(x0, 970, "外购件：ST7701S 2.1″ 圆屏（屏显版）· XVF3800 4 麦阵列 · 2804 云台无刷电机 · ESP32-S3", 13, SUB)
     a('</svg>')
     return "\n".join(out)
 
@@ -677,20 +673,12 @@ def exploded():
     text(40, 140, "花头（沿视线方向，前 → 后）", 17, INK, "start", 800)
     a(f'<line x1="60" y1="290" x2="520" y2="290" stroke="{ORAS}" stroke-dasharray="10 4 2 4"/>')
     sx = .36
-    parts = [(100, "1", "脸盖"), (175, "2", "圆屏"), (265, "3", "花瓣罩"), (352, "3", "灯环板"), (X, "4", "头壳")]
+    parts = [(115, "1", "脸盖"), (220, "3", "花瓣罩"), (325, "3", "灯环板"), (X, "4", "头壳")]
     for px, n, name in parts:
         a(f'<g transform="translate({px},290) scale({sx},.9) translate(-300,-276)">')
-        if name == "脸盖":
-            a(f'<circle cx="300" cy="276" r="56" fill="url(#face)" stroke="{ORAS}" stroke-width="3"/>'
-              f'<circle cx="300" cy="276" r="33" fill="#FFF3DA" stroke="{ORAS}" stroke-width="3"/>'
-              f'<ellipse cx="267" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity=".45"/>'
-              f'<ellipse cx="333" cy="290" rx="10" ry="6.5" fill="#F0627E" opacity=".45"/>')
-        elif name == "圆屏":
-            a(f'<circle cx="300" cy="276" r="37.5" fill="#1F2A44" stroke="#111" stroke-width="3"/>'
-              f'<circle cx="300" cy="276" r="32.4" fill="#22335A"/>'
-              f'<circle cx="286" cy="268" r="5" fill="#FFE3B3"/><circle cx="314" cy="268" r="5" fill="#FFE3B3"/>'
-              f'<path d="M290,284 Q300,293 310,284" fill="none" stroke="#FFE3B3" stroke-width="3" stroke-linecap="round"/>'
-              f'<rect x="292" y="312" width="16" height="40" fill="#C98A2B"/>')
+        if name == "脸盖":  # 实心无开窗，笑脸移印、不通电
+            face(300, 276, "smile")
+            a(f'<circle cx="300" cy="276" r="56" fill="none" stroke="{ORAS}" stroke-width="3"/>')
         elif name == "花瓣罩":
             petals(300, 276)
             a('<circle cx="300" cy="276" r="54" fill="#FBF3E2" stroke="#D9A400" stroke-width="2"/>')
@@ -744,7 +732,7 @@ def exploded():
     a('<rect x="392" y="580" width="12" height="9" rx="2" fill="#777"/>')
     a('</g>')
     y["17"] = 1202
-    labels = [("5", 440, X + 8, 440, "花茎管（内走 10 芯线）"), ("6", 524, X + 70, 524, "叶片 ×2"),
+    labels = [("5", 440, X + 8, 440, "花茎管（内走 5 芯线）"), ("6", 524, X + 70, 524, "叶片 ×2"),
               ("7", 482, X + 92, 488, "瓢虫说话键"),
               ("8", 612, X + 78, 620, "声学格栅 Ø78"), ("9", 664, X + 19, 672, "轴承 6801"),
               ("10", 714, X + 73, 722, "4 麦环形阵列板（XVF3800）"), ("11", 772, X + 32, 778, "线缆盘绕 + 挡销 ±170°"),
@@ -791,8 +779,8 @@ def exploded():
         badge(px, 160, n, 10.5)
         text(px, 186, name, 13.5, INK, "middle", 700)
     # 过关节走线对比
-    text(R0, 430, "过关节走线：屏显版反而更少", 16, INK, "start", 800)
-    for k, (title, wires, note) in enumerate((("标准版 10 芯", ["SPI × 4", "背光", "灯 DIN", "按键 × 2", "电源 × 2"], "底座主控直接驱动 1.28″ 屏（CS 接地）"),
+    text(R0, 430, "过关节走线：标准版 5 芯，屏显版 4 芯", 16, INK, "start", 800)
+    for k, (title, wires, note) in enumerate((("标准版 5 芯", ["灯 DIN", "按键 × 2", "电源 × 2"], "脸盖是不通电的固定笑脸，花瓣灯由底座主控驱动"),
                                               ("屏显版 4 芯 ㉒", ["5 V", "GND", "按键 × 2"], "屏幕数据走花头自己的 Wi-Fi"))):
         y0 = 456 + k * 92
         text(R0, y0 + 20, title, 14, INK, "start", 700)
@@ -823,10 +811,10 @@ def exploded():
     ty = 950
     text(R0, ty, "型号对比", 17, INK, "start", 800)
     rows = [("", "标准版", "屏显版"),
-            ("花芯", "1.28″ 240×240，只显示表情", "2.1″ 480×480：平时是脸，执行和完成时回显"),
+            ("花芯", "固定笑脸（不通电），看花瓣灯", "2.1″ 480×480：平时是脸，执行和完成时回显"),
             ("进展显示", "任意浏览器 / 投大屏", "花芯一眼可看，另外照样可投大屏"),
             ("主控", "底座 ESP32-S3", "底座 ESP32-S3 + 花头 ESP32-S3"),
-            ("过关节", "10 芯", "4 芯"),
+            ("过关节", "5 芯", "4 芯"),
             ("尺寸 / 供电", "Ø105 × 235 mm · USB-C PD 12 V", "同标准版")]
     for k, r in enumerate(rows):
         yy = ty + 16 + k * 44
