@@ -202,7 +202,8 @@ class CodexRunner:
             argv += ["--json", "-o", str(last_file), prompt]
             self.task, self.started, self.files, self.cancelled = text, time.time(), [], False
             self.last_event = None
-            log = open(self.run_dir / "events.jsonl", "a", encoding="utf-8")
+            # 行缓冲：Codex 卡住时 events.jsonl 要能看到它停在哪一步，不能攒到进程退出才落盘
+            log = open(self.run_dir / "events.jsonl", "a", encoding="utf-8", buffering=1)
             # stdin 显式关掉：codex exec 见到非终端 stdin 会尝试读取附加输入
             self.proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=log,
                                          text=True, start_new_session=True, cwd=self.workspace, env=self.env)
