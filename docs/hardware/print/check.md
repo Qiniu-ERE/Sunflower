@@ -13,8 +13,8 @@
 | `stl/common/leaf_right.stl` | 1 | 平放，键座朝上 | 60×24×12 | 2.9 | 1 | 0 | 82 |
 | `stl/common/ladybug.stl` | 1 | 平底朝下 | 16×11×4 | 0.4 | 1 | 0 | 11 |
 | `stl/standard/petal_ring.stl` | 1 | 背面朝下 | 105×105×4 | 21.2 | 1 | 0 | 9 |
-| `stl/standard/cover.stl` | 1 | 正面朝下 | 56×56×5 | 7.4 | 1 | 0 | 0 |
-| `stl/standard/head_front.stl` | 1 | 正面朝下 | 94×94×5 | 25.3 | 1 | 0 | 1496 |
+| `stl/standard/cover.stl` | 1 | 正面朝下 | 56×56×5 | 12.0 | 1 | 0 | 159 |
+| `stl/standard/head_front.stl` | 1 | 正面朝下 | 94×94×5 | 30.5 | 1 | 0 | 1243 |
 | `stl/standard/head_back.stl` | 1 | 背面朝下，颈座孔斜着，不加支撑 | 94×94×21 | 21.8 | 1 | 199 | 0 |
 
 - 花茎铝管长度：104 mm（底端 z = 48 留给电机联轴，见待核实）

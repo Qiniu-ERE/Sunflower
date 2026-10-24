@@ -27,15 +27,14 @@ FIT = 0.2                       # 插配单边间隙
 BUY = {  # 外购件尺寸：来源见 ../README.md「尺寸来源」，标 * 的是占位、要按实物核对
     "stem": (12.0, 8.0),        # 花茎铝管外径 / 内径
     "bearing": (12.0, 21.0, 5.0),  # 6801ZZ
-    "gc9a01": (37.5, 3.0),      # 1.28″ 模块外径、* 厚度
     "st7701s": (58.18, 60.71, 20.0, 3.0),  # 2.1″ 外形宽、高、* 排线引出处宽、* 厚度
     "lens": (56.0, 1.0),        # * 屏显版透明面罩：亚克力圆片
     "led": (10.0, 2.5),         # * WS2812B 单颗圆形小板
     "switch": (6.0, 3.5, 3.5),  # * 6×6 轻触开关：边长、本体高、按柱直径
     "speaker": (40.0, 15.0),    # Ø40 扬声器、* 高度
 }
-VARIANTS = {
-    "standard": {"name": "标准版", "face_r": 28.0, "body_r": 27.0, "window_r": 16.5, "lens": False, "depth": 20},
+VARIANTS = {  # window_r 为 None：没有屏，脸盖实心、正面刻固定笑脸
+    "standard": {"name": "标准版", "face_r": 28.0, "body_r": 27.0, "window_r": None, "lens": False, "depth": 20},
     "screen": {"name": "屏显版", "face_r": 31.0, "body_r": 30.0, "window_r": 27.0, "lens": True, "depth": 28},
 }
 
@@ -240,31 +239,47 @@ def petal_ring(v):
     return m
 
 
+COVER_TOP, FACE_DEPTH = 1.2, 0.8  # 脸盖正面高度（下面 cover 的 0.7 + 0.5）、笑脸凹槽深
+
+
+def face_marks(v):
+    """标准版脸盖上的固定笑脸：../draw.py 的 face(expr="smile") 等比缩到脸盖（图里脸半径 56 → face_r，y 轴翻过来）。
+    返回 [(颜色, 截面)]：眼睛、嘴、腮红。"""
+    k = v["face_r"] / 56
+    eye, blush = "#6D2C1F", "#F0627E"
+    eyes = CrossSection.batch_boolean([CrossSection.circle(5 * k, 32).translate((x * k, 8 * k)) for x in (-14, 14)],
+                                      OpType.Add)
+    w = 3 * k  # 嘴：二次贝塞尔 (-10, 8) → (0, 17) → (10, 8)，线宽 3，圆头
+    pts = [((-10 + 20 * t) * k, -(8 * (1 - t) ** 2 + 34 * t * (1 - t) + 8 * t * t) * k) for t in (i / 24 for i in range(25))]
+    dots = [CrossSection.circle(w / 2, 16).translate(q) for q in pts]
+    mouth = CrossSection.batch_boolean([CrossSection.batch_hull([a, b]) for a, b in zip(dots, dots[1:])], OpType.Add)
+    cheeks = CrossSection([ellipse(x * k, -14 * k, 10 * k, 6.5 * k, 0) for x in (-33, 33)])
+    return [(eye, eyes), (eye, mouth), (blush, cheeks)]
+
+
 def cover(v):
     r, b, w = v["face_r"], v["body_r"], v["window_r"]
     m = cyl(b, 4, -4, 128) + cyl(r, 0.7, 0, 128) + cyl(r, 0.5, 0.7, 128, r - 0.5)
+    if w is None:  # 正面朝下打印，凹槽贴床面，槽顶是 ≤ 6.5 mm 的短桥，不用支撑
+        return m - union(cs.extrude(FACE_DEPTH + 1).translate((0, 0, COVER_TOP - FACE_DEPTH)) for _, cs in face_marks(v))
     m -= cyl(w, 10, -5, 128)
-    if v["lens"]:
-        m -= cyl(BUY["lens"][0] / 2 + 0.25, 1.0, 0.21, 128)  # 面罩沉台
-    else:
-        m -= cyl(w, 2.21, -1.0, 128, w + 2.21)  # 窗口 45° 倒角，屏不显得深
+    m -= cyl(BUY["lens"][0] / 2 + 0.25, 1.0, 0.21, 128)  # 面罩沉台
     return m
 
 
-def panel_cs(v, grow=0.0):
-    if not v["lens"]:
-        return CrossSection.circle(BUY["gc9a01"][0] / 2 + grow, 128)
+def panel_cs(grow=0.0):
+    """屏显版的 2.1″ 屏外形。"""
     wd, ht, tab, _ = BUY["st7701s"]
     c = CrossSection.circle(wd / 2 + grow, 128)
     return c + CrossSection.square((tab + 2 * grow, ht - wd / 2 + grow)).translate((-tab / 2 - grow, -(ht - wd / 2) - grow))
 
 
 def head_front(v):
-    thick = BUY["st7701s"][3] if v["lens"] else BUY["gc9a01"][1]
     m = cyl(47, PLATE_Z1 - PLATE_Z0, PLATE_Z0, 160)
-    m -= panel_cs(v, 0.25).extrude(thick + 0.1).translate((0, 0, PLATE_Z1 - thick))
-    m -= panel_cs(v, -2).extrude(10).translate((0, 0, PLATE_Z0 - 1))  # 留 2 mm 窄沿托住屏背
-    if v["lens"]:
+    if v["window_r"] is not None:  # 屏槽，标准版没有屏、中间是实心
+        thick = BUY["st7701s"][3]
+        m -= panel_cs(0.25).extrude(thick + 0.1).translate((0, 0, PLATE_Z1 - thick))
+        m -= panel_cs(-2).extrude(10).translate((0, 0, PLATE_Z0 - 1))  # 留 2 mm 窄沿托住屏背
         m -= Manifold.cube((20, 14, 10)).translate((-10, -33, PLATE_Z0 - 1))  # 屏排线过孔
     m -= union(at(cyl(BUY["led"][0] / 2 + 0.2, 2.6, -6.5, 32), LED_R, 22.5 * i) for i in range(16))
     m -= union(at(cyl(1.5, 4, PLATE_Z0 - 1, 16), LED_R, 22.5 * i) for i in range(16))
@@ -328,12 +343,10 @@ def local_to_world(p):
 def buy_parts(v, stem_top):
     od, idd = BUY["stem"]
     bi, bo, bw = BUY["bearing"]
-    thick = BUY["st7701s"][3] if v["lens"] else BUY["gc9a01"][1]
     parts = {
         "花茎铝管": ring(od / 2, idd / 2, stem_top - 48, 48, 64),
         "6801 轴承": ring(bo / 2, bi / 2, bw, DECK_Z - 4, 64),
         "扬声器": cyl(BUY["speaker"][0] / 2, BUY["speaker"][1], 11.01, 64),
-        "圆屏": head_world(panel_cs(v).extrude(thick).translate((0, 0, PLATE_Z1 - thick))),
         "灯珠 ×16": head_world(union(at(cyl(BUY["led"][0] / 2, BUY["led"][1], PLATE_Z1 - BUY["led"][1], 24), LED_R,
                                         22.5 * i) for i in range(16))),
     }
@@ -341,6 +354,9 @@ def buy_parts(v, stem_top):
     top = button_top_world()
     sw = Manifold.cube((s, s, body), center=True).translate((0, 0, -0.5 - body / 2)) + cyl(stem / 2, 1.0, -0.5, 24)
     parts["轻触开关"] = sw.translate(tuple(top))
+    if v["window_r"] is not None:
+        thick = BUY["st7701s"][3]
+        parts["圆屏"] = head_world(panel_cs().extrude(thick).translate((0, 0, PLATE_Z1 - thick)))
     if v["lens"]:
         parts["亚克力面罩"] = head_world(cyl(BUY["lens"][0] / 2, BUY["lens"][1], 0.21, 128))
     return parts
@@ -465,16 +481,10 @@ COLORS = {"pot_shell": "#F7F3EA", "base_plate": "#EDE6D8", "deck": "#5D4E44", "s
 
 
 def face_deco(v):
-    """效果图里屏幕显示的内容（只用于渲染）。"""
+    """效果图里花芯的颜色（只用于渲染）：标准版是脸盖凹槽里涂的漆，屏显版是屏幕显示的内容。"""
+    if v["window_r"] is None:
+        return [(c, cs.extrude(FACE_DEPTH - 0.1).translate((0, 0, COVER_TOP - FACE_DEPTH))) for c, cs in face_marks(v)]
     z = PLATE_Z1 + 0.02
-    if not v["lens"]:
-        r = BUY["gc9a01"][0] / 2
-        return [("#F6A33A", cyl(r - 1.3, 0.1, z, 96)),
-                ("#2B2B2B", union([Manifold.sphere(1, 24).scale((1.4, 2.0, 0.4)).translate((x, 3, z + 0.1))
-                                   for x in (-5, 5)])),
-                ("#F28B82", union([Manifold.sphere(1, 24).scale((2.6, 1.6, 0.3)).translate((x, -2.8, z + 0.1))
-                                   for x in (-9, 9)])),
-                ("#2B2B2B", (ring(3.2, 2.5, 0.25, z + 0.05, 48) ^ Manifold.cube((8, 4, 2)).translate((-4, -6, z))))]
     r = BUY["st7701s"][0] / 2
     arc = ring(26.5, 25, 0.2, z + 0.1, 128) - Manifold.cube((30, 30, 2)).translate((-30, 0, z))
     return [("#1F2A44", cyl(r - 0.5, 0.1, z, 128)), ("#F5A623", arc),
@@ -497,7 +507,7 @@ def write_bin(path, m):
 EXPLODE = {"base_plate": (0, 0, -32), "deck": (0, 0, 24), "stem_collar": (0, 0, 24), "6801 轴承": (0, 0, 12),
            "花茎铝管": (0, 0, 24), "leaf_collar": (0, 0, 40), "leaf_left": (-30, 0, 40), "leaf_right": (30, 0, 40),
            "ladybug": (30, 0, 58), "瓢虫斑点": (30, 0, 58)}
-HEAD_EXPLODE = {"cover": 48, "亚克力面罩": 66, "petal_ring": 22, "屏幕": -4, "圆屏": -4, "head_front": -30,
+HEAD_EXPLODE = {"cover": 48, "笑脸": 48, "亚克力面罩": 66, "petal_ring": 22, "屏幕": -4, "圆屏": -4, "head_front": -30,
                 "head_back": -66}
 
 
@@ -523,10 +533,11 @@ def write_scene(d, parts, buys, v, explode=False):
             add(name, w, COLORS[name], 1.0, 0.45 if name == "petal_ring" else 0.6)
     add("花茎铝管", buys["花茎铝管"], COLORS["花茎铝管"], 1.0, 0.4)
     if explode:
-        add("圆屏", buys["圆屏"], "#2B2B2B", 1.0, 0.3)
+        if "圆屏" in buys:
+            add("圆屏", buys["圆屏"], "#2B2B2B", 1.0, 0.3)
         add("6801 轴承", buys["6801 轴承"], "#B0B4BA", 1.0, 0.25)
     for color, m in face_deco(v):
-        add("屏幕", head_world(m), color, 1.0, 0.3)
+        add("笑脸" if v["window_r"] is None else "屏幕", head_world(m), color, 1.0, 0.3)
     spots = union([Manifold.sphere(1, 16).scale((1.2, 1.2, 0.5)).translate((x, y, z)) for x, y, z in
                    [(1.5, 2.6, 3.6), (1.5, -2.6, 3.6), (-2.5, 0, 4.0), (4.5, 0, 2.2)]])
     add("瓢虫斑点", spots.translate(tuple(button_top_world() + [0, 0, 0.3])), "#1E1E1E")
