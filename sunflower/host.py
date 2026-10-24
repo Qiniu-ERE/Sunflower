@@ -2,6 +2,7 @@
 
     device  --POST /api/*-->  host  --codex exec-->  agent
     device  <--SSE /events--  host  --SSE /events-->  panel (any browser: big screen / kiosk / AirPlay mirror)
+    device  <--SSE key------  host  <--POST /api/key--  panel (说话按键落在屏幕上的窗口，#40)
 
     python3 -m sunflower.host --profile dev-single-mac
 """
@@ -22,6 +23,8 @@ from . import agents, config
 
 WEB = pathlib.Path(__file__).resolve().parent / "web"
 HEARTBEAT_S = 30
+PANEL_KEYS = {"talk", "mute", "1", "2", "3", "4", "5"}  # 面板按键（#40）：与设备终端按键同一组动作
+MIC_STATES = {"recording", "recognizing", "idle"}
 
 
 class Bus:
@@ -93,7 +96,8 @@ def resolve_channel(hcfg, name, codex_home=None, environ=None):
 
 def make_handler(bus, runner, token, resolve=None):
     commit, pid, started = config.code_commit(), os.getpid(), time.time()
-    device = {}  # 最近一次连上 /events 的设备所报告的代码提交
+    device = {}  # 最近一次连上 /events 的桌面设备所报告的代码提交
+    desks = []  # 正连着 /events 的桌面设备（TG 入口不算）；面板按键只发给它们
 
     class H(BaseHTTPRequestHandler):
         server_version = "sunflower/0.1"
@@ -135,10 +139,14 @@ def make_handler(bus, runner, token, resolve=None):
                 # read-only stream: loopback (the panel window on this machine) needs no token
                 if not (self._loopback() or self._authed()):
                     return self._json(401, {"error": "token required"})
-                if self.headers.get("X-Sunflower-Commit"):
+                # 没带角色头的是 #40 之前的设备进程；TG 入口带 role=tg，不覆盖设备记录
+                desk = bool(self.headers.get("X-Sunflower-Commit")) and \
+                    self.headers.get("X-Sunflower-Role", "device") == "device"
+                if desk:
                     device.update(commit=self.headers["X-Sunflower-Commit"][:40], seen=time.time(),
                                   reload=self.headers.get("X-Sunflower-Reload") == "1")
-                return self._sse(replay=parse_qs(urlparse(self.path).query).get("replay", ["1"])[0] == "1")
+                return self._sse(replay=parse_qs(urlparse(self.path).query).get("replay", ["1"])[0] == "1",
+                                 desk=desk)
             self._json(404, {"error": "not found"})
 
         def do_POST(self):
@@ -174,19 +182,35 @@ def make_handler(bus, runner, token, resolve=None):
                     return self._json(400, {"ok": False, "say": str(e)})
                 res = runner.set_agent(argv, name)
                 return self._json(200 if res["ok"] else 409, res)
+            if path == "/api/key":
+                key = body.get("key")
+                if key not in PANEL_KEYS:
+                    return self._json(400, {"ok": False, "say": f"不认识的按键：{key}"})
+                if not desks:
+                    return self._json(409, {"ok": False, "say": "桌面设备没在线：python3 -m sunflower.service device"})
+                bus.emit("key", {"key": key})
+                return self._json(200, {"ok": True})
+            if path == "/api/device":
+                state, muted = body.get("state"), body.get("muted")
+                if (state is not None and state not in MIC_STATES) or (muted is not None and not isinstance(muted, bool)):
+                    return self._json(400, {"ok": False, "say": f"未知设备状态：{body}"})
+                bus.emit("device", {k: v for k, v in (("state", state), ("muted", muted)) if v is not None})
+                return self._json(200, {"ok": True})
             if path == "/api/voice":
                 # device mirrors what it heard / is saying so the screen shows the conversation
                 bus.emit("voice", {"role": body.get("role", "?"), "text": body.get("text", "")})
                 return self._json(200, {"ok": True})
             self._json(404, {"error": "not found"})
 
-        def _sse(self, replay):
+        def _sse(self, replay, desk=False):
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
             self.send_header("Cache-Control", "no-cache")
             self.send_header("Connection", "keep-alive")
             self.end_headers()
             q = bus.subscribe(replay=replay)
+            if desk:
+                desks.append(q)
             try:
                 while True:
                     try:
@@ -200,6 +224,8 @@ def make_handler(bus, runner, token, resolve=None):
                 pass
             finally:
                 bus.unsubscribe(q)
+                if q in desks:
+                    desks.remove(q)
 
     return H
 

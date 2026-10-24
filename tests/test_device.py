@@ -281,6 +281,54 @@ class SecondFrontendTest(unittest.TestCase):
         self.assertEqual(asyncio.run(go()), ("linx-tg.json", "linx.json"))
 
 
+class PanelKeyTest(unittest.TestCase):
+    """面板接管说话按键（#40）：面板的键和终端的键走同一组动作；录音状态回报给面板。"""
+
+    def test_panel_keys_drive_the_same_actions_as_terminal_keys(self):
+        async def go():
+            d = make_device()
+            done = []
+
+            async def talk():
+                done.append("talk")
+
+            async def quick(k):
+                done.append("quick " + k)
+            d.toggle_talk, d.press_quick = talk, quick
+            for key in ("talk", "3", "mute", "bogus"):
+                job = d.on_host("key", {"key": key})
+                if job is not None:
+                    await job
+            return d, done
+        d, done = asyncio.run(go())
+        self.assertEqual(done, ["talk", "quick 3"])
+        self.assertTrue(d.muted)
+
+    def test_mic_state_is_reported_while_talking(self):
+        class H:
+            def __init__(self):
+                self.posts = []
+
+            def post(self, path, body=None, timeout=12):
+                self.posts.append((path, body))
+                return {"ok": True}
+
+        async def go():
+            d = make_device()
+            d.host = H()
+            d.ensure = lambda: asyncio.sleep(0)
+            await d.toggle_talk()
+            await asyncio.sleep(0.1)
+            await d.toggle_talk()
+            return d.host
+        h = asyncio.run(go())
+        deadline = time.time() + 3
+        while time.time() < deadline and len([p for p in h.posts if p[0] == "/api/device"]) < 2:
+            time.sleep(0.05)
+        states = [b["state"] for p, b in h.posts if p == "/api/device"]
+        self.assertEqual(states, ["recording", "recognizing"])
+
+
 class EarconTest(unittest.TestCase):
     def test_tone_is_short_audible_pcm_with_soft_edges(self):
         pcm = device.tone(880, 90)

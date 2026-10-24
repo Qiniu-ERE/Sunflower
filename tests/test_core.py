@@ -12,7 +12,7 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from sunflower import agents, host  # noqa: E402
+from sunflower import agents, device, host  # noqa: E402
 
 FAKE = [sys.executable, str(pathlib.Path(__file__).with_name("fake_codex.py"))]
 
@@ -333,6 +333,77 @@ class HostApiTest(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as cm:
             self.post("/api/dispatch", {"text": " "})
         self.assertEqual(cm.exception.code, 400)
+
+
+class PanelKeyApiTest(unittest.TestCase):
+    """面板接管说话按键（#40）：按键经主机只到桌面设备；TG 入口不冒充设备。"""
+
+    def setUp(self):
+        self.bus = host.Bus()
+        runner = agents.CodexRunner(git_repo(), self.bus.emit, base_argv=FAKE, run_dir=tempfile.mkdtemp())
+        self.srv = ThreadingHTTPServer(("127.0.0.1", 0), host.make_handler(self.bus, runner, "tok"))
+        self.srv.daemon_threads = True
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+        self.base = f"http://127.0.0.1:{self.srv.server_address[1]}"
+
+    def tearDown(self):
+        self.srv.shutdown()
+        self.srv.server_close()
+
+    def post(self, path, body):
+        req = urllib.request.Request(self.base + path, data=json.dumps(body).encode(), method="POST",
+                                     headers={"Authorization": "Bearer tok", "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=5) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            return dict(json.loads(e.read()), code=e.code)
+
+    def health(self):
+        with urllib.request.urlopen(self.base + "/health", timeout=5) as r:
+            return json.loads(r.read())
+
+    def stream(self, role):
+        """以 role 身份订阅事件流，收到的 (event, data) 放进列表。"""
+        got, ready = [], threading.Event()
+
+        def run():
+            for ev in device.Host(self.base, "tok").events(role=role, on_open=ready.set):
+                got.append(ev)
+        threading.Thread(target=run, daemon=True).start()
+        self.assertTrue(ready.wait(5))
+        time.sleep(0.2)  # 主机登记订阅者
+        return got
+
+    def wait(self, got, event):
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            hit = [d for e, d in got if e == event]
+            if hit:
+                return hit
+            time.sleep(0.05)
+        return []
+
+    def test_panel_key_without_desk_device_says_so(self):
+        self.stream("tg")  # 只有 TG 入口在线，不算设备
+        res = self.post("/api/key", {"key": "talk"})
+        self.assertFalse(res["ok"])
+        self.assertIn("设备", res["say"])
+        self.assertIsNone(self.health()["device"])
+
+    def test_panel_key_reaches_desk_device(self):
+        got = self.stream("device")
+        self.assertTrue(self.post("/api/key", {"key": "talk"})["ok"])
+        self.assertEqual(self.wait(got, "key")[0]["key"], "talk")
+        self.assertEqual(self.post("/api/key", {"key": "rm -rf"})["code"], 400)  # 只认按键表里的键
+        self.assertIsNotNone(self.health()["device"])
+
+    def test_device_mic_state_reaches_panel(self):
+        got = self.stream("device")
+        self.assertTrue(self.post("/api/device", {"state": "recording"})["ok"])
+        self.assertEqual(self.wait(got, "device")[0]["state"], "recording")
+        self.assertTrue(self.post("/api/device", {"muted": True})["ok"])
+        self.assertEqual(self.post("/api/device", {"state": "boom"})["code"], 400)
 
 
 if __name__ == "__main__":
