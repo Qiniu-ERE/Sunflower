@@ -43,10 +43,15 @@
     "workspace": "~/sunflower-demo",
     "codex_channel": "qiniu-gpt",
     "codex_channels": {
-      "qiniu-gpt": [],
+      "qiniu-gpt": [
+        "-c",
+        "model_providers.qiniu-gpt.stream_idle_timeout_ms=60000"
+      ],
       "icodeeasy": [
         "-c",
-        "model_providers.icodeeasy.supports_websockets=false"
+        "model_providers.icodeeasy.supports_websockets=false",
+        "-c",
+        "model_providers.icodeeasy.stream_idle_timeout_ms=60000"
       ]
     }
   }

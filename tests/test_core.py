@@ -80,6 +80,15 @@ class ChannelTest(unittest.TestCase):
         self.assertNotIn("qiniu-gpt", argv)
         self.assertEqual(agents.CODEX_BASE[agents.CODEX_BASE.index("--profile") + 1], "qiniu-gpt")
 
+    def test_every_channel_cuts_a_silent_stream_within_90s(self):
+        # 上游流断开后 Codex 自动重连，重连那次再挂住时默认要静默等 300 s 才再试（10-24 现场卡 132 s，
+        # icodeeasy 生产 17 次里 1 次）；每个渠道都要把静默上限压到 90 s 内，让 Codex 自己断开重试
+        for f in sorted((pathlib.Path(__file__).parent.parent / "profiles").glob("*.json")):
+            for name, extra in (json.loads(f.read_text()).get("host") or {}).get("codex_channels", {}).items():
+                key = f"model_providers.{name}.stream_idle_timeout_ms="
+                vals = [int(a[len(key):]) for a in extra if a.startswith(key)]
+                self.assertTrue(vals and vals[-1] <= 90000, f"{f.name} {name}: {extra}")
+
     def test_resolve_channel_accepts_configured_or_existing_profile(self):
         home = pathlib.Path(tempfile.mkdtemp())
         (home / "openai.config.toml").write_text("model = 'x'\n")
@@ -111,7 +120,8 @@ class RunnerTest(unittest.TestCase):
     def setUp(self):
         self.ws = git_repo()
         self.rec = Recorder()
-        self.r = agents.CodexRunner(self.ws, self.rec, base_argv=FAKE, run_dir=tempfile.mkdtemp())
+        self.run_dir = pathlib.Path(tempfile.mkdtemp())
+        self.r = agents.CodexRunner(self.ws, self.rec, base_argv=FAKE, run_dir=self.run_dir)
 
     def run_task(self, text):
         self.rec.done.clear()
@@ -151,6 +161,19 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("可以说", self.rec.of("announce")[-1]["text"])  # 出错带下一步（#10）
         self.assertNotIn("撤销", self.rec.of("announce")[-1]["text"])  # 失败不提交，撤销会撤掉上一次成功的
         self.assertIsNone(self.rec.of("state")[-1]["commit"])
+
+    def test_events_log_is_written_while_codex_runs(self):
+        # 卡住时要靠 events.jsonl 看 Codex 停在哪一步；整块缓冲到进程退出才落盘就看不到（10-24 卡死排查）
+        self.assertTrue(self.r.dispatch("SLOW 跑个大任务")["ok"])
+        log = self.run_dir / "events.jsonl"
+        deadline = time.time() + 5
+        while time.time() < deadline and "Reconnecting" not in (log.read_text() if log.exists() else ""):
+            time.sleep(0.05)
+        try:
+            self.assertIn("Reconnecting", log.read_text())
+        finally:
+            self.r.cancel()
+            self.assertTrue(self.rec.done.wait(10))
 
     def test_misheard_stop_word_cancels_instead_of_dispatching(self):
         # 平台 ASR 常把「停下」听成「听下」，灵矽又可能把它当新需求 dispatch（#35）
