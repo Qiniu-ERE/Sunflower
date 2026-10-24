@@ -23,6 +23,15 @@ class CostModelTest(unittest.TestCase):
         b = cost_model.bom(cost_model.rates())
         self.assertGreater(cost_model.total(b["屏显版"], "unit_1k"), cost_model.total(b["标准版"], "unit_1k"))
 
+    def test_standard_variant_has_no_screen(self):
+        # 10-24 定：标准版花芯是不通电的固定笑脸，状态只靠花瓣灯；BOM、竞品表和文档都不能再出现标准版的屏
+        self.assertEqual([r["part"] for r in cost_model.read("bom.csv") if r["variant"] == "标准版"], [])
+        self.assertTrue(cost_model.OURS["标准版"]["screen"].startswith("无屏"))
+        for doc in ("README.md", "docs/business/README.md", "docs/hardware/README.md"):
+            text = (ROOT / doc).read_text(encoding="utf-8")
+            for word in ("1.28″", "GC9A01", "10 芯"):
+                self.assertNotIn(word, text, doc)
+
 
 if __name__ == "__main__":
     unittest.main()
