@@ -109,6 +109,9 @@ python3 -m venv .venv && .venv/bin/pip install manifold3d                       
 .venv/bin/python docs/hardware/print/model.py docs/hardware/print                     # 写 stl/ 和 check.md
 .venv/bin/python docs/hardware/print/model.py docs/hardware/print --scene /tmp/scene  # 效果图场景
 swift docs/hardware/print/render.swift /tmp/scene/screen /tmp/hero.png hero          # 渲染，仅 macOS
+swift docs/hardware/print/render.swift /tmp/scene/screen-exploded /tmp/explode.png explode  # 爆炸图
 ```
+
+`render-screen.jpg`（1640×900）是这两张 1600×1200 的图左右拼起来再裁的：左边整机，右边爆炸图。拼接没有脚本，重新出图时对照现有那张手工对齐。
 
 尺寸都在 `model.py` 顶部：外购件在 `BUY`，两种型号的差异在 `VARIANTS`。`manifold3d` 只是生成工具，不进 `requirements.txt`。
