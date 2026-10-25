@@ -8,7 +8,7 @@ issue（需求 / 调研 / 缺陷）
   → 先写红：新测试在 main 的代码上失败
   → 实现到绿：scripts/gate.sh 输出 EXIT=0
   → PR（模板：为什么 / 改了什么 / 规格 / 验证 / 已知边界）
-  → CI 门禁全绿 + scripts/merge.sh <PR号>
+  → scripts/merge.sh <PR号>（本机门禁 Python 3.9 + 3.12 全绿才合）
   → GitHub 合并提交「合并 #N：标题」，回执贴在 PR 评论和合并提交正文
   → 攒够一版：PR 提升 sunflower/__init__.py 版本号 → scripts/release.sh
 ```
@@ -19,11 +19,11 @@ issue（需求 / 调研 / 缺陷）
 
 | 命令 | 做什么 | 谁跑 |
 |---|---|---|
-| `scripts/gate.sh` | 语法检查 + 全部单测（Python 3.9 / 3.12） | 本地、CI（push main） |
-| `scripts/gate.sh --base origin/main` | 再加**规格门**：PR 正文「规格」段点名的测试，在 main 的代码上必须失败、在本分支必须通过 | CI（PR）、`merge.sh` |
-| `scripts/merge.sh <PR号>` | 要求 PR 不落后于 main、CI 全绿，再用 **main 上的门禁脚本**在干净检出上重跑一遍，通过才合并 | 合入时 |
+| `scripts/gate.sh` | 语法检查 + 全部单测（解释器由 `PYTHON` 指定，默认 `python3`） | 本地、`merge.sh` |
+| `scripts/gate.sh --base origin/main` | 再加**规格门**：PR 正文「规格」段点名的测试，在 main 的代码上必须失败、在本分支必须通过 | `merge.sh` |
+| `scripts/merge.sh <PR号>` | 要求 PR 不落后于 main，用 **main 上的门禁脚本**在本机干净检出上按 Python 3.9、3.12 各跑一遍（uv venv，缓存在 `~/.cache/sunflower-gate`），都通过才合并；PR 头和合并提交挂 commit status `local-gate` | 合入时 |
 
-仓库私有期间 GitHub 不提供 required check，所以 `merge.sh` 是唯一合入入口；公开后再在 GitHub 上把 `gate` 设为 required。
+门禁不依赖 GitHub Actions：2026-10-24 起组织计费失败，托管 runner 不起 job，`gate.yml` 只留手动触发。仓库私有期间 GitHub 不提供 required check，`merge.sh` 是唯一合入入口；公开后可把 `local-gate` 设为 required。
 
 ### 规格门在验证什么
 
@@ -48,4 +48,4 @@ issue（需求 / 调研 / 缺陷）
 ## 发版
 
 1. 开 PR 修改 `sunflower/__init__.py` 的 `__version__`，按上面的流程合入。
-2. 在最新的 main 上运行 `scripts/release.sh`：要求该提交的 CI 门禁为绿、tag 尚不存在，然后创建 GitHub Release `vX.Y.Z`，正文列出上个版本以来合入的 PR。
+2. 在最新的 main 上运行 `scripts/release.sh`：要求该提交挂着 `merge.sh` 贴的 `local-gate` 绿、tag 尚不存在，然后创建 GitHub Release `vX.Y.Z`，正文列出上个版本以来合入的 PR。
