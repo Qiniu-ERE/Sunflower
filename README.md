@@ -311,6 +311,7 @@ python3 -m sunflower.service device       # 或者在终端里启动设备：终
 
 | 文档 | 内容 |
 |---|---|
+| [docs/architecture.md](docs/architecture.md) | 架构设计：模块规格、主机接口与事件、分工、代码来源与过程说明 |
 | [docs/demo-script.md](docs/demo-script.md) | 现场演示话术与真人实测耗时；彩排前先跑 `python3 -m sunflower.demo reset` |
 | [docs/hardware/](docs/hardware/README.md) | 两种型号的设计说明、关键决定与依据、尺寸来源、改图方法 |
 | [docs/business/](docs/business/README.md) | 初期商业可行性评估：成本、渠道费用、盈亏平衡、外壳做法与众筹回本、众筹先例、软件费率、竞品对比；口径与数据缺口 |
