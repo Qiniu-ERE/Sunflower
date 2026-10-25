@@ -331,6 +331,49 @@ class DemoResetTest(unittest.TestCase):
         self.assertIsNone(r.thread_id)
 
 
+
+class DemoPreviewTest(unittest.TestCase):
+    """台上第 19 页：任务一提交就能点开网页；撤销 / 重置后网页跟着没了，不留撤销前的旧页面。"""
+
+    NO_WEB = "import sys\nprint('清单为空')\n"          # 初始状态：serve 当普通参数，打印完就退
+    WEB = "import sys, time\nif sys.argv[1:2] == ['serve']:\n    time.sleep(60)\n"  # 网页版：serve 一直跑
+
+    def test_preview_follows_commits(self):
+        from sunflower import demo
+        ws = git_repo()
+        (ws / "todo.py").write_text(self.NO_WEB, encoding="utf-8")
+        subprocess.run(["git", "-C", str(ws), "add", "-A"], check=True)
+        subprocess.run(["git", "-C", str(ws), "commit", "-qm", "init"], check=True)
+        pv = demo.Preview(ws, settle=0.8)
+        self.addCleanup(pv.stop)
+        self.assertIn("没有网页", pv.tick())
+        self.assertIsNone(pv.proc)
+        self.assertIsNone(pv.tick())                      # 提交没变就什么都不做
+        (ws / "todo.py").write_text(self.WEB, encoding="utf-8")
+        subprocess.run(["git", "-C", str(ws), "commit", "-qam", "voice: 网页版"], check=True)
+        self.assertIn("已启动", pv.tick())
+        served = pv.proc
+        self.assertIsNone(served.poll())
+        subprocess.run(["git", "-C", str(ws), "revert", "--no-edit", "HEAD"], capture_output=True, check=True)
+        self.assertIn("没有网页", pv.tick())                # 撤销后旧服务必须停掉
+        self.assertIsNotNone(served.wait(5))
+        self.assertIsNone(pv.proc)
+
+    def test_preview_stops_when_workspace_is_reset(self):
+        from sunflower import demo
+        ws = git_repo()
+        (ws / "todo.py").write_text(self.WEB, encoding="utf-8")
+        subprocess.run(["git", "-C", str(ws), "add", "-A"], check=True)
+        subprocess.run(["git", "-C", str(ws), "commit", "-qm", "voice: 网页版"], check=True)
+        pv = demo.Preview(ws, settle=0.8)
+        self.addCleanup(pv.stop)
+        self.assertIn("已启动", pv.tick())
+        served = pv.proc
+        import shutil
+        shutil.rmtree(ws)
+        self.assertIn("已停", pv.tick())
+        self.assertIsNotNone(served.wait(5))
+
 class HostApiTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

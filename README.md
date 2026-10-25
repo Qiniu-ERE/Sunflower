@@ -198,6 +198,7 @@ cp .env.example .env                 # 填 LINX_API_KEY（lx- 开头）和任意
 
 python3 -m sunflower.linx_admin up   # 按需创建灵矽智能体、预注册软设备、取 WebSocket 令牌
 python3 -m sunflower.demo reset      # 生成演示工作区 ~/sunflower-demo（预埋一个编号差一 bug）
+python3 -m sunflower.demo preview    # 演示时另开终端常驻：每次提交后按当前代码重启网页服务，撤销后自动停
 ```
 
 开两个终端：
@@ -324,7 +325,7 @@ sunflower/
 ├── agents.py       CodexRunner：exec/resume、事件流解析、voice: 提交、撤销、语音摘要
 ├── linx_admin.py   灵矽平台侧：按需建删智能体、预注册设备、OTA 取令牌
 ├── service.py      常驻服务：launchd、部署目录、不打断任务的重启、版本漂移检查
-├── demo.py         演示工作区重置（拒绝落在比赛仓内）
+├── demo.py         演示工作区重置（拒绝落在比赛仓内）+ 预览（提交后重启网页服务）
 ├── config.py       .env / profile / 运行态（~/.sunflower，600 权限）
 └── web/panel.html  进展面板（1080p 投屏 / 7 寸屏自适应，零依赖）
 profiles/           部署形态：硬件差异只放在这里
