@@ -34,12 +34,12 @@ HELLO = {"type": "hello", "version": 1, "features": {"mcp": True}, "transport": 
 
 TOOLS = [
     {"name": "self.code.dispatch",
-     "description": "把用户的编程需求交给编程代理执行（写代码、改代码、修 bug、跑测试、提交）。用户提出任何编程需求时调用。",
+     "description": "把用户的编程需求交给编程工具执行（写代码、改代码、修 bug、跑测试、提交）。用户提出任何编程需求时调用。",
      "inputSchema": {"type": "object", "properties": {"text": {"type": "string", "description": "用户原话，完整保留"}},
                      "required": ["text"]}},
-    {"name": "self.code.status", "description": "查询编程代理当前进度。用户问进度、好了没有时调用。",
+    {"name": "self.code.status", "description": "查询编程工具当前进度。用户问进度、好了没有时调用。",
      "inputSchema": {"type": "object", "properties": {}}},
-    {"name": "self.code.cancel", "description": "让编程代理停止当前任务。用户说停下、取消时调用。",
+    {"name": "self.code.cancel", "description": "让编程工具停止当前任务。用户说停下、取消时调用。",
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "self.code.undo", "description": "撤销上一次语音任务的代码改动。用户说撤销、回滚时调用。",
      "inputSchema": {"type": "object", "properties": {}}},
