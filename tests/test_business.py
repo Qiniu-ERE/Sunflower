@@ -31,8 +31,8 @@ class CostModelTest(unittest.TestCase):
         self.assertEqual([r["part"] for r in cost_model.read("bom.csv")
                           if r["variant"] == "标准版" and screen_part.search(r["part"])], [])
         self.assertTrue(cost_model.OURS["标准版"]["screen"].startswith("无屏"))
-        # 旧标准版的屏型号与过关节线数；按词边界匹配，「110 芯」「10 芯片」不算
-        old_spec = re.compile(r"(?<![\d.])1\.28″|\bGC9A01\b|(?<!\d)10 芯(?!片)")
+        # 旧标准版的屏型号与过关节线数；按边界匹配（紧挨中文也算命中），「110 芯」「10 芯片」不算
+        old_spec = re.compile(r"(?<![\d.])1\.28″|(?<![A-Za-z0-9])GC9A01(?![A-Za-z0-9])|(?<!\d)10 芯(?!片)")
         for doc in ("README.md", "docs/business/README.md", "docs/hardware/README.md"):
             text = (ROOT / doc).read_text(encoding="utf-8")
             self.assertIsNone(old_spec.search(text), doc)

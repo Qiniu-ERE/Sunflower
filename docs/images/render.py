@@ -93,7 +93,7 @@ def terminal(log, first, last, out):
     rows = []
     for line in pathlib.Path(log).read_text(encoding="utf-8").splitlines()[int(first) - 1:int(last)]:
         ts, msg = re.match(r"(\[\d\d:\d\d:\d\d\]) (.*)", line).groups()
-        msg = re.sub(r"(linx session \w{5})\w+", r"\1…", msg)  # 会话 id 只留前缀
+        msg = re.sub(r"(linx session [A-Za-z0-9]{5})[A-Za-z0-9]{8,}", r"\1…", msg)  # 会话 id（16 位）只留前缀，「closed」不动
         if msg.startswith("工具"):
             head, _, args = msg.partition(": ")
             body = f'<span class="tool">{html.escape(head)}: <code>{html.escape(args)}</code></span>'
