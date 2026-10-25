@@ -112,9 +112,9 @@ sequenceDiagram
     设备->>灵矽: PCM 音频流
     灵矽->>设备: tools/call self.code.dispatch(原话)
     设备->>主机: POST /api/dispatch
-    主机-->>设备: 立即回执「已交给 Codex」
+    主机-->>设备: 立即回执「收到，已交给 Codex（模型名）开始处理」
     设备-->>灵矽: 工具结果（< 2 s，远低于平台 ~30 s 上限）
-    灵矽->>你: 播报「好的，已经交给编程代理了」
+    灵矽->>你: 播报「好的，已经交给 Codex（GPT 6.1 Sol）去做了」
     Note over 设备,灵矽: 空闲 20 s，设备主动断开，不白耗时长
     主机->>Codex: codex exec --json（或 resume 同一会话）
     Codex-->>主机: 事件流：命令 / 改文件 / 测试 / 总结
@@ -147,11 +147,11 @@ sequenceDiagram
   <img src="docs/hardware/device-hero.png" alt="太阳花两种型号：标准版（固定笑脸，状态看花瓣灯）与屏显版（圆屏花芯回显进展）" width="100%">
 </p>
 
-太阳花是一个放在桌上的摆件。有人说话时，花面转向说话的人。Codex 正在听、在做、做完了还是出错了，看 16 颗花瓣灯的颜色和动效就能知道。两种型号共用一个花盆底座，转向、麦克风和扬声器都一样。标准版的花芯是一张不通电的固定笑脸；屏显版把花芯换成一块圆屏，平时显示脸，执行和完成时显示进展。圆屏装在花面上，跟着花面转，所以总是朝着说话的人。
+太阳花是一个放在桌上的摆件。有人说话时，花面转向说话的人。Codex 正在听、在做、做完了还是出错了，看 16 颗花瓣灯的颜色和动效就能知道。两种型号共用一个花盆底座，转向、麦克风和扬声器都一样。标准版的花芯是一张不通电的固定笑脸；屏显版把花芯换成一块圆屏，平时显示脸，聆听、执行、完成和出错时回显。圆屏装在花面上，跟着花面转，所以总是朝着说话的人。
 
 | | 标准版 | 屏显版 |
 |---|---|---|
-| 花芯 | 固定笑脸，不通电；状态只看花瓣灯 | 2.1″ 480×480：平时是脸，执行和完成时显示步骤、进度环、测试结果和提交号 |
+| 花芯 | 固定笑脸，不通电；状态只看花瓣灯 | 2.1″ 480×480：平时是脸，聆听时回显听写，执行和完成时显示步骤、进度环、测试结果和提交号，出错时显示失败数和下一步 |
 | 进展显示 | 任意浏览器，或投到大屏 | 花芯上看一眼就够；完整日志仍在浏览器里 |
 | 主控 | 底座一颗 ESP32-S3 | 底座同标准版，花头再加一颗 ESP32-S3，用 Wi-Fi 订阅主机事件、驱动圆屏 |
 | 过转动关节的线 | 5 芯（灯、按键和电源） | 4 芯（电源和按键） |
@@ -256,7 +256,7 @@ python3 -m sunflower.service tg-install                  # 常驻：launchd 看�
 渠道就是一个 Codex profile（`~/.codex/<名>.config.toml`），再加上这个渠道专属的修正参数，修正参数写在 profile 的 `host.codex_channels` 里：
 
 ```bash
-python3 -m sunflower.host --profile dev-single-mac --channel icodeeasy      # 启动时选；也可设 SUNFLOWER_CODEX_CHANNEL
+python3 -m sunflower.host --profile dev-single-mac --channel icodeeasy      # 启动时选；也可在 shell 里 export SUNFLOWER_CODEX_CHANNEL（写进 .env 不生效）
 curl -X POST -H "Authorization: Bearer $SUNFLOWER_TOKEN" -d '{"name":"qiniu-gpt"}' \
      http://127.0.0.1:8787/api/channel                                       # 运行中切换（空闲时生效，切换后开新会话）
 ```
@@ -326,8 +326,10 @@ sunflower/
 ├── linx_admin.py   灵矽平台侧：按需建删智能体、预注册设备、OTA 取令牌
 ├── service.py      常驻服务：launchd、部署目录、不打断任务的重启、版本漂移检查
 ├── demo.py         演示工作区重置（拒绝落在比赛仓内）+ 预览（提交后重启网页服务）
+├── tryout.py       试音：念固定句子，看平台听成什么、会调哪个工具，只记录不执行
+├── tg.py           Telegram 入口：手机私聊 bot 发文字 / 语音，经灵矽软设备进同一条链路
 ├── config.py       .env / profile / 运行态（~/.sunflower，600 权限）
-└── web/panel.html  进展面板（1080p 投屏 / 7 寸屏自适应，零依赖）
+└── web/            进展面板 panel.html（1080p 投屏 / 7 寸屏自适应，零依赖）· 试音页 tryout.html
 profiles/           部署形态：硬件差异只放在这里
 demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
 scripts/            门禁 / 合入 / 发版（gate · merge · release），演示计时（bench_demo），树莓派整备与密钥下发
