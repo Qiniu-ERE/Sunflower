@@ -80,10 +80,23 @@ class ShellLintTest(unittest.TestCase):
 
 
 class WorkflowLockTest(unittest.TestCase):
-    def test_ci_runs_the_same_gate_on_pr_and_main(self):
+    def test_merge_and_release_do_not_depend_on_github_actions(self):
+        # 2026-10-24 组织计费失败，GitHub 托管 runner 一个 job 都不起，merge.sh 等「CI 全绿」就永远合不进去。
+        # 门禁改在本机干净检出上跑 3.9 + 3.12，结果作为 commit status「local-gate」贴回 GitHub
+        merge = (ROOT / "scripts/merge.sh").read_text(encoding="utf-8")
+        release = (ROOT / "scripts/release.sh").read_text(encoding="utf-8")
+        self.assertNotIn("gh pr checks", merge)
+        self.assertNotIn("gh run list", release)
+        for v in ("3.9", "3.12"):
+            self.assertIn(v, merge)
+        self.assertIn("local-gate", merge)
+        self.assertIn("local-gate", release)
+
+    def test_workflow_is_manual_and_runs_the_same_gate(self):
         wf = (ROOT / ".github/workflows/gate.yml").read_text(encoding="utf-8")
-        self.assertIn("pull_request", wf)
-        self.assertIn("branches: [main]", wf)
+        self.assertIn("workflow_dispatch", wf)
+        self.assertNotIn("pull_request", wf)
+        self.assertNotIn("push:", wf)
         self.assertIn("scripts/gate.sh", wf)
 
 

@@ -338,7 +338,7 @@ docs/business/      成本、费率、盈亏平衡与竞品（CSV + cost_model.p
 ## 测试
 
 ```bash
-scripts/gate.sh    # 语法检查 + 全部单测，最后一行是 EXIT=0 即通过；本地和 CI 跑的是同一条命令
+scripts/gate.sh    # 语法检查 + 全部单测，最后一行是 EXIT=0 即通过；merge.sh 合入前在本机按 3.9 / 3.12 各跑一遍
 ```
 
 单测覆盖：派发立即返回、resume、提交与撤销、失败路径、SSE、鉴权、文本脱敏、门禁自身的判定逻辑，以及成本表与 CSV 是否一致。
