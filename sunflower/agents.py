@@ -87,6 +87,13 @@ def codex_argv(channel="qiniu-gpt", extra=()):
 
 
 CODEX_BASE = codex_argv()
+_MODEL_RE = re.compile(r"""^model\s*=\s*["']([^"']+)["']""", re.M)
+
+
+def spoken_model(name):
+    """gpt-6.1-sol → GPT 6.1 Sol：播报念横杠和全小写缩写会别扭；屏幕上仍显示原名。"""
+    words = [w for w in re.split(r"[-_\s]+", name or "") if w]
+    return " ".join(w.upper() if w.lower() == "gpt" else w[:1].upper() + w[1:] for w in words)
 
 
 def voice_summary(last_message, limit=60):
@@ -152,6 +159,8 @@ def _git(repo, *args):
 class CodexRunner:
     """One task at a time, multi-turn via `exec resume <thread_id>`."""
 
+    AGENT_NAME = "Codex"
+
     def __init__(self, workspace, emit, base_argv=None, run_dir=None, channel=None, env=None):
         self.workspace = pathlib.Path(os.path.expanduser(workspace))
         self.emit = emit
@@ -170,6 +179,23 @@ class CodexRunner:
         self.cancelled = False
 
     # -- queries ---------------------------------------------------------
+    def model(self):
+        """当前渠道的模型名：<CODEX_HOME>/<渠道>.config.toml 里的 model；读不到返回空串。"""
+        if not self.channel:
+            return ""
+        home = (self.env or os.environ).get("CODEX_HOME") or "~/.codex"
+        try:
+            text = (pathlib.Path(os.path.expanduser(home)) / f"{self.channel}.config.toml").read_text(encoding="utf-8")
+        except OSError:
+            return ""
+        m = _MODEL_RE.search(text)
+        return m.group(1) if m else ""
+
+    def agent_label(self):
+        """回执里报的名字：代理 +（好念的模型名），换渠道就跟着变。"""
+        spoken = spoken_model(self.model())
+        return f"{self.AGENT_NAME}（{spoken}）" if spoken else self.AGENT_NAME
+
     def busy(self):
         return self.proc is not None and self.proc.poll() is None
 
@@ -209,8 +235,12 @@ class CodexRunner:
                                          text=True, start_new_session=True, cwd=self.workspace, env=self.env)
             self.emit("state", {"state": "running", "task": text, "started": self.started,
                                 "resume": bool(self.thread_id), "read_only": self.read_only})
+            model = self.model()
+            if model:
+                self.emit("log", {"kind": "system", "text": f"交给 {self.AGENT_NAME} · {model}"})
             threading.Thread(target=self._pump, args=(self.proc, last_file, log), daemon=True).start()
-            return {"ok": True, "say": "收到，已交给 Codex 开始处理"}
+            label = self.agent_label()
+            return {"ok": True, "say": f"收到，已交给 {label}{'' if label.endswith('）') else ' '}开始处理"}
 
     def cancel(self):
         with self.lock:
@@ -221,7 +251,7 @@ class CodexRunner:
                 os.killpg(self.proc.pid, signal.SIGINT)
             except ProcessLookupError:
                 pass
-            return {"ok": True, "say": "已让 Codex 停下"}
+            return {"ok": True, "say": f"已让 {self.AGENT_NAME} 停下"}
 
     def new_session(self):
         with self.lock:
@@ -240,7 +270,8 @@ class CodexRunner:
             self.base_argv, self.channel, self.thread_id = list(argv), channel, None
             self.emit("state", {"state": "idle", "channel": channel})
             self.emit("log", {"kind": "system", "text": f"已切换渠道：{channel}"})
-            return {"ok": True, "say": f"已切换到 {channel} 渠道"}
+            spoken = spoken_model(self.model())
+            return {"ok": True, "say": f"已切换到 {channel} 渠道" + (f"，模型 {spoken}" if spoken else "")}
 
     def undo(self):
         with self.lock:

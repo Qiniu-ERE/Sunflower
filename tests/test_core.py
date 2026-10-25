@@ -191,6 +191,37 @@ class RunnerTest(unittest.TestCase):
             self.assertFalse(agents.stop_intent(real), real)  # 带了别的内容就是正常需求
 
 
+class AckNamesAgentTest(unittest.TestCase):
+    """回执报出当前在用的代理和模型（按渠道配置现读），现场换渠道就能听出可配置；模型名转成 TTS 好念的写法。"""
+
+    def test_spoken_model_is_readable(self):
+        for raw, spoken in (("gpt-6.1-sol", "GPT 6.1 Sol"), ("gpt-6-astra", "GPT 6 Astra"), ("gpt-5.5", "GPT 5.5"),
+                            ("claude-opus-5-5", "Claude Opus 5 5"), ("", "")):
+            self.assertEqual(agents.spoken_model(raw), spoken, raw)
+
+    def test_dispatch_ack_names_agent_and_channel_model(self):
+        home = pathlib.Path(tempfile.mkdtemp())
+        (home / "icodeeasy.config.toml").write_text('model = "gpt-6.1-sol"\nmodel_provider = "icodeeasy"\n')
+        (home / "qiniu-gpt.config.toml").write_text("model = 'gpt-6-astra'\n")
+        rec = Recorder()
+        r = agents.CodexRunner(git_repo(), rec, base_argv=FAKE, run_dir=tempfile.mkdtemp(), channel="icodeeasy",
+                               env=dict(os.environ, CODEX_HOME=str(home)))
+        res = r.dispatch("加功能")
+        self.assertEqual(res["say"], "收到，已交给 Codex（GPT 6.1 Sol）开始处理")
+        self.assertTrue(rec.done.wait(10))
+        self.assertTrue(any("gpt-6.1-sol" in d.get("text", "") for d in rec.of("log")))  # 屏幕上留原名
+        self.assertIn("GPT 6 Astra", r.set_agent(FAKE, "qiniu-gpt")["say"])
+        rec.done.clear()
+        self.assertEqual(r.dispatch("再加")["say"], "收到，已交给 Codex（GPT 6 Astra）开始处理")
+        self.assertTrue(rec.done.wait(10))
+
+    def test_dispatch_ack_without_known_model_names_agent_only(self):
+        rec = Recorder()
+        r = agents.CodexRunner(git_repo(), rec, base_argv=FAKE, run_dir=tempfile.mkdtemp())
+        self.assertEqual(r.dispatch("加功能")["say"], "收到，已交给 Codex 开始处理")
+        self.assertTrue(rec.done.wait(10))
+
+
 class LinxPromptTest(unittest.TestCase):
     def test_prompt_maps_single_words_to_tools(self):
         # 说话费力时只说一两个字也要路由对（#10）
@@ -205,6 +236,16 @@ class LinxPromptTest(unittest.TestCase):
         line = next(l for l in linx_admin.SYSTEM_PROMPT.splitlines() if "「停」" in l)
         for word in ("「听下」", "「挺下」"):
             self.assertIn(word, line)
+
+    def test_prompt_and_tools_do_not_hardcode_agent(self):
+        # 「代理」有歧义（代理商 / 网络代理）；代理和模型可换，名字只从工具返回里来，提示词不写死
+        from sunflower import linx_admin
+        texts = [linx_admin.SYSTEM_PROMPT] + [t["description"] for t in device.TOOLS]
+        for t in texts:
+            self.assertNotIn("代理", t)
+            self.assertNotIn("Codex", t)
+        rule = next((l for l in linx_admin.SYSTEM_PROMPT.splitlines() if "模型名" in l), "")
+        self.assertIn("照原样", rule)
 
 
 class ReadOnlyIntentTest(unittest.TestCase):
