@@ -62,8 +62,10 @@ gh pr merge "$n" --merge --match-head-commit "$sha" --delete-branch \
 [ "$(gh pr view "$n" --json state -q .state)" = MERGED ] || die "合入失败：PR #$n 未处于 MERGED"
 # PR 不落后于 main（上面已校验），合并提交的树就是刚验过的 PR 头
 gate_status "$(gh pr view "$n" --json mergeCommit -q .mergeCommit.oid)"
-git switch -q main && git pull -q --ff-only origin main
-echo "✔ 已合入 #$n → main $(git rev-parse --short HEAD)"
+git fetch -q origin main
+# 在 worktree 里跑时 main 已在别的目录检出、切不过去，HEAD 还是 PR 分支；回执一律报 origin/main
+git switch -q main 2>/dev/null && git pull -q --ff-only origin main || true
+echo "✔ 已合入 #$n → main $(git rev-parse --short origin/main)"
 
 # 主机服务已安装时，合入即部署；主机正在执行任务就跳过（不打断），status 会提示漂移
 if [ -f "$HOME/Library/LaunchAgents/com.sunflower.host.plist" ]; then
