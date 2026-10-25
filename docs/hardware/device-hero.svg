@@ -4,7 +4,7 @@
 <text x="40.0" y="56.0" font-size="32" fill="#3B3227" text-anchor="start" font-weight="800" >太阳花 Sunflower · 桌面语音编程伙伴</text>
 <text x="40.0" y="88.0" font-size="15.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >对着太阳花说一句话，Codex 就开始写代码；花面转向说话人，进展实时上屏，完成后语音播报 —— 两种型号同一个底座，屏显版只把花芯换成圆屏</text>
 <text x="1760.0" y="56.0" font-size="15" fill="#7A6E5D" text-anchor="end" font-weight="600" >概念设计 v0.1</text>
-<text x="1760.0" y="80.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-23</text>
+<text x="1760.0" y="80.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-25</text>
 <line x1="40" y1="106" x2="1760" y2="106" stroke="#B9AE9A"/>
 <rect x="40" y="846" width="900" height="6" rx="3" fill="#EADFC8"/>
 <g transform="translate(240,301.0) scale(1.1) translate(-300,-150)">
@@ -145,7 +145,7 @@
 <text x="240.0" y="928.0" font-size="14" fill="#7A6E5D" text-anchor="middle" font-weight="400" >固定笑脸花芯，状态看花瓣灯 · 进展投到任意浏览器 / 大屏</text>
 <rect x="585" y="868" width="210" height="34" rx="17" fill="#3B3227"/>
 <text x="690.0" y="891.0" font-size="17" fill="#FFF8E5" text-anchor="middle" font-weight="700" >屏显版</text>
-<text x="690.0" y="928.0" font-size="14" fill="#7A6E5D" text-anchor="middle" font-weight="400" >2.1″ 圆屏花芯 · 平时是脸，执行和完成时回显进展</text>
+<text x="690.0" y="928.0" font-size="14" fill="#7A6E5D" text-anchor="middle" font-weight="400" >2.1″ 圆屏花芯 · 平时是脸，聆听、执行、完成和出错时回显进展</text>
 <rect x="1010" y="136" width="360" height="122" rx="14" fill="#FFFFFF" stroke="#EADFC8"/>
 <rect x="1010" y="136" width="6" height="122" rx="3" fill="#F6A33A"/>
 <text x="1032.0" y="172.0" font-size="20" fill="#3B3227" text-anchor="start" font-weight="800" >听声转向</text>
@@ -643,7 +643,7 @@
 <path d="M290,284 Q300,293 310,284" fill="none" stroke="#6D2C1F" stroke-width="3" stroke-linecap="round"/>
 </g>
 <text x="1530.0" y="868.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >完成</text>
-<text x="1530.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >绿色闪烁</text>
+<text x="1530.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >绿色闪 2 次</text>
 <text x="1530.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：结果 + 提交号</text>
 <g transform="translate(1680,794) scale(.44) translate(-300,-276)">
 <circle cx="300" cy="276" r="150" fill="url(#glowR)"/>
@@ -703,7 +703,7 @@
 </g>
 <text x="1680.0" y="868.0" font-size="15" fill="#3B3227" text-anchor="middle" font-weight="700" >出错</text>
 <text x="1680.0" y="887.0" font-size="12.5" fill="#7A6E5D" text-anchor="middle" font-weight="400" >橙红常亮</text>
-<text x="1680.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：失败 + 建议</text>
+<text x="1680.0" y="906.0" font-size="12" fill="#7A6E5D" text-anchor="middle" font-weight="400" >屏显版：失败数 + 下一步</text>
 <text x="1010.0" y="948.0" font-size="13.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >语音识别与合成由灵矽提供；编程交给 Codex（可切换渠道）；主机与面板代码两种型号通用。</text>
 <text x="1010.0" y="970.0" font-size="13" fill="#7A6E5D" text-anchor="start" font-weight="400" >外购件：ST7701S 2.1″ 圆屏（屏显版）· XVF3800 4 麦阵列 · 2804 云台无刷电机 · ESP32-S3</text>
 </svg>

@@ -34,14 +34,14 @@
 </p>
 
 <p align="center"><sub>
-进展面板，真实运行截图，一次两轮的语音会话。第一轮说「检查一下代码有没有逻辑问题」：Codex 跑测试，<b>红色失败</b>，只报告不改，用时 79 s。第二轮说「给待办清单加一个删除命令，按编号删除并补上测试」，中途问「进度怎么样了？」：Codex 改代码、补测试、测试转绿、自动提交 <code>voice:</code> 并播报，用时 103 s。
+进展面板，真实运行截图（10-24 彩排）。说一句「把待办清单做成一个网页版，能在浏览器里添加、完成和删除事项，并补上测试」：Codex 先跑测试看到<b>红色失败</b>，顺手修掉原有的编号偏差，加网页入口、补测试，11 项测试转绿，自动提交 <code>voice:</code> 并播报，用时 128 s。
 </sub></p>
 
 <table>
 <tr>
 <td width="58%" valign="top">
 <img src="docs/images/device-terminal.png" alt="设备端终端：听到、工具调用、播报">
-<p align="center"><sub>设备端日志（真人语音实测）：撤销 → 派新任务 → 中途问进度 → 完成播报。<br>空闲 20 s 断开语音会话，要播报时再连上。</sub></p>
+<p align="center"><sub>设备端日志（同一次彩排，真人语音）：派任务 → 立即回执 → 完成播报 → 说「回滚操作」撤销。<br>空闲 20 s 断开语音会话，要播报时再连上。</sub></p>
 </td>
 <td width="42%" valign="top">
 <img src="docs/images/panel-7in.png" alt="7 寸屏布局">
@@ -112,9 +112,9 @@ sequenceDiagram
     设备->>灵矽: PCM 音频流
     灵矽->>设备: tools/call self.code.dispatch(原话)
     设备->>主机: POST /api/dispatch
-    主机-->>设备: 立即回执「已交给 Codex」
+    主机-->>设备: 立即回执「收到，已交给 Codex（模型名）开始处理」
     设备-->>灵矽: 工具结果（< 2 s，远低于平台 ~30 s 上限）
-    灵矽->>你: 播报「好的，已经交给编程代理了」
+    灵矽->>你: 播报「好的，已经交给 Codex（GPT 6.1 Sol）去做了」
     Note over 设备,灵矽: 空闲 20 s，设备主动断开，不白耗时长
     主机->>Codex: codex exec --json（或 resume 同一会话）
     Codex-->>主机: 事件流：命令 / 改文件 / 测试 / 总结
@@ -147,13 +147,13 @@ sequenceDiagram
   <img src="docs/hardware/device-hero.png" alt="太阳花两种型号：标准版（固定笑脸，状态看花瓣灯）与屏显版（圆屏花芯回显进展）" width="100%">
 </p>
 
-太阳花是一个放在桌上的摆件。有人说话时，花面转向说话的人。Codex 正在听、在做、做完了还是出错了，看 16 颗花瓣灯的颜色和动效就能知道。两种型号共用一个花盆底座，转向、麦克风和扬声器都一样。标准版的花芯是一张不通电的固定笑脸；屏显版把花芯换成一块圆屏，平时显示脸，执行和完成时显示进展。圆屏装在花面上，跟着花面转，所以总是朝着说话的人。
+太阳花是一个放在桌上的摆件。有人说话时，花面转向说话的人。Codex 正在听、在做、做完了还是出错了，看 16 颗花瓣灯的颜色和动效就能知道。两种型号共用一个花盆底座，转向、麦克风和扬声器都一样。标准版的花芯是一张不通电的固定笑脸；屏显版把花芯换成一块圆屏，平时显示脸，聆听、执行、完成和出错时回显。圆屏装在花面上，跟着花面转，所以总是朝着说话的人。
 
 | | 标准版 | 屏显版 |
 |---|---|---|
-| 花芯 | 固定笑脸，不通电；状态只看花瓣灯 | 2.1″ 480×480：平时是脸，执行和完成时显示步骤、进度环、测试结果和提交号 |
+| 花芯 | 固定笑脸，不通电；状态只看花瓣灯 | 2.1″ 480×480：平时是脸，聆听时回显听写，执行和完成时显示步骤、进度环、测试结果和提交号，出错时显示失败数和下一步 |
 | 进展显示 | 任意浏览器，或投到大屏 | 花芯上看一眼就够；完整日志仍在浏览器里 |
-| 主控 | 底座一颗 ESP32-S3 | 底座同标准版，花头再加一颗 ESP32-S3，用 Wi-Fi 订阅主机事件、驱动圆屏 |
+| 主控 | 底座一颗 ESP32-S3 | 底座同标准版，花头再加一颗 ESP32-S3，用 Wi-Fi 订阅主机事件、驱动圆屏和花瓣灯 |
 | 过转动关节的线 | 5 芯（灯、按键和电源） | 4 芯（电源和按键） |
 | 尺寸 / 供电 | Ø105 × 235 mm · USB-C PD 12 V | 同标准版 |
 
@@ -256,7 +256,7 @@ python3 -m sunflower.service tg-install                  # 常驻：launchd 看�
 渠道就是一个 Codex profile（`~/.codex/<名>.config.toml`），再加上这个渠道专属的修正参数，修正参数写在 profile 的 `host.codex_channels` 里：
 
 ```bash
-python3 -m sunflower.host --profile dev-single-mac --channel icodeeasy      # 启动时选；也可设 SUNFLOWER_CODEX_CHANNEL
+python3 -m sunflower.host --profile dev-single-mac --channel icodeeasy      # 启动时选；也可在 shell 里 export SUNFLOWER_CODEX_CHANNEL（写进 .env 不生效）
 curl -X POST -H "Authorization: Bearer $SUNFLOWER_TOKEN" -d '{"name":"qiniu-gpt"}' \
      http://127.0.0.1:8787/api/channel                                       # 运行中切换（空闲时生效，切换后开新会话）
 ```
@@ -326,8 +326,10 @@ sunflower/
 ├── linx_admin.py   灵矽平台侧：按需建删智能体、预注册设备、OTA 取令牌
 ├── service.py      常驻服务：launchd、部署目录、不打断任务的重启、版本漂移检查
 ├── demo.py         演示工作区重置（拒绝落在比赛仓内）+ 预览（提交后重启网页服务）
+├── tryout.py       试音：念固定句子，看平台听成什么、会调哪个工具，只记录不执行
+├── tg.py           Telegram 入口：手机私聊 bot 发文字 / 语音，经灵矽软设备进同一条链路
 ├── config.py       .env / profile / 运行态（~/.sunflower，600 权限）
-└── web/panel.html  进展面板（1080p 投屏 / 7 寸屏自适应，零依赖）
+└── web/            进展面板 panel.html（1080p 投屏 / 7 寸屏自适应，零依赖）· 试音页 tryout.html
 profiles/           部署形态：硬件差异只放在这里
 demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
 scripts/            门禁 / 合入 / 发版（gate · merge · release），演示计时（bench_demo），树莓派整备与密钥下发

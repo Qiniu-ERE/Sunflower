@@ -4,7 +4,7 @@
 <text x="40.0" y="56.0" font-size="32" fill="#3B3227" text-anchor="start" font-weight="800" >太阳花 Sunflower · 解构图</text>
 <text x="40.0" y="88.0" font-size="15.5" fill="#7A6E5D" text-anchor="start" font-weight="400" >左：标准版整机沿装配轴拆开（编号同结构图零件表）；右：屏显版只换花头 —— 花盆、转向、麦克风两种型号共用</text>
 <text x="1760.0" y="56.0" font-size="15" fill="#7A6E5D" text-anchor="end" font-weight="600" >概念设计 v0.1</text>
-<text x="1760.0" y="80.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-23</text>
+<text x="1760.0" y="80.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-25</text>
 <line x1="40" y1="106" x2="1760" y2="106" stroke="#B9AE9A"/>
 <text x="40.0" y="140.0" font-size="17" fill="#3B3227" text-anchor="start" font-weight="800" >花头（沿视线方向，前 → 后）</text>
 <line x1="60" y1="290" x2="520" y2="290" stroke="#D9801A" stroke-dasharray="10 4 2 4"/>
@@ -388,7 +388,7 @@
 <text x="1392.0" y="992.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >屏显版</text>
 <text x="1052.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >花芯</text>
 <text x="1152.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >固定笑脸（不通电），看花瓣灯</text>
-<text x="1392.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >2.1″ 480×480：平时是脸，执行和完成时回显</text>
+<text x="1392.0" y="1036.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >2.1″ 圆屏：平时是脸，聆听、执行、完成和出错时回显</text>
 <rect x="1040" y="1054" width="720" height="40" fill="#F6F0E4"/>
 <text x="1052.0" y="1080.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="700" >进展显示</text>
 <text x="1152.0" y="1080.0" font-size="14" fill="#3B3227" text-anchor="start" font-weight="400" >任意浏览器 / 投大屏</text>

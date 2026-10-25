@@ -1,6 +1,7 @@
 // 效果图：读 model.py --scene 写出的场景，用 SceneKit 离屏渲染成 PNG（只在 macOS 上能跑）。
 //
-//     swift docs/hardware/print/render.swift <场景目录> <输出.png> [hero|side|back]
+//     swift docs/hardware/print/render.swift <场景目录> <输出.png> [hero|side|back|explode]
+//     explode 视角配 <key>-exploded 场景（model.py --scene 同时写出）
 import AppKit
 import SceneKit
 

@@ -4,7 +4,7 @@
 <text x="40.0" y="52.0" font-size="30" fill="#3B3227" text-anchor="start" font-weight="800" >太阳花 Sunflower · 实体设备结构设计图</text>
 <text x="40.0" y="82.0" font-size="15" fill="#7A6E5D" text-anchor="start" font-weight="400" >桌面语音编程伙伴：听声转向（4 麦阵列定位 + 单轴偏航）· 笑脸花芯 · 花瓣状态灯 · 瓢虫说话键 —— 单位 mm，三视图 1 mm = 2 px</text>
 <text x="1760.0" y="52.0" font-size="15" fill="#7A6E5D" text-anchor="end" font-weight="600" >v0.1 概念结构</text>
-<text x="1760.0" y="76.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-23</text>
+<text x="1760.0" y="76.0" font-size="13" fill="#7A6E5D" text-anchor="end" font-weight="400" >2026-10-25</text>
 <line x1="40" y1="100" x2="1760" y2="100" stroke="#B9AE9A"/>
 <text x="40.0" y="132.0" font-size="19" fill="#3B3227" text-anchor="start" font-weight="700" >A　正视图 · 外观</text>
 <ellipse cx="300" cy="644" rx="130" ry="10" fill="#E8E0CF"/>
@@ -357,7 +357,7 @@
 <text x="1408.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >睁眼 + 听写回显</text>
 <text x="1568.0" y="1018.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >按 θ 转向</text>
 <text x="1158.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="700" >执行中</text>
-<text x="1258.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >顺时针流水</text>
+<text x="1258.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >琥珀流水</text>
 <text x="1408.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >进度环 + 当前步骤</text>
 <text x="1568.0" y="1048.0" font-size="13" fill="#3B3227" text-anchor="start" font-weight="400" >保持不动</text>
 <rect x="1150" y="1058" width="610" height="30" fill="#F6F0E4"/>
