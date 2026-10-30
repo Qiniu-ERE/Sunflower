@@ -33,7 +33,6 @@
 | `sunflower/config.py`（65 行） | `.env`、profile、运行态读写 | `load_env / load_profile / read_state / write_state` | 运行态文件 600 权限；密钥只来自 `.env` 或钥匙串 | 无专门单测，经 `test_core.py`、`test_service.py` 间接覆盖 |
 | `sunflower/web/` | 进展面板 `panel.html`（1080p 投屏 / 7 寸屏自适应）、试音页 `tryout.html` | 浏览器打开 `http://<主机>:8787/` | 零依赖，只用 SSE 和按键接口；屏幕即任意浏览器，AirPlay 只是其中一种投屏方式 | `tests/test_panel.py` |
 | `scripts/` | 门禁、合入、发版；演示计时；树莓派整备 | `gate.sh`、`merge.sh <PR号>`、`release.sh`、`bench_demo.py` | 合入只经 `merge.sh`：本机干净检出、用 main 上的门禁在 Python 3.9 + 3.12 各跑一遍；规格门要求点名测试在 main 上红、在分支上绿 | `tests/test_gate_check.py` |
-| `docs/hardware/`、`docs/business/` | 硬件概念设计与 3D 打印原型；成本、盈亏平衡与竞品 | `draw.py`、`cost_model.py` 由数据生成图表 | README 里的数字与 CSV 一致 | `tests/test_business.py` |
 
 ## 接口
 

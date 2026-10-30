@@ -2,7 +2,7 @@
 
 # 🌻 Sunflower · 太阳花语音编程
 
-**对着太阳花说一句话，Codex 就开始写代码。<br>花面转向说话的人，进展实时上屏，做完用语音报结果。**
+**对着太阳花说一句话，Codex 就开始写代码。<br>进展实时上屏，做完用语音报结果。**
 
 [![Python](https://img.shields.io/badge/python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies](https://img.shields.io/badge/dependencies-1%20(websockets)-brightgreen)](./requirements.txt)
@@ -18,12 +18,7 @@
 
 </div>
 
-这个仓库有三部分：
-
-| [软件](#软件现在就能跑) | [硬件](#硬件太阳花概念设计-v01) | [成本与竞品](#成本与竞品) |
-|---|---|---|
-| <a href="#软件现在就能跑"><img src="docs/images/panel-1080p.png" alt="进展面板"></a> | <a href="#硬件太阳花概念设计-v01"><img src="docs/hardware/device-hero.png" alt="太阳花两种型号"></a> | 两种型号的 BOM、亚马逊与众筹两个渠道的盈亏平衡价、众筹要多少支持者才回本，以及和 11 款亚马逊在售产品的价格与功能对比 |
-| 已经能完整跑通：语音派活 → Codex 改代码 → 浏览器实时显示进展 → 语音播报结果 | 桌面摆件的概念设计，分标准版和屏显版；有图纸，也有两套可以直接切片的 3D 打印文件，还没实际打印过 | 数据在 CSV 里，表格由脚本生成，改了数字重跑一次就更新 |
+> 参赛评审已结束，本仓不再维护。硬件概念设计与商业评估资料已于 2026-10-29 移出。
 
 ---
 
@@ -140,52 +135,6 @@ sequenceDiagram
 | 演示要可重复 | Codex 只改仓库外的一次性副本，`demo reset` 一键回到预埋 bug 的初始状态 |
 
 第三方依赖只有 `websockets` 一个，且没有传递依赖；HTTP、SSE、evdev 按键和进程管理都用标准库。
-
-## 硬件：太阳花（概念设计 v0.1）
-
-<p align="center">
-  <img src="docs/hardware/device-hero.png" alt="太阳花两种型号：标准版（固定笑脸，状态看花瓣灯）与屏显版（圆屏花芯回显进展）" width="100%">
-</p>
-
-太阳花是一个放在桌上的摆件。有人说话时，花面转向说话的人。Codex 正在听、在做、做完了还是出错了，看 16 颗花瓣灯的颜色和动效就能知道。两种型号共用一个花盆底座，转向、麦克风和扬声器都一样。标准版的花芯是一张不通电的固定笑脸；屏显版把花芯换成一块圆屏，平时显示脸，聆听、执行、完成和出错时回显。圆屏装在花面上，跟着花面转，所以总是朝着说话的人。
-
-| | 标准版 | 屏显版 |
-|---|---|---|
-| 花芯 | 固定笑脸，不通电；状态只看花瓣灯 | 2.1″ 480×480：平时是脸，聆听时回显听写，执行和完成时显示步骤、进度环、测试结果和提交号，出错时显示失败数和下一步 |
-| 进展显示 | 任意浏览器，或投到大屏 | 花芯上看一眼就够；完整日志仍在浏览器里 |
-| 主控 | 底座一颗 ESP32-S3 | 底座同标准版，花头再加一颗 ESP32-S3，用 Wi-Fi 订阅主机事件、驱动圆屏和花瓣灯 |
-| 过转动关节的线 | 5 芯（灯、按键和电源） | 4 芯（电源和按键） |
-| 尺寸 / 供电 | Ø105 × 235 mm · USB-C PD 12 V | 同标准版 |
-
-<table>
-<tr>
-<td width="50%" valign="top"><a href="docs/hardware/device-structure.svg"><img src="docs/hardware/device-structure.png" alt="结构设计图"></a>
-<p align="center"><sub>结构图：正视尺寸 · 侧剖视 · 俯视听声转向 · 零件表（<a href="docs/hardware/device-structure.svg">矢量版</a>）</sub></p></td>
-<td width="50%" valign="top"><a href="docs/hardware/device-exploded.svg"><img src="docs/hardware/device-exploded.png" alt="解构图"></a>
-<p align="center"><sub>解构图：标准版沿装配轴拆开，屏显版只换花头（<a href="docs/hardware/device-exploded.svg">矢量版</a>）</sub></p></td>
-</tr>
-</table>
-
-听声转向的做法：土面下面装一圈 4 个麦克风，算出说话人的方向角；盆里的云台无刷电机带着花茎转过去，磁编码器做闭环，转动范围 ±170°。整个过程在设备本地完成，不经过云端。设计依据、尺寸来源和还没核实的地方见 [docs/hardware/](docs/hardware/README.md)。两种型号的 3D 打印原型文件（STL、装配步骤、效果图）见 [标准版](docs/hardware/print/standard.md) 和 [屏显版](docs/hardware/print/screen.md)。
-
-## 成本与竞品
-
-下表由 [`docs/business/cost_model.py`](docs/business/cost_model.py) 从 CSV 生成。BOM 按量产 1k 台计；有几样零件查不到 1k 档报价，只能用更小批量的价格代替，所以成本是上界。
-
-<!-- cost_summary:begin -->
-| 型号 · 渠道 | 售价 | 海外报价：落地成本 | 海外报价：盈亏平衡价 | 国内采购：落地成本 | 国内采购：盈亏平衡价 |
-|---|---:|---:|---:|---:|---:|
-| 标准版 · 亚马逊（建议售价） | 299.00 | 101.83 | **167.12** | 103.40 | **169.16** |
-| 标准版 · 众筹（早鸟价） | 249.00 | 101.83 | **194.00** | 103.40 | **196.28** |
-| 屏显版 · 亚马逊（建议售价） | 349.00 | 128.67 | **201.98** | 130.24 | **204.02** |
-| 屏显版 · 众筹（早鸟价） | 289.00 | 128.67 | **232.90** | 130.24 | **235.18** |
-
-落地成本 = 量产 1k 的 BOM ×（1 + 30% 头程与关税）；盈亏平衡价 =（落地成本 + 每台固定费用）÷（1 − 按售价提成的费用比例）。国内采购只替换查到了国内报价的零件，其余沿用海外报价。
-
-按早鸟价 249.00 / 289.00 USD，开模方案要 619 / 710 名支持者才收回 NRE；自己 FDM 打印 + 自己组装要 338 / 330 名。Kickstarter 上同类先例的支持者数：ESP32 Agent Dev Kit 170、Ropet KAMOMO 1,134、Living.ai EMO 2,126、Loona 7,811、Anki Vector 8,300。
-<!-- cost_summary:end -->
-
-BOM 明细、各项费用、NRE、外壳做法（开模 / 3D 打印）对回本的影响、Kickstarter 先例、软件费率，以及竞品的价格与功能对比，见 [初期商业可行性评估](docs/business/README.md)。
 
 ## 快速开始
 
@@ -313,8 +262,6 @@ python3 -m sunflower.service device       # 或者在终端里启动设备：终
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | 架构设计：模块规格、主机接口与事件、分工、代码来源与过程说明 |
 | [docs/demo-script.md](docs/demo-script.md) | 现场演示话术与真人实测耗时；彩排前先跑 `python3 -m sunflower.demo reset` |
-| [docs/hardware/](docs/hardware/README.md) | 两种型号的设计说明、关键决定与依据、尺寸来源、改图方法 |
-| [docs/business/](docs/business/README.md) | 初期商业可行性评估：成本、渠道费用、盈亏平衡、外壳做法与众筹回本、众筹先例、软件费率、竞品对比；口径与数据缺口 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | issue → 分支 → PR → 门禁合入的流程，以及「规格」写法 |
 
 ## 项目结构
@@ -335,8 +282,6 @@ profiles/           部署形态：硬件差异只放在这里
 demo/todo-app/      演示模板（预埋 bug + AGENTS.md）
 scripts/            门禁 / 合入 / 发版（gate · merge · release），演示计时（bench_demo），树莓派整备与密钥下发
 tests/              离线单测（fake_codex 回放事件流，不连云）
-docs/hardware/      硬件概念设计：形象图 / 结构图 / 解构图（draw.py 生成）
-docs/business/      成本、费率、盈亏平衡与竞品（CSV + cost_model.py 生成表格）
 ```
 
 ## 测试
@@ -345,7 +290,7 @@ docs/business/      成本、费率、盈亏平衡与竞品（CSV + cost_model.p
 scripts/gate.sh    # 语法检查 + 全部单测，最后一行是 EXIT=0 即通过；merge.sh 合入前在本机按 3.9 / 3.12 各跑一遍
 ```
 
-单测覆盖：派发立即返回、resume、提交与撤销、失败路径、SSE、鉴权、文本脱敏、门禁自身的判定逻辑，以及成本表与 CSV 是否一致。
+单测覆盖：派发立即返回、resume、提交与撤销、失败路径、SSE、鉴权、文本脱敏、门禁自身的判定逻辑。
 
 ## 开发流程
 
